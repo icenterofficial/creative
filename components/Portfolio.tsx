@@ -26,6 +26,46 @@ const Portfolio: React.FC = () => {
     ? projects 
     : projects.filter(p => p.category === filter);
 
+  // URL Sync Effect
+  useEffect(() => {
+    // 1. Check URL on mount
+    const params = new URLSearchParams(window.location.search);
+    const projectId = params.get('project');
+    if (projectId) {
+        const found = projects.find(p => p.id === projectId);
+        if (found) setSelectedProject(found);
+    }
+
+    // 2. Handle Back Button
+    const handlePopState = () => {
+        const p = new URLSearchParams(window.location.search);
+        const pId = p.get('project');
+        if (pId) {
+            const found = projects.find(prj => prj.id === pId);
+            if (found) setSelectedProject(found);
+        } else {
+            setSelectedProject(null);
+        }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [projects]);
+
+  const handleOpenProject = (project: Project) => {
+      setSelectedProject(project);
+      const url = new URL(window.location.href);
+      url.searchParams.set('project', project.id);
+      window.history.pushState({}, '', url);
+  };
+
+  const handleCloseProject = () => {
+      setSelectedProject(null);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('project');
+      window.history.pushState({}, '', url);
+  };
+
   // Lock body scroll when modal is open
   useEffect(() => {
     if (selectedProject) {
@@ -79,7 +119,7 @@ const Portfolio: React.FC = () => {
           {filteredProjects.map((project, index) => (
             <RevealOnScroll key={project.id} delay={index * 100} variant="zoom-in" duration={600}>
               <div 
-                onClick={() => setSelectedProject(project)}
+                onClick={() => handleOpenProject(project)}
                 className="group relative rounded-2xl overflow-hidden break-inside-avoid bg-gray-800 transition-transform duration-500 hover:-translate-y-2 hover:rotate-1 hover:shadow-2xl hover:shadow-indigo-500/20 cursor-pointer"
               >
                 <img 
@@ -122,12 +162,12 @@ const Portfolio: React.FC = () => {
            {/* Backdrop */}
            <div 
              className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
-             onClick={() => setSelectedProject(null)}
+             onClick={handleCloseProject}
            />
 
            {/* Close Button - Fixed Position */}
            <button 
-              onClick={() => setSelectedProject(null)}
+              onClick={handleCloseProject}
               className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all z-50 border border-white/10"
            >
               <X size={24} />
