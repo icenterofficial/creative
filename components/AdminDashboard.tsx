@@ -51,11 +51,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
 
   // Manual Sync (Mostly for Super Admin or troubleshooting)
   const handleSync = async () => {
-      if (!githubConfig?.token) {
-          alert("Please configure your GitHub Token in the Settings tab first.");
-          if (isSuperAdmin) setActiveTab('settings');
-          return;
-      }
+      // Check if config exists either in context OR if hardcoded logic in DataContext handles it
+      // We'll let syncToGitHub return the error if missing
       setIsSyncing(true);
       setSyncStatus(null);
       const result = await syncToGitHub();
@@ -64,15 +61,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
       
       if(result.success) {
           setTimeout(() => setSyncStatus(null), 5000);
+      } else {
+          alert(`Sync Failed: ${result.message}`);
       }
   };
   
   const handleFetch = async () => {
-      if (!githubConfig?.token) {
-          alert("Please configure your GitHub Token in the Settings tab first.");
-          if (isSuperAdmin) setActiveTab('settings');
-          return;
-      }
       setIsSyncing(true);
       await fetchFromGitHub();
       setIsSyncing(false);
@@ -131,14 +125,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
        updateService(editingItem.id, editingItem);
     }
     
-    // 2. AUTO SYNC TO GITHUB (If Configured)
+    // 2. AUTO SYNC TO GITHUB
     // We pass the 'overrides' object. The syncToGitHub function will use these lists 
     // instead of the current state (which might be stale).
-    if (githubConfig?.token) {
-        const result = await syncToGitHub(overrides);
-        if (!result.success) {
-            alert(`Saved locally, but failed to sync to GitHub: ${result.message}`);
-        }
+    const result = await syncToGitHub(overrides);
+    
+    if (!result.success) {
+        // LOUD ERROR if sync fails (e.g. missing token)
+        alert(`⚠️ Saved Locally ONLY!\n\nFailed to push to GitHub: ${result.message}\n\nPlease ask the Admin to check the GitHub Token configuration in DataContext.tsx.`);
     }
 
     setIsSaving(false);
@@ -290,7 +284,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
               )}
               
               {/* Only Super Admin needs manual controls now, since Members auto-save */}
-              {githubConfig && isSuperAdmin && (
+              {isSuperAdmin && (
                 <>
                     <button 
                         onClick={handleFetch} 
