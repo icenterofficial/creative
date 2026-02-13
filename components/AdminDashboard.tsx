@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
 import { TeamMember, Project, Post, Service } from '../types';
-import { X, Plus, Trash2, Edit, Save, RotateCcw, LogOut, LayoutGrid, Users, FileText, Briefcase, Settings, Cloud, RefreshCw, Eye, Shield, Lock } from 'lucide-react';
+import { X, Plus, Trash2, Edit, Save, RotateCcw, LogOut, LayoutGrid, Users, FileText, Briefcase, Settings, Cloud, RefreshCw, Eye, Shield, Lock, Loader2 } from 'lucide-react';
 import { CurrentUser } from '../App';
 
 interface AdminDashboardProps {
@@ -38,6 +38,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
   
   // Sync States
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // New state for auto-save loading
   const [syncStatus, setSyncStatus] = useState<{success: boolean, message: string} | null>(null);
 
   // GitHub Config Form State
@@ -48,6 +49,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
       token: githubConfig?.token || ''
   });
 
+  // Manual Sync (Mostly for Super Admin or troubleshooting)
   const handleSync = async () => {
       if (!githubConfig?.token) {
           alert("Please configure your GitHub Token in the Settings tab first.");
@@ -60,7 +62,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
       setSyncStatus(result);
       setIsSyncing(false);
       
-      // Clear message after 5 seconds
       if(result.success) {
           setTimeout(() => setSyncStatus(null), 5000);
       }
@@ -83,10 +84,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
       alert("Configuration saved! You can now sync data.");
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  // 100% Guarantee Logic: Auto-Sync on Save
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingItem) return;
 
+    setIsSaving(true); // Start loading indicator on button
+
+    // 1. Update Local Data
     if (activeTab === 'team') {
        if (isAdding && isSuperAdmin) addTeamMember(editingItem);
        else updateTeamMember(editingItem.id, editingItem);
@@ -100,6 +105,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
        updateService(editingItem.id, editingItem);
     }
     
+    // 2. AUTO SYNC TO GITHUB (If Configured)
+    // This ensures Team Members don't need to press a separate button.
+    if (githubConfig?.token) {
+        // We wait for the local state update to potentially propagate, 
+        // though in React state batches, passing the *updated* data to sync 
+        // would be cleaner. However, DataContext syncToGitHub uses current state.
+        // A small timeout allows React to update context before we sync.
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        const result = await syncToGitHub();
+        if (!result.success) {
+            alert(`Saved locally, but failed to sync to GitHub: ${result.message}`);
+        }
+    }
+
+    setIsSaving(false);
     setEditingItem(null);
     setIsAdding(false);
   };
@@ -116,11 +137,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
     } else if (activeTab === 'projects' && isSuperAdmin) {
         setEditingItem({ id, title: '', category: 'graphicdesign', image: '' } as Project);
     } else if (activeTab === 'insights') {
-        // Members can only add posts as themselves
         const newAuthorId = isSuperAdmin ? 't1' : (memberId || 't1');
         setEditingItem({ id, title: '', titleKm: '', excerpt: '', date: new Date().toLocaleDateString(), category: 'Design', image: '', authorId: newAuthorId, content: '' } as Post);
     }
     setIsAdding(true);
+  };
+
+  // Helper to calculate article count
+  const getPostCount = (authorId: string) => {
+      return insights.filter(post => post.authorId === authorId).length;
   };
 
   const renderForm = () => {
@@ -137,17 +162,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
           </div>
 
           <form onSubmit={handleSave} className="space-y-4">
-             {/* Dynamic Fields based on Active Tab */}
              {Object.keys(editingItem).map((key) => {
                 if (key === 'id' || key === 'comments' || key === 'replies' || key === 'icon') return null; 
                 
-                // If Member, lock authorId field
                 if (key === 'authorId' && !isSuperAdmin) return null;
 
                 const value = editingItem[key];
                 const label = key.charAt(0).toUpperCase() + key.slice(1);
 
-                // Arrays (Skills, Experience, Features)
                 if (Array.isArray(value)) {
                     return (
                         <div key={key}>
@@ -161,7 +183,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
                     );
                 }
 
-                // Socials Object
                 if (key === 'socials' && typeof value === 'object') {
                     return (
                         <div key={key} className="space-y-2 border border-white/5 p-3 rounded-lg">
@@ -182,7 +203,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
                     );
                 }
 
-                 // Long Text
                 if (key === 'content' || key === 'description' || key === 'bio' || key === 'bioKm' || key === 'descriptionKm') {
                     return (
                         <div key={key}>
@@ -197,7 +217,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
                     );
                 }
 
-                // Default Input
                 return (
                     <div key={key}>
                         <label className="block text-xs font-bold text-gray-400 mb-1">{label}</label>
@@ -210,8 +229,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
                 );
              })}
 
-             <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-colors flex justify-center items-center gap-2">
-                <Save size={18} /> Save Changes
+             <button 
+                type="submit" 
+                disabled={isSaving}
+                className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
+            >
+                {isSaving ? (
+                    <>
+                        <Loader2 size={18} className="animate-spin" /> Publishing...
+                    </>
+                ) : (
+                    <>
+                        <Save size={18} /> Save & Publish
+                    </>
+                )}
              </button>
           </form>
         </div>
@@ -221,7 +252,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
 
   return (
     <div className="min-h-screen bg-gray-950 text-white font-sans selection:bg-indigo-500">
-      {/* Top Bar */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-gray-900 border-b border-white/10 flex items-center justify-between px-6 z-50">
           <div className="flex items-center gap-3">
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${isSuperAdmin ? 'bg-indigo-600' : 'bg-green-600'}`}>
@@ -233,14 +263,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
               </div>
           </div>
 
-          {/* Sync Status / Buttons */}
           <div className="flex items-center gap-4">
               {lastSyncTime && (
-                  <span className="text-xs text-gray-500 hidden lg:inline">Last synced: {lastSyncTime}</span>
+                  <span className="text-xs text-gray-500 hidden lg:inline">Live: {lastSyncTime}</span>
               )}
               
-              {/* Only show full sync controls if configured or if super admin */}
-              {githubConfig && (
+              {/* Only Super Admin needs manual controls now, since Members auto-save */}
+              {githubConfig && isSuperAdmin && (
                 <>
                     <button 
                         onClick={handleFetch} 
@@ -262,7 +291,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
                         } disabled:opacity-50`}
                     >
                         <Cloud size={14} /> 
-                        {isSyncing ? 'Syncing...' : syncStatus?.success ? 'Saved!' : 'Push to Live'}
+                        {isSyncing ? 'Syncing...' : syncStatus?.success ? 'Live!' : 'Push Live'}
                     </button>
                 </>
               )}
@@ -276,20 +305,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
       </header>
 
       <div className="pt-16 flex h-screen">
-         {/* Sidebar */}
          <aside className="w-64 bg-gray-900/50 border-r border-white/10 p-4 hidden md:flex flex-col gap-2">
-            
-            {/* Team Members: Visible to all, but logic differs inside */}
             <button onClick={() => setActiveTab('team')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'team' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:bg-white/5'}`}>
                 <Users size={20} /> {isSuperAdmin ? 'Team Management' : 'My Profile'}
             </button>
 
-            {/* Articles: Visible to all */}
             <button onClick={() => setActiveTab('insights')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'insights' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:bg-white/5'}`}>
                 <FileText size={20} /> {isSuperAdmin ? 'All Articles' : 'My Articles'}
             </button>
 
-            {/* Projects & Services: ADMIN ONLY */}
             {isSuperAdmin && (
                 <>
                     <button onClick={() => setActiveTab('projects')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'projects' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:bg-white/5'}`}>
@@ -303,7 +327,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
             
             <div className="flex-1" />
             
-            {/* Settings: ADMIN ONLY */}
             {isSuperAdmin && (
                 <button onClick={() => setActiveTab('settings')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-gray-800 text-white border border-white/10' : 'text-gray-400 hover:bg-white/5'}`}>
                     <Settings size={20} /> Settings
@@ -311,14 +334,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
             )}
          </aside>
 
-         {/* Main Content */}
          <main className="flex-1 overflow-y-auto p-8">
             <div className="flex justify-between items-center mb-8">
                 <h2 className="text-2xl font-bold capitalize">
                     {activeTab === 'team' && !isSuperAdmin ? 'My Profile' : `${activeTab} Management`}
                 </h2>
                 
-                {/* Add Button Logic */}
                 {((isSuperAdmin && activeTab !== 'services' && activeTab !== 'settings') || (activeTab === 'insights' && !isSuperAdmin)) && (
                     <button onClick={startAdd} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-bold transition-colors">
                         <Plus size={18} /> Add New
@@ -326,7 +347,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
                 )}
             </div>
 
-            {/* Error Message */}
             {syncStatus?.success === false && (
                 <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl flex items-center justify-between">
                     <span>{syncStatus.message}</span>
@@ -407,22 +427,34 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
                     
                     {/* TEAM TAB */}
                     {activeTab === 'team' && team
-                        .filter(item => isSuperAdmin || item.id === memberId) // Filter for members
-                        .map(item => (
-                        <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
-                            <img src={item.image} alt={item.name} className="w-full h-48 object-cover rounded-lg bg-gray-800" />
-                            <div>
-                                <h4 className="font-bold text-lg text-white">{item.name}</h4>
-                                <p className="text-gray-400 text-sm">{item.role}</p>
-                            </div>
-                            <div className="mt-auto flex gap-2">
-                                <button onClick={() => startEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><Edit size={14}/> Edit</button>
-                                {isSuperAdmin && (
-                                    <button onClick={() => deleteItem('team', item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg"><Trash2 size={16}/></button>
-                                )}
-                            </div>
-                        </div>
-                    ))}
+                        .filter(item => isSuperAdmin || item.id === memberId)
+                        .map(item => {
+                            // Calculate Article Count for the badge
+                            const postCount = getPostCount(item.id);
+                            
+                            return (
+                                <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
+                                    <div className="relative">
+                                        <img src={item.image} alt={item.name} className="w-full h-48 object-cover rounded-lg bg-gray-800" />
+                                        {postCount > 0 && (
+                                            <div className="absolute top-2 right-2 px-2 py-1 bg-indigo-600/90 backdrop-blur-sm rounded-lg border border-white/10 text-white text-[10px] font-bold uppercase tracking-wide flex items-center gap-1">
+                                                <FileText size={10} /> {postCount} Articles
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h4 className="font-bold text-lg text-white">{item.name}</h4>
+                                        <p className="text-gray-400 text-sm">{item.role}</p>
+                                    </div>
+                                    <div className="mt-auto flex gap-2">
+                                        <button onClick={() => startEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><Edit size={14}/> Edit</button>
+                                        {isSuperAdmin && (
+                                            <button onClick={() => deleteItem('team', item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg"><Trash2 size={16}/></button>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
 
                     {/* PROJECTS TAB (Admin Only) */}
                     {activeTab === 'projects' && isSuperAdmin && projects.map(item => (
@@ -441,16 +473,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
 
                     {/* INSIGHTS TAB */}
                     {activeTab === 'insights' && insights
-                        .filter(item => isSuperAdmin || item.authorId === memberId) // Show only own posts for members? Or show all but only allow edit own?
-                        // Let's allow viewing all but editing only own as per modern standards, 
-                        // but to keep it simple and safe: Filter view for now or Disable buttons.
-                        // Let's disable buttons for clarity.
+                        .filter(item => isSuperAdmin || item.authorId === memberId)
                         .map(item => {
                             const canEdit = isSuperAdmin || item.authorId === memberId;
-                            
-                            // If filtering view is preferred:
-                            // if (!isSuperAdmin && item.authorId !== memberId) return null;
-
                             return (
                                 <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
                                     <img src={item.image} alt={item.title} className="w-full h-40 object-cover rounded-lg bg-gray-800" />
