@@ -1,0 +1,102 @@
+import React from 'react';
+
+export interface GitHubConfig {
+  username: string;
+  repo: string;
+  branch: string;
+  token: string; // Personal Access Token
+}
+
+export interface Service {
+  id: string;
+  title: string;
+  titleKm: string;
+  subtitle: string;
+  subtitleKm?: string;
+  icon: React.ReactNode;
+  color: string;
+  link: string;
+  description: string;
+  descriptionKm?: string;
+  features: string[];
+  featuresKm?: string[];
+}
+
+export interface Project {
+  id: string;
+  title: string;
+  category: 'graphicdesign' | 'webapp' | 'architecture' | 'mvac' | 'arabiccalligraphy' | 'translator' | 'website';
+  image: string;
+  client?: string;
+}
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  roleKm: string;
+  image: string;
+  socials: {
+    facebook?: string;
+    telegram?: string;
+  };
+  bio: string;
+  bioKm?: string;
+  skills: string[];
+  experience: string[];
+  experienceKm?: string[];
+}
+
+export interface Comment {
+  id: string;
+  user: string;
+  avatar: string;
+  content: string;
+  date: string;
+  replies?: Comment[];
+}
+
+export interface Post {
+  id: string;
+  title: string;
+  titleKm: string;
+  excerpt: string;
+  date: string;
+  category: string;
+  image: string;
+  link: string;
+  authorId: string;
+  content?: string;
+  comments?: Comment[];
+}
+
+export interface NavItem {
+  label: string;
+  href: string;
+}
+
+export interface Testimonial {
+  id: string;
+  name: string;
+  role: string;
+  company: string;
+  content: string;
+  contentKm?: string;
+  avatar: string;
+}
+
+export interface ProcessStep {
+  id: string;
+  number: string;
+  title: string;
+  titleKm: string;
+  description: string;
+  descriptionKm?: string;
+  icon: React.ReactNode;
+}
+
+export interface Partner {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+}

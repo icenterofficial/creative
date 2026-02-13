@@ -1,0 +1,512 @@
+import React from 'react';
+import { Palette, Home, PenTool, Languages, Camera, Monitor, Video, BookOpen, Wind, Search, Lightbulb, PenLine, Rocket, Building2, Cpu, Globe, Zap, Gem, Feather, Anchor, Droplet } from 'lucide-react';
+import { Service, Project, TeamMember, Post, Testimonial, ProcessStep, Partner } from './types';
+
+export const SERVICES: Service[] = [
+  {
+    id: 'graphic',
+    title: 'Graphic Design',
+    titleKm: 'ការរចនាក្រាហ្វិក',
+    subtitle: 'Branding & Visual Identity',
+    subtitleKm: 'អត្តសញ្ញាណម៉ាកយីហោ',
+    icon: <Palette size={32} />,
+    color: 'bg-purple-500',
+    link: '#',
+    description: 'We bring your brand to life with stunning visuals. From logos to marketing materials, our designs are crafted to captivate and communicate your message effectively.',
+    descriptionKm: 'យើងធ្វើឱ្យម៉ាកយីហោរបស់អ្នករស់រវើកជាមួយនឹងរូបភាពដ៏ស្រស់ស្អាត។ ចាប់ពីឡូហ្គោ រហូតដល់សម្ភារៈទីផ្សារ ការរចនារបស់យើងត្រូវបានបង្កើតឡើងដើម្បីទាក់ទាញ និងទំនាក់ទំនងសាររបស់អ្នកប្រកបដោយប្រសិទ្ធភាព។',
+    features: ['Logo & Branding Identity', 'Social Media Graphics', 'Marketing Materials (Flyers, Brochures)', 'Packaging Design'],
+    featuresKm: ['ឡូហ្គោ និងអត្តសញ្ញាណម៉ាក', 'ក្រាហ្វិកបណ្តាញសង្គម', 'សម្ភារៈទីផ្សារ (ប័ណ្ណផ្សព្វផ្សាយ)', 'ការរចនាការវេចខ្ចប់']
+  },
+  {
+    id: 'architecture',
+    title: 'Architecture',
+    titleKm: 'ស្ថាបត្យកម្ម',
+    subtitle: 'Sustainable & Modern Spaces',
+    subtitleKm: 'លំហទំនើប និងនិរន្តរភាព',
+    icon: <Home size={32} />,
+    color: 'bg-indigo-500',
+    link: '#',
+    description: 'Blending functionality with aesthetics, we design spaces that inspire. Our architectural services cover everything from concept sketches to detailed blueprints.',
+    descriptionKm: 'ការរួមបញ្ចូលគ្នារវាងមុខងារប្រើប្រាស់ និងសោភ័ណភាព យើងរចនាទីធ្លាដែលផ្តល់នូវការបំផុសគំនិត។ សេវាកម្មស្ថាបត្យកម្មរបស់យើងគ្របដណ្តប់លើអ្វីៗគ្រប់យ៉ាងចាប់ពីគំនូរព្រាងរហូតដល់ប្លង់លម្អិត។',
+    features: ['Residential & Commercial Design', '3D Modeling & Rendering', 'Interior Design', 'Landscape Planning'],
+    featuresKm: ['ការរចនាអគារលំនៅដ្ឋាន និងពាណិជ្ជកម្ម', 'ការបង្កើតម៉ូដែល 3D', 'ការរចនាផ្ទៃខាងក្នុង', 'ការរៀបចំសួនច្បារ']
+  },
+  {
+    id: 'calligraphy',
+    title: 'Arabic Calligraphy',
+    titleKm: 'អក្សរផ្ចង់អារ៉ាប់',
+    subtitle: 'Traditional Art & Digital Assets',
+    subtitleKm: 'សិល្បៈប្រពៃណី និងឌីជីថល',
+    icon: <PenTool size={32} />,
+    color: 'bg-pink-500',
+    link: '#',
+    description: 'Masterful Arabic calligraphy for art pieces, logos, and digital media. We combine traditional rules with modern flair.',
+    descriptionKm: 'អក្សរផ្ចង់អារ៉ាប់ដ៏ប៉ិនប្រសប់សម្រាប់ស្នាដៃសិល្បៈ ឡូហ្គោ និងប្រព័ន្ធផ្សព្វផ្សាយឌីជីថល។ យើងរួមបញ្ចូលគ្នានូវច្បាប់ប្រពៃណីជាមួយនឹងរចនាប័ទ្មទំនើប។',
+    features: ['Custom Name Design', 'Logo Calligraphy', 'Wall Art & Decoration', 'Digital Calligraphy Assets'],
+    featuresKm: ['ការរចនាឈ្មោះ', 'ឡូហ្គោអក្សរផ្ចង់', 'សិល្បៈជញ្ជាំង និងការតុបតែង', 'ធនធានអក្សរផ្ចង់ឌីជីថល']
+  },
+  {
+    id: 'translation',
+    title: 'Translation Services',
+    titleKm: 'សេវាកម្មបកប្រែ',
+    subtitle: 'Professional & Accurate',
+    subtitleKm: 'វិជ្ជាជីវៈ និងត្រឹមត្រូវ',
+    icon: <Languages size={32} />,
+    color: 'bg-orange-500',
+    link: '#',
+    description: 'Accurate and culturally nuanced translation services. We bridge the gap between languages to help you reach a global audience.',
+    descriptionKm: 'សេវាកម្មបកប្រែដែលមានភាពត្រឹមត្រូវ និងយល់ពីវប្បធម៌។ យើងផ្សារភ្ជាប់គម្លាតរវាងភាសា ដើម្បីជួយអ្នកទៅដល់ទស្សនិកជនសកល។',
+    features: ['Document Translation (Khmer, English, Arabic)', 'Simultaneous Interpretation', 'Website Localization', 'Legal & Technical Translation'],
+    featuresKm: ['ការបកប្រែឯកសារ (ខ្មែរ អង់គ្លេស អារ៉ាប់)', 'ការបកប្រែផ្ទាល់មាត់', 'ការធ្វើឱ្យវេបសាយមានលក្ខណៈតំបន់', 'ការបកប្រែច្បាប់ និងបច្ចេកទេស']
+  },
+  {
+    id: 'media',
+    title: 'Video & Photo',
+    titleKm: 'ផលិតវីដេអូ និងថតរូប',
+    subtitle: 'Capturing Moments',
+    subtitleKm: 'ផ្តិតយកពេលវេលា',
+    icon: <Camera size={32} />,
+    color: 'bg-blue-500',
+    link: '#',
+    description: 'High-quality photography and videography services to capture moments and tell your story through a cinematic lens.',
+    descriptionKm: 'សេវាកម្មថតរូប និងវីដេអូដែលមានគុណភាពខ្ពស់ ដើម្បីផ្តិតយកពេលវេលាដ៏សំខាន់ និងប្រាប់រឿងរ៉ាវរបស់អ្នកតាមរយៈកែវភ្នែកភាពយន្ត។',
+    features: ['Event Photography', 'Commercial Video Production', 'Video Editing & Post-Production', 'Product Photography'],
+    featuresKm: ['ការថតរូបក្នុងកម្មវិធី', 'ផលិតវីដេអូពាណិជ្ជកម្ម', 'ការកាត់តវីដេអូ', 'ការថតរូបផលិតផល']
+  },
+  {
+    id: 'courses',
+    title: 'Online Courses',
+    titleKm: 'វគ្គសិក្សាអនឡាញ',
+    subtitle: 'Learn from Experts',
+    subtitleKm: 'រៀនពីអ្នកជំនាញ',
+    icon: <BookOpen size={32} />,
+    color: 'bg-emerald-500',
+    link: '#',
+    description: 'Learn new skills from industry experts. Our online courses are designed to be practical, engaging, and accessible anywhere.',
+    descriptionKm: 'រៀនជំនាញថ្មីពីអ្នកជំនាញក្នុងវិស័យ។ វគ្គសិក្សាអនឡាញរបស់យើងត្រូវបានរចនាឡើងដើម្បីឱ្យមានការអនុវត្តជាក់ស្តែង គួរឱ្យចាប់អារម្មណ៍ និងអាចចូលរៀនបានគ្រប់ទីកន្លែង។',
+    features: ['Graphic Design Masterclass', 'Web Development Bootcamp', 'Language Learning', 'Architecture Basics'],
+    featuresKm: ['ថ្នាក់ជំនាញរចនាក្រាហ្វិក', 'វគ្គបណ្តុះបណ្តាលវេបសាយ', 'ការរៀនភាសា', 'មូលដ្ឋានគ្រឹះស្ថាបត្យកម្ម']
+  },
+  {
+    id: 'webdev',
+    title: 'Web & App',
+    titleKm: 'អភិវឌ្ឍគេហទំព័រ',
+    subtitle: 'Scalable Digital Solutions',
+    subtitleKm: 'ដំណោះស្រាយឌីជីថល',
+    icon: <Monitor size={32} />,
+    color: 'bg-yellow-500',
+    link: '#',
+    description: 'We build robust, scalable, and beautiful websites and mobile applications tailored to your business needs.',
+    descriptionKm: 'យើងបង្កើតគេហទំព័រ និងកម្មវិធីទូរស័ព្ទដែលមានភាពរឹងមាំ អាចពង្រីកបាន និងស្រស់ស្អាត ដែលតម្រូវតាមតម្រូវការអាជីវកម្មរបស់អ្នក។',
+    features: ['Custom Website Development', 'Mobile App Development (iOS/Android)', 'E-commerce Solutions', 'UI/UX Design'],
+    featuresKm: ['ការអភិវឌ្ឍវេបសាយតាមតម្រូវការ', 'ការអភិវឌ្ឍកម្មវិធីទូរស័ព្ទ', 'ដំណោះស្រាយពាណិជ្ជកម្មអេឡិចត្រូនិក', 'ការរចនា UI/UX']
+  },
+    {
+    id: 'mvac',
+    title: 'MVAC Design',
+    titleKm: 'ប្រព័ន្ធម៉ាស៊ីនត្រជាក់',
+    subtitle: 'Climate Control Systems',
+    subtitleKm: 'ប្រព័ន្ធគ្រប់គ្រងអាកាសធាតុ',
+    icon: <Wind size={32} />,
+    color: 'bg-cyan-500',
+    link: '#',
+    description: 'Expert design and consulting for Mechanical, Ventilation, and Air Conditioning systems to ensure optimal comfort and efficiency.',
+    descriptionKm: 'ការរចនា និងការប្រឹក្សាយោបល់ជំនាញសម្រាប់ប្រព័ន្ធមេកានិច ម៉ាស៊ីនត្រជាក់ និងខ្យល់ ដើម្បីធានាបាននូវផាសុកភាព និងប្រសិទ្ធភាពខ្ពស់បំផុត។',
+    features: ['HVAC System Design', 'Energy Efficiency Consulting', 'Installation Planning', 'Maintenance Schedules'],
+    featuresKm: ['ការរចនាប្រព័ន្ធ HVAC', 'ការប្រឹក្សាអំពីប្រសិទ្ធភាពថាមពល', 'ការរៀបចំផែនការដំឡើង', 'កាលវិភាគថែទាំ']
+  },
+];
+
+export const PROJECTS: Project[] = [
+  {
+    id: 'p1',
+    title: 'Book Art Design',
+    category: 'website',
+    image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi81tg3VCyPdGdmmHdbUTf5GeNwi0bI28uJ6F5H-_Jj8TSGZFchga1miJvW0blcvp0e33B0SyNoxGRNp-sf7gev3yZSx8YR8giKDUmxfX_ffqmM6ZdM-xtrXwNburJn3r6g-Rr_DX5IEGSht-0N9eSQzh7pXgLstekmoRUM5q4drRghQTLAdRh6b2B6dqA/s1600/fb%20cover.jpg',
+  },
+  {
+    id: 'p2',
+    title: 'Social Media Poster',
+    category: 'graphicdesign',
+    image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgBNO6soY5uydiJo7csDhel8zSlg3q7DIFAA6rSIF44qJyBsv2WD8eUGu5ZYDuJu1I1NppTG70NNW0PIHbXxjvBTygXJGVMBLIpjID9_SVIA_Roox9_A8Z6yqBYsSBXRQoRfPotUJnTBo8c_1YG6Ui3Aa5ohGt-7z7f-ciJQwEIwA7njLehAGhClTflSzs/s1600/ponloe.poster.jpg',
+  },
+  {
+    id: 'p3',
+    title: 'Ponloe Creative Web',
+    category: 'webapp',
+    image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiuEcfaETv68lAV6WDzh7Gub7lzi2fwpPjmPmcq0EMklRIUB4K8t4rHJBcB7uAK_LMpvQnJpuFV8T_XjnDSoSEIII9FDpOFBU4i1hRpWCxYW5QQQmFoRTRneazGjdgZT8ZME6cDx652INDsd2s6FnV9DiiKyo40XwgHA5gRXn1QM0pD0gr440JEjV1pock/s1600/ponloe.jpg',
+  },
+  {
+    id: 'p4',
+    title: 'Islamic School',
+    category: 'architecture',
+    image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7Ps8IhveUmB9RFKJYQCvOzWQH3j5nb7cByL7PjJD3tIN7oRsEkP0HLIKB0j1sNyVPrJF6c6M8rv7CH2XUI38_6x7xgecWFFZy07bLfh3kodS1759LxMRcghxElhyj3AJCMoCbRpW5-JlllAG6iAaYOP4UXFbAQtcnAHFOs-F-zBtiOkGKXTeBqPFz1xc/s320/near%20pic.png',
+  },
+  {
+    id: 'p5',
+    title: 'Air System',
+    category: 'mvac',
+    image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEigqOTALAa-2e4EfpXN9r_wBNE6ZdiSf69XjUIrkVioxdSVafgPdvfJLglejFykZ4XUrrdxZUunKv8cFE-pFT1EMqWtj-BTLmgiE8LHrG3-oLfVZ72B7WRe6JxxHLQKqSfe1qRuo1Xf6TaeCFLqZbEnbZnN5PYss-2uc6Fej9cZy53ZrQjj9ubeSDVZpz4/s320/image_2025-11-23_23-35-04.png',
+  },
+   {
+    id: 'p6',
+    title: 'Arabic Calligraphy Art',
+    category: 'arabiccalligraphy',
+    image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgdO1wHd0pb8bMDmGo2Br1-wfWpBvUfvlm6Ze6pu0je9j8cUwNlEeCeAhUXHr7H1eKv_ptkZr-RQv5HLqB-r77Rex_Lxpzs9vr1a3S7ICb61ycbSwX_DeeWMOlFFrEy1ljUu9pUu2DjWyEjKZ4me6WWSXDXuCmgB2K_XeMNMNglN4-GqBVIydnFx0qxDYQ/s1600/486282539_1128936618973719_3554373107042098501_n.jpg',
+  },
+  {
+    id: 'p7',
+    title: 'Gohome App',
+    category: 'webapp',
+    image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi_utIYD5sz6iR93lfrMGuMmO9K-0UZf8i7rNbnmJRfuFtng7gOWiqF2McMUptkaVOk04KkBxAyZxo1YGFWg6QqbrcsZ7W-H4LohazfWeNsttcjN2rPsdAQ8jAoicidnXtPz_S6lqNBb8JOGbiu48ZdM-xtrXwNburJn3r6g-Rr_DX5IEGSht-0N9eSQzh7pXgLstekmoRUM5q4drRghQTLAdRh6b2B6dqA/s1600/Gohome.jpg',
+  }
+];
+
+export const TEAM: TeamMember[] = [
+  {
+    id: 't1',
+    name: 'Youshow',
+    role: 'Lead Web/App Developer',
+    roleKm: 'អភិវឌ្ឍគេហទំព័រ និងកម្មវិធី',
+    image: 'https://img.ponloe.org/creative/team/youshow.jpg',
+    socials: { facebook: 'https://fb.com/You2Show', telegram: 'https://t.me/khmermuslim' },
+    bio: 'Passionate full-stack developer with a focus on scalable web and mobile applications. Driven by innovation and code excellence.',
+    bioKm: 'អ្នកអភិវឌ្ឍន៍ Full-stack ដែលមានចំណង់ចំណូលចិត្តក្នុងការបង្កើតកម្មវិធីវេបសាយ និងទូរស័ព្ទដែលមានគុណភាពខ្ពស់។',
+    skills: ['React', 'Next.js', 'Flutter', 'Node.js', 'PostgreSQL'],
+    experience: ['Lead Developer at Ponloe (5 Years)', 'Freelance Senior Dev (3 Years)', 'Tech Consultant'],
+    experienceKm: ['អ្នកអភិវឌ្ឍន៍នាំមុខនៅ Ponloe (៥ ឆ្នាំ)', 'អ្នកអភិវឌ្ឍន៍ឯករាជ្យជាន់ខ្ពស់ (៣ ឆ្នាំ)', 'ទីប្រឹក្សាបច្ចេកវិទ្យា']
+  },
+  {
+    id: 't2',
+    name: 'Samry',
+    role: 'Lead Graphic Designer',
+    roleKm: 'អ្នករចនាក្រាហ្វិក',
+    image: 'https://img.ponloe.org/creative/team/samry.jpg',
+    socials: { facebook: 'https://fb.com/miss.you.545402', telegram: 'https://t.me/SOS_SAMRY' },
+    bio: 'Creative visionary transforming ideas into visual reality through branding and graphic design. An artist with a digital canvas.',
+    bioKm: 'អ្នកមានគំនិតច្នៃប្រឌិតក្នុងការប្រែក្លាយគំនិតទៅជាការពិតតាមរយៈការបង្កើតម៉ាកយីហោ និងការរចនាក្រាហ្វិក។',
+    skills: ['Adobe Photoshop', 'Illustrator', 'Brand Identity', 'UI Design', 'Typography'],
+    experience: ['Senior Graphic Designer (4 Years)', 'Art Director', 'Freelance Illustrator'],
+    experienceKm: ['អ្នករចនាក្រាហ្វិកជាន់ខ្ពស់ (៤ ឆ្នាំ)', 'នាយកសិល្បៈ', 'អ្នកគូររូបឯករាជ្យ']
+  },
+  {
+    id: 't3',
+    name: 'Sreyneang',
+    role: 'Lead Architecture',
+    roleKm: 'ស្ថាបត្យកម្ម',
+    image: 'https://img.ponloe.org/creative/team/sreyneang.jpg',
+    socials: { facebook: 'https://fb.com/penh.sreyneang.2025', telegram: 'https://t.me/Penh_sreyneang' },
+    bio: 'Architect dedicated to sustainable and functional design that respects local culture. Building spaces that inspire.',
+    bioKm: 'ស្ថាបត្យករដែលប្តេជ្ញាចិត្តចំពោះការរចនាដែលមាននិរន្តរភាព និងមុខងារប្រើប្រាស់ ដោយគោរពតាមវប្បធម៌ក្នុងស្រុក។',
+    skills: ['AutoCAD', 'SketchUp', 'Lumion', 'Interior Design', 'Project Planning'],
+    experience: ['Lead Architect (3 Years)', 'Residential Project Manager', 'Urban Planning Intern'],
+    experienceKm: ['ស្ថាបត្យករនាំមុខ (៣ ឆ្នាំ)', 'អ្នកគ្រប់គ្រងគម្រោងលំនៅដ្ឋាន', 'កម្មសិក្សាការរៀបចំផែនការទីក្រុង']
+  },
+  {
+    id: 't4',
+    name: 'Faisol',
+    role: 'Lead Translation Services',
+    roleKm: 'អ្នកបកប្រែ',
+    image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgTQdoxo2hBNR7YI1wYlvQmPGpSsfay_XU1yG12utm9q4VurQX_BkX8W_seJ4wNzi99d9XHIiQMEeQfl3O892ZFLEUZgeRXp3Ut7stWQY89PvbDH_WoC-ea2n8jHVO-bN6xYJ8ZH0YmUUaV11Fj6vYNtqEQnZr_SoXGHNBuJT_tYDo9b0cxDg83ZZJ01pY/s1600/IMG_20260104_151731_010.png',
+    socials: { facebook: 'https://fb.com/faisalalchampavi', telegram: 'https://t.me/faisalalchampavi' },
+    bio: 'Expert linguist bridging communication gaps between Arabic, English, and Khmer speakers. Ensuring clarity and cultural accuracy.',
+    bioKm: 'អ្នកជំនាញភាសាដែលផ្សារភ្ជាប់គម្លាតទំនាក់ទំនងរវាងអ្នកនិយាយភាសាអារ៉ាប់ អង់គ្លេស និងខ្មែរ។',
+    skills: ['Simultaneous Interpretation', 'Document Translation', 'Editing', 'Cultural Consulting'],
+    experience: ['Certified Translator (5 Years)', 'Education Consultant', 'Language Instructor'],
+    experienceKm: ['អ្នកបកប្រែដែលមានការទទួលស្គាល់ (៥ ឆ្នាំ)', 'ទីប្រឹក្សាអប់រំ', 'គ្រូបង្រៀនភាសា']
+  },
+   {
+    id: 't5',
+    name: 'Adib Gazaly',
+    role: 'Translation Team',
+    roleKm: 'អ្នកបកប្រែ',
+    image: 'https://img.ponloe.org/creative/team/adibgazaly.jpg',
+    socials: { facebook: 'https://www.facebook.com/share/1Z7uSXTe2o/', telegram: 'https://t.me/Abuhumaidi' },
+    bio: 'Dedicated translator ensuring accuracy and cultural relevance in every document. Detail-oriented and reliable.',
+    bioKm: 'អ្នកបកប្រែដែលយកចិត្តទុកដាក់ធានានូវភាពត្រឹមត្រូវ និងភាពសមស្របតាមវប្បធម៌នៅក្នុងឯកសារនីមួយៗ។',
+    skills: ['Translation', 'Proofreading', 'Content Localization', 'Research'],
+    experience: ['Translation Specialist (2 Years)', 'Content Writer', 'Editor'],
+    experienceKm: ['អ្នកឯកទេសបកប្រែ (២ ឆ្នាំ)', 'អ្នកសរសេរអត្ថបទ', 'អ្នកកែសម្រួល']
+  },
+  {
+    id: 't6',
+    name: 'Sait Abdulvasea',
+    role: 'MVAC Designer',
+    roleKm: 'អ្នករចនា MVAC',
+    image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiWA5K2kspL_-HNLwWk6oCuXO1CAZJ9NQkCLzsc0Jgef6CJhNTcKUYYyHN2fzFYFjcUH8nqjxfMY-Q9xSQFVgOOxty4dcd54CV8K6j7IBnikZTIQOrlrCzCnoSz2nTte6sOvKYWmXwvqh153SbeEMp7tCYt-OSAsIm5qFMwRn7nZIvx3Ydi8D52aTod800/s1600/Generated%20Image%20November%2030,%202025%20-%2011_47PM%20%281%29.png',
+    socials: { facebook: 'https://fb.com/abdulvasea.sait' },
+    bio: 'Engineer focused on efficient and comfortable climate control systems. Designing for optimal airflow and energy saving.',
+    bioKm: 'វិស្វករដែលផ្តោតលើប្រព័ន្ធគ្រប់គ្រងអាកាសធាតុប្រកបដោយប្រសិទ្ធភាព និងផាសុកភាព។',
+    skills: ['HVAC Design', 'AutoCAD MEP', 'Energy Efficiency', 'System Installation'],
+    experience: ['MVAC Engineer (3 Years)', 'Site Supervisor', 'System Analyst'],
+    experienceKm: ['វិស្វករ MVAC (៣ ឆ្នាំ)', 'អ្នកត្រួតពិនិត្យការដ្ឋាន', 'អ្នកវិភាគប្រព័ន្ធ']
+  }
+];
+
+export const INSIGHTS: Post[] = [
+  {
+    id: 'post_code_1',
+    title: 'Modern CSS Glassmorphism Generator',
+    titleKm: 'បង្កើត Glassmorphism ទំនើបជាមួយ CSS',
+    excerpt: 'Copy and paste this production-ready CSS code to give your website that premium frosted glass look immediately.',
+    date: 'March 20, 2025',
+    category: 'Code',
+    authorId: 't1',
+    image: 'https://images.unsplash.com/photo-1550063873-ab792950096b?auto=format&fit=crop&q=80&w=800',
+    link: '#',
+    content: "Creating a stunning glassmorphism effect is easier than you think. It adds depth and a premium feel to your UI.\n\nHere is the exact CSS snippet we use at Ponloe Creative for our cards and modals:\n\n" + 
+             "```css\n/* Glassmorphism Card Style */\n.glass-panel {\n  background: rgba(255, 255, 255, 0.05);\n  backdrop-filter: blur(16px);\n  -webkit-backdrop-filter: blur(16px);\n  border: 1px solid rgba(255, 255, 255, 0.1);\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);\n  border-radius: 24px;\n}\n\n/* Dark Mode Support */\n@media (prefers-color-scheme: dark) {\n  .glass-panel {\n    background: rgba(0, 0, 0, 0.2);\n    border: 1px solid rgba(255, 255, 255, 0.05);\n  }\n}\n```" +
+             "\n\nSimply copy this class into your stylesheet and apply it to any `div` element. The `backdrop-filter` property does the heavy lifting by blurring whatever is behind the element.\n\n**Pro Tip:** Add a subtle noise texture overlay to make it look even more cinematic!",
+    comments: []
+  },
+  {
+    id: 'post_design_1',
+    title: 'Mastering Poster Composition',
+    titleKm: 'គន្លឹះរចនា Poster ឱ្យទាក់ទាញ',
+    excerpt: 'Learn the 5 golden rules of poster design and download our free premium PSD template to get started.',
+    date: 'March 18, 2025',
+    category: 'Design',
+    authorId: 't2',
+    image: 'https://images.unsplash.com/photo-1626785774573-4b7993143d2d?auto=format&fit=crop&q=80&w=800',
+    link: '#',
+    content: "Great poster design isn't just about making things look pretty; it's about communication hierarchy. When someone looks at your poster, they should know **Where** to look, **What** it is, and **Why** it matters within 3 seconds.\n\n### The 5 Golden Rules:\n1. **Hierarchy is King:** Make the headline huge.\n2. **Negative Space:** Don't fill every corner. Let the design breathe.\n3. **Color Palette:** Stick to 2-3 primary colors.\n4. **Typography:** Mix a bold display font with a clean sans-serif.\n5. **Call to Action:** Make sure the date or website is clear.\n\n" +
+             "![Poster Design Grid System](https://images.unsplash.com/photo-1558655146-d09347e0b7a9?auto=format&fit=crop&q=80&w=800)" +
+             "\n\nTo help you practice, we have created a free, high-quality PSD template that follows these exact rules. It includes organized layers and smart objects.\n\n" +
+             "[[DOWNLOAD:https://drive.google.com/uc?id=123456:Download Free PSD Template]]" +
+             "\n\nDownload it, open it in Photoshop, and try changing the image and text to see how the layout holds up!",
+    comments: []
+  },
+  {
+    id: 'post1',
+    title: 'The Future of Khmer Web Design',
+    titleKm: 'អនាគតនៃការរចនាវេបសាយខ្មែរ',
+    excerpt: 'Exploring how traditional Khmer typography blends with modern UI trends to create unique digital experiences.',
+    date: 'March 15, 2025',
+    category: 'Design',
+    authorId: 't2',
+    image: 'https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&q=80&w=800',
+    link: '#',
+    content: `Khmer typography has a rich history, known for its intricate curves and complex layering. In the digital age, bringing these traditional elements into modern web design poses both a challenge and an opportunity.
+
+    Modern UI trends favor minimalism and clean lines, which can sometimes clash with the decorative nature of Khmer script. However, designers are finding innovative ways to blend these two worlds. By using ample whitespace and selecting fonts that balance readability with style (like Kantumruy Pro), we can create interfaces that feel both contemporary and culturally rooted.
+
+    The key lies in hierarchy. Using bold Khmer headings against clean, sans-serif English body text creates a striking visual contrast. Furthermore, incorporating subtle Khmer motifs—such as Kbach patterns—into background elements or UI components adds a layer of depth without overwhelming the user.
+
+    As internet penetration in Cambodia grows, the demand for high-quality, localized digital experiences is skyrocketing. It's no longer enough to simply translate text; the design itself must speak the language of the culture. This fusion of tradition and technology is not just a trend; it's the future of Cambodian digital identity.`,
+    comments: [
+      {
+        id: 'c1',
+        user: 'Sokha Chan',
+        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100',
+        content: 'This is a fantastic article! The blend of traditional Khmer elements with modern design is exactly what we need.',
+        date: '2 hours ago',
+        replies: [
+          {
+            id: 'c1-1',
+            user: 'Samry',
+            avatar: 'https://img.ponloe.org/creative/team/samry.jpg',
+            content: 'Thank you Sokha! We believe cultural identity is crucial in the digital age.',
+            date: '1 hour ago',
+            replies: [
+               {
+                 id: 'c1-1-1',
+                 user: 'Sokha Chan',
+                 avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100',
+                 content: 'Absolutely! I am looking forward to seeing more projects like this.',
+                 date: '30 mins ago'
+               },
+               {
+                 id: 'c1-1-2',
+                 user: 'David Miller',
+                 avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100',
+                 content: 'I agree with Sokha, the cultural depth is amazing.',
+                 date: '10 mins ago'
+               }
+            ]
+          }
+        ]
+      },
+      {
+        id: 'c2',
+        user: 'David Miller',
+        avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100',
+        content: 'Great insights on the font selection. Kantumruy Pro is indeed a game changer for legibility.',
+        date: '5 hours ago'
+      }
+    ]
+  },
+  {
+    id: 'post2',
+    title: 'Sustainable Architecture in Cambodia',
+    titleKm: 'ស្ថាបត្យកម្មដែលមិនប៉ះពាល់បរិស្ថាន',
+    excerpt: 'How modern architects are using eco-friendly materials to build cooler, greener homes in tropical climates.',
+    date: 'February 28, 2025',
+    category: 'Architecture',
+    authorId: 't3',
+    image: 'https://images.unsplash.com/photo-1518005052351-1b6b2ddec84b?auto=format&fit=crop&q=80&w=800',
+    link: '#',
+    content: `Cambodia's tropical climate presents unique challenges for architects. The heat and humidity require buildings that breathe, yet the modern trend has often been towards sealed glass boxes that rely heavily on air conditioning.
+
+    A new wave of sustainable architecture is changing this narrative. Architects are rediscovering traditional Khmer building techniques—such as raised floors for ventilation and high ceilings for heat dissipation—and combining them with modern materials.
+
+    One major focus is passive cooling. By orienting buildings to maximize airflow and minimize direct sunlight, we can significantly reduce indoor temperatures without using a single watt of electricity. Green roofs and vertical gardens are also gaining popularity, serving as natural insulation while bringing nature back into the urban jungle.
+
+    Materials matter too. Bamboo, locally sourced timber, and compressed earth blocks are sustainable alternatives to concrete that have a lower carbon footprint and better thermal properties. This shift isn't just about saving the planet; it's about creating living spaces that are healthier, more comfortable, and harmoniously integrated with the Cambodian environment.`
+  },
+  {
+    id: 'post3',
+    title: 'Why Your Business Needs a Mobile App',
+    titleKm: 'ហេតុអ្វីអាជីវកម្មអ្នកត្រូវការកម្មវិធីទូរស័ព្ទ?',
+    excerpt: 'In a mobile-first world, having a dedicated app can significantly increase customer retention and sales.',
+    date: 'February 10, 2025',
+    category: 'Technology',
+    authorId: 't1',
+    image: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&q=80&w=800',
+    link: '#',
+    content: `In today's digital landscape, a website is essential, but a mobile app can be a game-changer. With over 90% of internet users in Cambodia accessing the web via smartphones, the mobile experience is paramount.
+
+    Apps offer a level of engagement that websites struggle to match. Push notifications allow you to communicate directly with your customers, announcing sales, new products, or important updates instantly. This direct line of communication keeps your brand top-of-mind.
+
+    Furthermore, apps can leverage device features like the camera, GPS, and biometrics to create smoother, more personalized user experiences. Imagine a real-estate app that uses GPS to show nearby properties, or an e-commerce store that lets users try on products virtually.
+
+    Customer retention is another huge benefit. An icon on a user's home screen is a constant reminder of your business. Loyalty programs integrated directly into the app encourage repeat purchases and foster a community around your brand. While the initial investment might be higher, the long-term ROI in terms of customer loyalty and brand value is undeniable.`
+  },
+  {
+    id: 'post4',
+    title: 'The Rise of AI in Creative Industries',
+    titleKm: 'ការកើនឡើងនៃ AI នៅក្នុងឧស្សាហកម្មច្នៃប្រឌិត',
+    excerpt: 'How artificial intelligence is assisting designers and developers, not replacing them, to create better work faster.',
+    date: 'January 25, 2025',
+    category: 'Technology',
+    authorId: 't1',
+    image: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?auto=format&fit=crop&q=80&w=800',
+    link: '#',
+    content: `Artificial Intelligence (AI) has become a buzzword in recent years, sparking debates about the future of human creativity. However, at Ponloe Creative, we see AI as a powerful ally rather than a threat.
+
+    Tools like Midjourney and ChatGPT are revolutionizing our workflow. For designers, AI can generate mood boards and color palettes in seconds, allowing more time for refining the core creative concept. For developers, AI assistants like GitHub Copilot help write cleaner code and debug faster.
+
+    The human touch remains irreplaceable. AI can generate an image, but it takes a human eye to understand emotional resonance, cultural context, and brand alignment. The future belongs to those who learn to collaborate with these intelligent tools to push the boundaries of what is possible.`
+  },
+  {
+    id: 'post5',
+    title: 'Color Psychology in Branding',
+    titleKm: 'ចិត្តវិទ្យានៃពណ៌នៅក្នុងម៉ាកយីហោ',
+    excerpt: 'Understanding how color choices influence consumer behavior and perception of your brand identity.',
+    date: 'January 10, 2025',
+    category: 'Design',
+    authorId: 't2',
+    image: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=800',
+    link: '#',
+    content: `Color is one of the most powerful tools in a designer's arsenal. It communicates without words, evoking emotions and associations instantly. When building a brand, selecting the right color palette is crucial.
+
+    Blue, for instance, often signifies trust and professionalism, which is why it's popular among banks and tech companies. Red evokes excitement and urgency, common in food and clearance sales. Green is synonymous with nature, health, and growth.
+
+    However, context matters. In Cambodia, certain colors have specific cultural meanings. Gold represents wealth and prosperity, while white is traditionally associated with mourning but has evolved to symbolize purity in modern contexts. Understanding these nuances is essential for localizing a global brand or building a local one that resonates deeply with the audience.`
+  },
+  {
+    id: 'post6',
+    title: 'E-commerce Trends in Southeast Asia',
+    titleKm: 'និន្នាការ E-commerce នៅអាស៊ីអាគ្នេយ៍',
+    excerpt: 'Key insights into the booming digital market and how businesses can leverage social commerce for growth.',
+    date: 'December 20, 2024',
+    category: 'Business',
+    authorId: 't1',
+    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?auto=format&fit=crop&q=80&w=800',
+    link: '#',
+    content: `Southeast Asia is witnessing an e-commerce explosion. With a young, tech-savvy population and increasing smartphone penetration, the way people shop is changing rapidly.
+
+    One major trend is "Social Commerce." Platforms like Facebook, TikTok, and Telegram are no longer just for socializing; they are marketplaces. Live selling has become a phenomenon, allowing businesses to interact with customers in real-time, demonstrate products, and close sales instantly.
+
+    Another key factor is the rise of digital payments. KHQR in Cambodia has simplified transactions, making it easier than ever for businesses of all sizes to accept cashless payments. To succeed in this market, businesses must adopt an omnichannel approach, integrating their social media presence with robust e-commerce platforms for a seamless customer journey.`
+  }
+];
+
+export const TESTIMONIALS: Testimonial[] = [
+  {
+    id: 'tm1',
+    name: 'Sokha Chan',
+    role: 'Marketing Director',
+    company: 'Khmer Enterprise',
+    content: "Ponloe Creative transformed our digital presence. Their attention to detail and understanding of Khmer culture is unmatched.",
+    contentKm: "Ponloe Creative បានផ្លាស់ប្តូរវត្តមានឌីជីថលរបស់យើង។ ការយកចិត្តទុកដាក់របស់ពួកគេលើព័ត៌មានលម្អិត និងការយល់ដឹងពីវប្បធម៌ខ្មែរគឺពិតជាល្អឯក។",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200",
+  },
+  {
+    id: 'tm2',
+    name: 'David Miller',
+    role: 'CEO',
+    company: 'Angkor Tech Solutions',
+    content: "The best agency we've worked with in Southeast Asia. Professional, timely, and incredibly talented.",
+    contentKm: "ភ្នាក់ងារដែលល្អបំផុតដែលយើងធ្លាប់សហការនៅអាស៊ីអាគ្នេយ៍។ មានវិជ្ជាជីវៈ ទាន់ពេលវេលា និងមានទេពកោសល្យខ្ពស់។",
+    avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200",
+  },
+  {
+    id: 'tm3',
+    name: 'Bopha Vong',
+    role: 'Founder',
+    company: 'Lotus Spa',
+    content: "Our booking system is now seamless thanks to their web dev team. Revenue increased by 40% in just two months.",
+    contentKm: "ប្រព័ន្ធកក់របស់យើងឥឡូវនេះដំណើរការយ៉ាងរលូន ដោយសារក្រុមអភិវឌ្ឍន៍វេបសាយរបស់ពួកគេ។ ប្រាក់ចំណូលកើនឡើង ៤០% ត្រឹមតែ ២ ខែប៉ុណ្ណោះ។",
+    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200",
+  },
+  {
+    id: 'tm4',
+    name: 'Sarah Chen',
+    role: 'Project Manager',
+    company: 'Global Development',
+    content: "The architectural rendering provided for our new eco-resort was breathtaking. Highly recommended!",
+    contentKm: "ប្លង់ស្ថាបត្យកម្មសម្រាប់រមណីយដ្ឋានធម្មជាតិថ្មីរបស់យើងពិតជាអស្ចារ្យណាស់។ សូមណែនាំយ៉ាងខ្លាំង!",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200",
+  }
+];
+
+export const PROCESS_STEPS: ProcessStep[] = [
+  {
+    id: 'ps1',
+    number: '01',
+    title: 'Discovery',
+    titleKm: 'ការសិក្សា',
+    description: 'We start by understanding your goals, audience, and challenges.',
+    descriptionKm: 'យើងចាប់ផ្តើមដោយការស្វែងយល់ពីគោលដៅ ទស្សនិកជន និងបញ្ហាប្រឈមរបស់អ្នក។',
+    icon: <Search size={24} />,
+  },
+  {
+    id: 'ps2',
+    number: '02',
+    title: 'Strategy',
+    titleKm: 'យុទ្ធសាស្ត្រ',
+    description: 'Developing a tailored roadmap to achieve success.',
+    descriptionKm: 'ការបង្កើតផែនទីបង្ហាញផ្លូវដែលតម្រូវតាមតម្រូវការ ដើម្បីសម្រេចបានជោគជ័យ។',
+    icon: <Lightbulb size={24} />,
+  },
+  {
+    id: 'ps3',
+    number: '03',
+    title: 'Creation',
+    titleKm: 'ការបង្កើត',
+    description: 'Our experts design, build, and refine your solution.',
+    descriptionKm: 'អ្នកជំនាញរបស់យើងរចនា បង្កើត និងកែលម្អដំណោះស្រាយរបស់អ្នក។',
+    icon: <PenLine size={24} />,
+  },
+  {
+    id: 'ps4',
+    number: '04',
+    title: 'Launch',
+    titleKm: 'ការដាក់ឱ្យដំណើរការ',
+    description: 'Testing, deploying, and optimizing for maximum impact.',
+    descriptionKm: 'ការសាកល្បង ការដាក់ពង្រាយ និងការបង្កើនប្រសិទ្ធភាពសម្រាប់ផលប៉ះពាល់ជាអតិបរមា។',
+    icon: <Rocket size={24} />,
+  },
+];
+
+export const PARTNERS: Partner[] = [
+    { id: '1', name: 'Khmer Enterprise', icon: <Building2 size={32} /> },
+    { id: '2', name: 'Angkor Tech', icon: <Cpu size={32} /> },
+    { id: '3', name: 'Global Dev', icon: <Globe size={32} /> },
+    { id: '4', name: 'Lotus Spa', icon: <Droplet size={32} /> },
+    { id: '5', name: 'Smart Axiata', icon: <Zap size={32} /> },
+    { id: '6', name: 'Chip Mong', icon: <Gem size={32} /> },
+    { id: '7', name: 'Vattanac Bank', icon: <Building2 size={32} /> },
+    { id: '8', name: 'Brown Coffee', icon: <Feather size={32} /> },
+    { id: '9', name: 'Sihanutville Port', icon: <Anchor size={32} /> },
+];
