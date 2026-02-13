@@ -91,30 +91,51 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
 
     setIsSaving(true); // Start loading indicator on button
 
-    // 1. Update Local Data
+    // CRITICAL FIX: React state updates are asynchronous.
+    // To ensure 100% accuracy, we must construct the new data list MANUALLY
+    // and pass it to syncToGitHub, rather than waiting for the state to update.
+    let overrides = {};
+
+    // 1. Update Local Data & Prepare Overrides
     if (activeTab === 'team') {
+       const newList = isAdding 
+            ? [...team, editingItem] // Note: DataContext uses [...prev, data] typically
+            : team.map(item => item.id === editingItem.id ? editingItem : item);
+       overrides = { team: newList };
+
        if (isAdding && isSuperAdmin) addTeamMember(editingItem);
        else updateTeamMember(editingItem.id, editingItem);
+
     } else if (activeTab === 'projects' && isSuperAdmin) {
+       const newList = isAdding
+            ? [editingItem, ...projects] // DataContext addProject uses [data, ...prev]
+            : projects.map(item => item.id === editingItem.id ? editingItem : item);
+       overrides = { projects: newList };
+
        if (isAdding) addProject(editingItem);
        else updateProject(editingItem.id, editingItem);
+
     } else if (activeTab === 'insights') {
+       const newList = isAdding
+            ? [editingItem, ...insights]
+            : insights.map(item => item.id === editingItem.id ? editingItem : item);
+       overrides = { insights: newList };
+
        if (isAdding) addInsight(editingItem);
        else updateInsight(editingItem.id, editingItem);
+
     } else if (activeTab === 'services' && isSuperAdmin) {
+       const newList = services.map(item => item.id === editingItem.id ? editingItem : item);
+       overrides = { services: newList };
+       
        updateService(editingItem.id, editingItem);
     }
     
     // 2. AUTO SYNC TO GITHUB (If Configured)
-    // This ensures Team Members don't need to press a separate button.
+    // We pass the 'overrides' object. The syncToGitHub function will use these lists 
+    // instead of the current state (which might be stale).
     if (githubConfig?.token) {
-        // We wait for the local state update to potentially propagate, 
-        // though in React state batches, passing the *updated* data to sync 
-        // would be cleaner. However, DataContext syncToGitHub uses current state.
-        // A small timeout allows React to update context before we sync.
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        const result = await syncToGitHub();
+        const result = await syncToGitHub(overrides);
         if (!result.success) {
             alert(`Saved locally, but failed to sync to GitHub: ${result.message}`);
         }
