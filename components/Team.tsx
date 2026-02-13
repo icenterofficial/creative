@@ -14,6 +14,46 @@ const Team: React.FC = () => {
   const [authorPosts, setAuthorPosts] = useState<Post[] | null>(null);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
+  // URL Sync Effect
+  useEffect(() => {
+    // 1. Check URL on mount
+    const params = new URLSearchParams(window.location.search);
+    const memberId = params.get('member');
+    if (memberId) {
+        const found = team.find(m => m.id === memberId);
+        if (found) setSelectedMember(found);
+    }
+
+    // 2. Handle Back Button
+    const handlePopState = () => {
+        const p = new URLSearchParams(window.location.search);
+        const mId = p.get('member');
+        if (mId) {
+            const found = team.find(m => m.id === mId);
+            if (found) setSelectedMember(found);
+        } else {
+            setSelectedMember(null);
+        }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [team]);
+
+  const handleOpenMember = (member: TeamMember) => {
+      setSelectedMember(member);
+      const url = new URL(window.location.href);
+      url.searchParams.set('member', member.id);
+      window.history.pushState({}, '', url);
+  };
+
+  const handleCloseMember = () => {
+      setSelectedMember(null);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('member');
+      window.history.pushState({}, '', url);
+  };
+
   // Lock body scroll when modal is open
   useEffect(() => {
     if (selectedMember || authorPosts || selectedPost) {
@@ -28,6 +68,8 @@ const Team: React.FC = () => {
 
   const handleShowArticles = (member: TeamMember) => {
       // Close member modal and open articles
+      // Note: We keep the ?member param in URL or remove it?
+      // For now let's just show the articles on top
       const posts = insights.filter(p => p.authorId === member.id);
       setAuthorPosts(posts);
   };
@@ -59,7 +101,7 @@ const Team: React.FC = () => {
                 <div 
                   key={member.id} 
                   className="group relative bg-white/5 rounded-2xl p-6 border border-white/5 hover:border-white/20 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-                  onClick={() => setSelectedMember(member)}
+                  onClick={() => handleOpenMember(member)}
                 >
                   <div className="absolute top-4 right-4 text-gray-500 group-hover:text-indigo-400 transition-colors">
                       <Info size={20} />
@@ -109,7 +151,7 @@ const Team: React.FC = () => {
       {selectedMember && (
           <MemberDetailModal 
             member={selectedMember} 
-            onClose={() => setSelectedMember(null)}
+            onClose={handleCloseMember}
             onShowArticles={handleShowArticles}
           />
       )}
