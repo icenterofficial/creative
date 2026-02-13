@@ -49,13 +49,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
       token: githubConfig?.token || ''
   });
 
-  // Manual Sync (Mostly for Super Admin or troubleshooting)
+  // Manual Sync
   const handleSync = async () => {
-      // Check if config exists either in context OR if hardcoded logic in DataContext handles it
-      // We'll let syncToGitHub return the error if missing
       setIsSyncing(true);
       setSyncStatus(null);
-      const result = await syncToGitHub();
+      // Pass the current user's name for the commit message
+      const result = await syncToGitHub(undefined, currentUser.name || 'Admin');
       setSyncStatus(result);
       setIsSyncing(false);
       
@@ -85,15 +84,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
 
     setIsSaving(true); // Start loading indicator on button
 
-    // CRITICAL FIX: React state updates are asynchronous.
-    // To ensure 100% accuracy, we must construct the new data list MANUALLY
-    // and pass it to syncToGitHub, rather than waiting for the state to update.
+    // CRITICAL FIX: Construct new data list MANUALLY
     let overrides = {};
 
     // 1. Update Local Data & Prepare Overrides
     if (activeTab === 'team') {
        const newList = isAdding 
-            ? [...team, editingItem] // Note: DataContext uses [...prev, data] typically
+            ? [...team, editingItem]
             : team.map(item => item.id === editingItem.id ? editingItem : item);
        overrides = { team: newList };
 
@@ -102,7 +99,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
 
     } else if (activeTab === 'projects' && isSuperAdmin) {
        const newList = isAdding
-            ? [editingItem, ...projects] // DataContext addProject uses [data, ...prev]
+            ? [editingItem, ...projects]
             : projects.map(item => item.id === editingItem.id ? editingItem : item);
        overrides = { projects: newList };
 
@@ -126,13 +123,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
     }
     
     // 2. AUTO SYNC TO GITHUB
-    // We pass the 'overrides' object. The syncToGitHub function will use these lists 
-    // instead of the current state (which might be stale).
-    const result = await syncToGitHub(overrides);
+    // Pass 'overrides' AND the 'currentUser.name' to tag the commit
+    const result = await syncToGitHub(overrides, currentUser.name || 'Team Member');
     
     if (!result.success) {
-        // LOUD ERROR if sync fails (e.g. missing token)
-        alert(`⚠️ Saved Locally ONLY!\n\nFailed to push to GitHub: ${result.message}\n\nPlease ask the Admin to check the GitHub Token configuration in DataContext.tsx.`);
+        alert(`⚠️ Saved Locally ONLY!\n\nFailed to push to GitHub: ${result.message}\n\nPlease ask the Admin to check the GitHub Token.`);
     }
 
     setIsSaving(false);
@@ -251,11 +246,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
             >
                 {isSaving ? (
                     <>
-                        <Loader2 size={18} className="animate-spin" /> Publishing...
+                        <Loader2 size={18} className="animate-spin" /> Verifying & Publishing...
                     </>
                 ) : (
                     <>
-                        <Save size={18} /> Save & Publish
+                        <Save size={18} /> Save to Live
                     </>
                 )}
              </button>
@@ -280,10 +275,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
 
           <div className="flex items-center gap-4">
               {lastSyncTime && (
-                  <span className="text-xs text-gray-500 hidden lg:inline">Live: {lastSyncTime}</span>
+                  <span className="text-xs text-green-400 hidden lg:inline flex items-center gap-1">
+                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                     Live: {lastSyncTime}
+                  </span>
               )}
               
-              {/* Only Super Admin needs manual controls now, since Members auto-save */}
               {isSuperAdmin && (
                 <>
                     <button 
