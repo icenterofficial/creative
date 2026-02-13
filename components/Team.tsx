@@ -14,44 +14,34 @@ const Team: React.FC = () => {
   const [authorPosts, setAuthorPosts] = useState<Post[] | null>(null);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
-  // URL Sync Effect
+  // Handle Hash Routing
   useEffect(() => {
-    // 1. Check URL on mount
-    const params = new URLSearchParams(window.location.search);
-    const memberId = params.get('member');
-    if (memberId) {
-        const found = team.find(m => m.id === memberId);
-        if (found) setSelectedMember(found);
-    }
-
-    // 2. Handle Back Button
-    const handlePopState = () => {
-        const p = new URLSearchParams(window.location.search);
-        const mId = p.get('member');
-        if (mId) {
-            const found = team.find(m => m.id === mId);
+    const handleHashChange = () => {
+        const hash = window.location.hash;
+        if (hash.startsWith('#team/')) {
+            const id = hash.replace('#team/', '');
+            const found = team.find(m => m.id === id);
             if (found) setSelectedMember(found);
-        } else {
+        } else if (hash === '#team' && selectedMember) {
             setSelectedMember(null);
         }
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    // Initial check
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, [team]);
 
   const handleOpenMember = (member: TeamMember) => {
       setSelectedMember(member);
-      const url = new URL(window.location.href);
-      url.searchParams.set('member', member.id);
-      window.history.pushState({}, '', url);
+      window.location.hash = `team/${member.id}`;
   };
 
   const handleCloseMember = () => {
       setSelectedMember(null);
-      const url = new URL(window.location.href);
-      url.searchParams.delete('member');
-      window.history.pushState({}, '', url);
+      window.history.pushState(null, '', '#team');
   };
 
   // Lock body scroll when modal is open
@@ -67,9 +57,6 @@ const Team: React.FC = () => {
   }, [selectedMember, authorPosts, selectedPost]);
 
   const handleShowArticles = (member: TeamMember) => {
-      // Close member modal and open articles
-      // Note: We keep the ?member param in URL or remove it?
-      // For now let's just show the articles on top
       const posts = insights.filter(p => p.authorId === member.id);
       setAuthorPosts(posts);
   };
