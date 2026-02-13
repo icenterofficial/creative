@@ -62,11 +62,20 @@ const Header: React.FC = () => {
     window.addEventListener('scroll', handleScroll);
     document.addEventListener('mousedown', handleClickOutside);
     
-    // Intersection Observer for Active State
+    // Intersection Observer for Active State & URL Hash update
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting && entry.target.id) {
-          setActiveSection(entry.target.id);
+          const newSection = entry.target.id;
+          setActiveSection(newSection);
+          
+          // Update URL Hash without scrolling
+          if (history.pushState) {
+              // Only update if it's different to prevent spamming history
+              if (window.location.hash !== `#${newSection}`) {
+                 window.history.replaceState(null, '', `#${newSection}`);
+              }
+          }
         }
       });
     }, { rootMargin: '-45% 0px -45% 0px' });
@@ -108,6 +117,10 @@ const Header: React.FC = () => {
     const element = document.querySelector(href);
     if (element) {
       setActiveSection(href.substring(1));
+      
+      // Update URL immediately on click
+      window.history.pushState(null, '', href);
+
       const headerOffset = 80;
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
