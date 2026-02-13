@@ -16,13 +16,14 @@ import ScrollButton from './components/ScrollButton';
 import Preloader from './components/Preloader';
 import AdminDashboard from './components/AdminDashboard';
 import { Lock, ArrowRight, X } from 'lucide-react';
+import { useAdminRouter } from './hooks/useRouter';
 
 function AppContent() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isAdminMode, setIsAdminMode] = useState(false);
   
   // Admin Login States
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const { isAdminOpen, closeAdmin } = useAdminRouter();
   const [pin, setPin] = useState('');
   const [loginError, setLoginError] = useState(false);
 
@@ -34,39 +35,16 @@ function AppContent() {
       });
     };
 
-    // Check URL hash for admin trigger
-    const checkHash = () => {
-        if (window.location.hash === '#admin') {
-            setShowLoginModal(true);
-        }
-    };
-
-    // Custom Event Listener for Footer Link
-    const handleOpenAdmin = () => {
-        setShowLoginModal(true);
-    };
-
     window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('hashchange', checkHash);
-    window.addEventListener('open-admin-login', handleOpenAdmin);
-    
-    // Initial check on load
-    checkHash(); 
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('hashchange', checkHash);
-      window.removeEventListener('open-admin-login', handleOpenAdmin);
-    };
+    return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
   const handleLoginSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       if (pin === '1234') {
           setIsAdminMode(true);
-          setShowLoginModal(false);
+          closeAdmin(); // Ensure hash is cleared
           setPin('');
-          window.location.hash = ''; // Clear hash
       } else {
           setLoginError(true);
           setPin('');
@@ -75,8 +53,7 @@ function AppContent() {
   };
 
   const closeLogin = () => {
-      setShowLoginModal(false);
-      window.location.hash = '';
+      closeAdmin();
       setPin('');
   };
 
@@ -120,7 +97,7 @@ function AppContent() {
       <ScrollButton />
       
       {/* Admin Login Modal - Very High Z-Index to beat Cursor and Preloader */}
-      {showLoginModal && (
+      {isAdminOpen && (
           <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-md animate-fade-in">
               <div className="bg-gray-900 border border-white/10 p-8 rounded-3xl shadow-2xl w-full max-w-sm relative animate-scale-up">
                   <button 
@@ -164,7 +141,7 @@ function AppContent() {
       {/* Hidden Trigger for Desktop Double Click (Optional Backup) */}
       <div 
         className="fixed bottom-0 left-0 w-10 h-10 z-[99999] opacity-0 cursor-default"
-        onDoubleClick={() => setShowLoginModal(true)}
+        onDoubleClick={() => window.location.hash = 'admin'}
       />
 
       <style>{`
