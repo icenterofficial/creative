@@ -69,10 +69,12 @@ const Header: React.FC = () => {
           const newSection = entry.target.id;
           setActiveSection(newSection);
           
-          // Update URL Hash without scrolling ONLY if not in a deep link (modal)
-          // We check if the current hash contains a '/' which implies a modal is open (e.g. #insights/1)
-          if (history.pushState && !window.location.hash.includes('/')) {
-              if (window.location.hash !== `#${newSection}`) {
+          // CRITICAL FIX: Do NOT overwrite URL if we are in Admin Mode or deep linking
+          const currentHash = window.location.hash;
+          const isSpecialRoute = currentHash === '#admin' || currentHash.includes('/');
+
+          if (history.pushState && !isSpecialRoute) {
+              if (currentHash !== `#${newSection}`) {
                  window.history.replaceState(null, '', `#${newSection}`);
               }
           }
