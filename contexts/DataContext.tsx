@@ -20,7 +20,8 @@ interface DataContextType {
   deleteItem: (type: 'service' | 'project' | 'team' | 'insight', id: string) => void;
   resetData: () => void;
   setGithubConfig: (config: GitHubConfig) => void;
-  syncToGitHub: () => Promise<{ success: boolean; message: string }>;
+  // Updated signature to accept overrides for immediate syncing
+  syncToGitHub: (overrides?: { services?: Service[], projects?: Project[], team?: TeamMember[], insights?: Post[] }) => Promise<{ success: boolean; message: string }>;
   fetchFromGitHub: () => Promise<void>;
 }
 
@@ -143,15 +144,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // ADMIN: Push data to GitHub Repo
-  const syncToGitHub = async () => {
+  // Accepts overrides to allow syncing *before* state update is processed
+  const syncToGitHub = async (overrides?: { services?: Service[], projects?: Project[], team?: TeamMember[], insights?: Post[] }) => {
     if (!githubConfig) return { success: false, message: "Configuration missing" };
 
     try {
+        // Use overrides if provided, otherwise use current state
         const content = {
-            services,
-            projects,
-            team,
-            insights,
+            services: overrides?.services || services,
+            projects: overrides?.projects || projects,
+            team: overrides?.team || team,
+            insights: overrides?.insights || insights,
             lastUpdated: new Date().toLocaleString()
         };
 
