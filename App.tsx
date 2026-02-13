@@ -15,7 +15,7 @@ import Footer from './components/Footer';
 import ScrollButton from './components/ScrollButton';
 import Preloader from './components/Preloader';
 import AdminDashboard from './components/AdminDashboard';
-import { Lock, ArrowRight, X, User } from 'lucide-react';
+import { Lock, ArrowRight, X } from 'lucide-react';
 import { useAdminRouter } from './hooks/useRouter';
 
 // Define User Role Type
@@ -33,10 +33,20 @@ function AppContent() {
   const { isAdminOpen, closeAdmin } = useAdminRouter();
   const [pin, setPin] = useState('');
   const [loginError, setLoginError] = useState(false);
-  const [step, setStep] = useState<'pin' | 'select_member'>('pin');
   
-  // Data for member selection
+  // Data for login verification
   const { team } = useData();
+
+  // MAPPING: Specific PINs for specific users
+  // This ensures precise login, not just choosing anyone.
+  const MEMBER_PINS: Record<string, string> = {
+      '1111': 't1', // Youshow
+      '2222': 't2', // Samry
+      '3333': 't3', // Sreyneang
+      '4444': 't4', // Faisol
+      '5555': 't5', // Adib Gazaly
+      '6666': 't6', // Sait Abdulvasea
+  };
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
@@ -53,17 +63,27 @@ function AppContent() {
   const handleLoginSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       
-      // SUPER ADMIN PIN
+      // 1. SUPER ADMIN CHECK
       if (pin === '1234') {
           setCurrentUser({ role: 'admin', name: 'Super Admin' });
           closeAdmin();
           setPin('');
-          setStep('pin');
       } 
-      // TEAM MEMBER PIN (Shared Code)
-      else if (pin === '5678') {
-          setStep('select_member');
-          setLoginError(false);
+      // 2. SPECIFIC MEMBER CHECK
+      else if (MEMBER_PINS[pin]) {
+          const memberId = MEMBER_PINS[pin];
+          const member = team.find(m => m.id === memberId);
+          
+          if (member) {
+              setCurrentUser({ role: 'member', id: member.id, name: member.name });
+              closeAdmin();
+              setPin('');
+          } else {
+              // Valid PIN but member not found in data (deleted?)
+              setLoginError(true);
+              setPin('');
+              setTimeout(() => setLoginError(false), 500);
+          }
       } 
       else {
           setLoginError(true);
@@ -72,20 +92,9 @@ function AppContent() {
       }
   };
 
-  const handleMemberSelect = (memberId: string) => {
-      const member = team.find(m => m.id === memberId);
-      if (member) {
-          setCurrentUser({ role: 'member', id: member.id, name: member.name });
-          closeAdmin();
-          setPin('');
-          setStep('pin');
-      }
-  };
-
   const closeLogin = () => {
       closeAdmin();
       setPin('');
-      setStep('pin');
   };
 
   if (currentUser) {
@@ -143,56 +152,38 @@ function AppContent() {
                           <Lock size={32} />
                       </div>
                       <h3 className="text-2xl font-bold text-white font-khmer">
-                          {step === 'pin' ? 'Access Control' : 'Who are you?'}
+                          Access Control
                       </h3>
                       <p className="text-gray-400 text-sm">
-                          {step === 'pin' ? 'Enter Admin or Team PIN' : 'Select your profile to continue'}
+                          Enter your personal or admin PIN
                       </p>
                   </div>
 
-                  {step === 'pin' ? (
-                      <form onSubmit={handleLoginSubmit} className="space-y-4">
-                          <div className="relative">
-                              <input 
-                                  type="password" 
-                                  value={pin}
-                                  onChange={(e) => setPin(e.target.value)}
-                                  autoFocus
-                                  className={`w-full bg-gray-800 border ${loginError ? 'border-red-500 animate-shake' : 'border-white/10'} rounded-xl px-4 py-3 text-center text-xl tracking-[0.5em] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all`}
-                                  placeholder="••••"
-                                  maxLength={4}
-                              />
-                          </div>
-                          <button 
-                              type="submit" 
-                              className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
-                          >
-                              Next <ArrowRight size={18} />
-                          </button>
-                      </form>
-                  ) : (
-                      <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 scrollbar-hide">
-                          {team.map((member) => (
-                              <button
-                                key={member.id}
-                                onClick={() => handleMemberSelect(member.id)}
-                                className="w-full flex items-center gap-3 p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 hover:border-indigo-500/50 transition-all group"
-                              >
-                                  <img src={member.image} className="w-10 h-10 rounded-full object-cover border border-white/10" alt={member.name} />
-                                  <div className="text-left">
-                                      <p className="text-white font-bold text-sm group-hover:text-indigo-400">{member.name}</p>
-                                      <p className="text-gray-500 text-xs">{member.role}</p>
-                                  </div>
-                              </button>
-                          ))}
-                          <button 
-                            onClick={() => { setStep('pin'); setPin(''); }}
-                            className="w-full py-2 text-gray-500 hover:text-white text-sm"
-                          >
-                              Back to PIN
-                          </button>
+                  <form onSubmit={handleLoginSubmit} className="space-y-4">
+                      <div className="relative">
+                          <input 
+                              type="password" 
+                              value={pin}
+                              onChange={(e) => setPin(e.target.value)}
+                              autoFocus
+                              className={`w-full bg-gray-800 border ${loginError ? 'border-red-500 animate-shake' : 'border-white/10'} rounded-xl px-4 py-3 text-center text-xl tracking-[0.5em] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all`}
+                              placeholder="••••"
+                              maxLength={4}
+                          />
                       </div>
-                  )}
+                      <button 
+                          type="submit" 
+                          className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                      >
+                          Verify Identity <ArrowRight size={18} />
+                      </button>
+                  </form>
+                  
+                  {/* Hint for Demo Purposes - Can be removed in production */}
+                  <div className="mt-6 pt-6 border-t border-white/5 text-xs text-gray-600 text-center">
+                      <p>Super Admin: 1234</p>
+                      <p>Members: 1111, 2222, 3333, 4444...</p>
+                  </div>
               </div>
           </div>
       )}
