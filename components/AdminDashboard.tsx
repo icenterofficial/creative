@@ -1,13 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useData } from '../contexts/DataContext';
 import { TeamMember, Project, Post, Service } from '../types';
-import { X, Plus, Trash2, Edit, Save, RotateCcw, LogOut, LayoutGrid, Users, FileText, Briefcase, Settings, Cloud, RefreshCw, Eye } from 'lucide-react';
+import { X, Plus, Trash2, Edit, Save, RotateCcw, LogOut, LayoutGrid, Users, FileText, Briefcase, Settings, Cloud, RefreshCw, Eye, Shield, Lock } from 'lucide-react';
+import { CurrentUser } from '../App';
 
 interface AdminDashboardProps {
   onLogout: () => void;
+  currentUser: CurrentUser;
 }
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }) => {
   const { 
     services, projects, team, insights, githubConfig, lastSyncTime,
     updateService, updateProject, updateTeamMember, updateInsight,
@@ -15,7 +17,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     setGithubConfig, syncToGitHub, fetchFromGitHub
   } = useData();
 
-  const [activeTab, setActiveTab] = useState<'team' | 'projects' | 'insights' | 'services' | 'settings'>('team');
+  // Role Checks
+  const isSuperAdmin = currentUser.role === 'admin';
+  const memberId = currentUser.id;
+
+  // Set default active tab based on role
+  const [activeTab, setActiveTab] = useState<'team' | 'projects' | 'insights' | 'services' | 'settings'>('insights');
+  
+  useEffect(() => {
+      // If member logs in, default to their profile or insights
+      if (!isSuperAdmin) {
+          setActiveTab('insights');
+      } else {
+          setActiveTab('team');
+      }
+  }, [isSuperAdmin]);
+
   const [editingItem, setEditingItem] = useState<any | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   
@@ -34,7 +51,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const handleSync = async () => {
       if (!githubConfig?.token) {
           alert("Please configure your GitHub Token in the Settings tab first.");
-          setActiveTab('settings');
+          if (isSuperAdmin) setActiveTab('settings');
           return;
       }
       setIsSyncing(true);
@@ -52,7 +69,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const handleFetch = async () => {
       if (!githubConfig?.token) {
           alert("Please configure your GitHub Token in the Settings tab first.");
-          setActiveTab('settings');
+          if (isSuperAdmin) setActiveTab('settings');
           return;
       }
       setIsSyncing(true);
@@ -71,15 +88,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
     if (!editingItem) return;
 
     if (activeTab === 'team') {
-       if (isAdding) addTeamMember(editingItem);
+       if (isAdding && isSuperAdmin) addTeamMember(editingItem);
        else updateTeamMember(editingItem.id, editingItem);
-    } else if (activeTab === 'projects') {
+    } else if (activeTab === 'projects' && isSuperAdmin) {
        if (isAdding) addProject(editingItem);
        else updateProject(editingItem.id, editingItem);
     } else if (activeTab === 'insights') {
        if (isAdding) addInsight(editingItem);
        else updateInsight(editingItem.id, editingItem);
-    } else if (activeTab === 'services') {
+    } else if (activeTab === 'services' && isSuperAdmin) {
        updateService(editingItem.id, editingItem);
     }
     
@@ -94,12 +111,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   const startAdd = () => {
     const id = Date.now().toString();
-    if (activeTab === 'team') {
+    if (activeTab === 'team' && isSuperAdmin) {
         setEditingItem({ id, name: '', role: '', roleKm: '', image: '', socials: {}, bio: '', skills: [], experience: [] } as TeamMember);
-    } else if (activeTab === 'projects') {
+    } else if (activeTab === 'projects' && isSuperAdmin) {
         setEditingItem({ id, title: '', category: 'graphicdesign', image: '' } as Project);
     } else if (activeTab === 'insights') {
-        setEditingItem({ id, title: '', titleKm: '', excerpt: '', date: new Date().toLocaleDateString(), category: 'Design', image: '', authorId: 't1', content: '' } as Post);
+        // Members can only add posts as themselves
+        const newAuthorId = isSuperAdmin ? 't1' : (memberId || 't1');
+        setEditingItem({ id, title: '', titleKm: '', excerpt: '', date: new Date().toLocaleDateString(), category: 'Design', image: '', authorId: newAuthorId, content: '' } as Post);
     }
     setIsAdding(true);
   };
@@ -120,8 +139,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           <form onSubmit={handleSave} className="space-y-4">
              {/* Dynamic Fields based on Active Tab */}
              {Object.keys(editingItem).map((key) => {
-                if (key === 'id' || key === 'comments' || key === 'replies' || key === 'icon') return null; // Skip non-editable
+                if (key === 'id' || key === 'comments' || key === 'replies' || key === 'icon') return null; 
                 
+                // If Member, lock authorId field
+                if (key === 'authorId' && !isSuperAdmin) return null;
+
                 const value = editingItem[key];
                 const label = key.charAt(0).toUpperCase() + key.slice(1);
 
@@ -202,8 +224,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       {/* Top Bar */}
       <header className="fixed top-0 left-0 right-0 h-16 bg-gray-900 border-b border-white/10 flex items-center justify-between px-6 z-50">
           <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center font-bold">P</div>
-              <span className="font-bold text-lg hidden md:inline">Admin Dashboard</span>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${isSuperAdmin ? 'bg-indigo-600' : 'bg-green-600'}`}>
+                  {isSuperAdmin ? <Shield size={16} /> : <Users size={16} />}
+              </div>
+              <div className="flex flex-col">
+                  <span className="font-bold text-sm hidden md:inline">{currentUser.name}</span>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-wider">{isSuperAdmin ? 'Super Admin' : 'Team Member'}</span>
+              </div>
           </div>
 
           {/* Sync Status / Buttons */}
@@ -212,6 +239,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                   <span className="text-xs text-gray-500 hidden lg:inline">Last synced: {lastSyncTime}</span>
               )}
               
+              {/* Only show full sync controls if configured or if super admin */}
               {githubConfig && (
                 <>
                     <button 
@@ -250,31 +278,48 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       <div className="pt-16 flex h-screen">
          {/* Sidebar */}
          <aside className="w-64 bg-gray-900/50 border-r border-white/10 p-4 hidden md:flex flex-col gap-2">
+            
+            {/* Team Members: Visible to all, but logic differs inside */}
             <button onClick={() => setActiveTab('team')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'team' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:bg-white/5'}`}>
-                <Users size={20} /> Team Members
+                <Users size={20} /> {isSuperAdmin ? 'Team Management' : 'My Profile'}
             </button>
-            <button onClick={() => setActiveTab('projects')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'projects' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:bg-white/5'}`}>
-                <Briefcase size={20} /> Projects
-            </button>
+
+            {/* Articles: Visible to all */}
             <button onClick={() => setActiveTab('insights')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'insights' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:bg-white/5'}`}>
-                <FileText size={20} /> Articles
+                <FileText size={20} /> {isSuperAdmin ? 'All Articles' : 'My Articles'}
             </button>
-            <button onClick={() => setActiveTab('services')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'services' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:bg-white/5'}`}>
-                <LayoutGrid size={20} /> Services
-            </button>
+
+            {/* Projects & Services: ADMIN ONLY */}
+            {isSuperAdmin && (
+                <>
+                    <button onClick={() => setActiveTab('projects')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'projects' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:bg-white/5'}`}>
+                        <Briefcase size={20} /> Projects
+                    </button>
+                    <button onClick={() => setActiveTab('services')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'services' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:bg-white/5'}`}>
+                        <LayoutGrid size={20} /> Services
+                    </button>
+                </>
+            )}
             
             <div className="flex-1" />
             
-            <button onClick={() => setActiveTab('settings')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-gray-800 text-white border border-white/10' : 'text-gray-400 hover:bg-white/5'}`}>
-                <Settings size={20} /> Settings
-            </button>
+            {/* Settings: ADMIN ONLY */}
+            {isSuperAdmin && (
+                <button onClick={() => setActiveTab('settings')} className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'settings' ? 'bg-gray-800 text-white border border-white/10' : 'text-gray-400 hover:bg-white/5'}`}>
+                    <Settings size={20} /> Settings
+                </button>
+            )}
          </aside>
 
          {/* Main Content */}
          <main className="flex-1 overflow-y-auto p-8">
             <div className="flex justify-between items-center mb-8">
-                <h2 className="text-2xl font-bold capitalize">{activeTab} Management</h2>
-                {activeTab !== 'services' && activeTab !== 'settings' && (
+                <h2 className="text-2xl font-bold capitalize">
+                    {activeTab === 'team' && !isSuperAdmin ? 'My Profile' : `${activeTab} Management`}
+                </h2>
+                
+                {/* Add Button Logic */}
+                {((isSuperAdmin && activeTab !== 'services' && activeTab !== 'settings') || (activeTab === 'insights' && !isSuperAdmin)) && (
                     <button onClick={startAdd} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg font-bold transition-colors">
                         <Plus size={18} /> Add New
                     </button>
@@ -359,8 +404,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {/* List Items based on Active Tab */}
-                    {activeTab === 'team' && team.map(item => (
+                    
+                    {/* TEAM TAB */}
+                    {activeTab === 'team' && team
+                        .filter(item => isSuperAdmin || item.id === memberId) // Filter for members
+                        .map(item => (
                         <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
                             <img src={item.image} alt={item.name} className="w-full h-48 object-cover rounded-lg bg-gray-800" />
                             <div>
@@ -369,12 +417,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                             </div>
                             <div className="mt-auto flex gap-2">
                                 <button onClick={() => startEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><Edit size={14}/> Edit</button>
-                                <button onClick={() => deleteItem('team', item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg"><Trash2 size={16}/></button>
+                                {isSuperAdmin && (
+                                    <button onClick={() => deleteItem('team', item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg"><Trash2 size={16}/></button>
+                                )}
                             </div>
                         </div>
                     ))}
 
-                    {activeTab === 'projects' && projects.map(item => (
+                    {/* PROJECTS TAB (Admin Only) */}
+                    {activeTab === 'projects' && isSuperAdmin && projects.map(item => (
                         <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
                             <img src={item.image} alt={item.title} className="w-full h-40 object-cover rounded-lg bg-gray-800" />
                             <div>
@@ -388,21 +439,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         </div>
                     ))}
 
-                    {activeTab === 'insights' && insights.map(item => (
-                        <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
-                            <img src={item.image} alt={item.title} className="w-full h-40 object-cover rounded-lg bg-gray-800" />
-                            <div>
-                                <h4 className="font-bold text-white line-clamp-2">{item.title}</h4>
-                                <p className="text-xs text-gray-500 mt-1">{item.date}</p>
-                            </div>
-                            <div className="mt-auto flex gap-2">
-                                <button onClick={() => startEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><Edit size={14}/> Edit</button>
-                                <button onClick={() => deleteItem('insight', item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg"><Trash2 size={16}/></button>
-                            </div>
-                        </div>
-                    ))}
+                    {/* INSIGHTS TAB */}
+                    {activeTab === 'insights' && insights
+                        .filter(item => isSuperAdmin || item.authorId === memberId) // Show only own posts for members? Or show all but only allow edit own?
+                        // Let's allow viewing all but editing only own as per modern standards, 
+                        // but to keep it simple and safe: Filter view for now or Disable buttons.
+                        // Let's disable buttons for clarity.
+                        .map(item => {
+                            const canEdit = isSuperAdmin || item.authorId === memberId;
+                            
+                            // If filtering view is preferred:
+                            // if (!isSuperAdmin && item.authorId !== memberId) return null;
 
-                    {activeTab === 'services' && services.map(item => (
+                            return (
+                                <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
+                                    <img src={item.image} alt={item.title} className="w-full h-40 object-cover rounded-lg bg-gray-800" />
+                                    <div>
+                                        <h4 className="font-bold text-white line-clamp-2">{item.title}</h4>
+                                        <p className="text-xs text-gray-500 mt-1">{item.date}</p>
+                                    </div>
+                                    <div className="mt-auto flex gap-2">
+                                        {canEdit ? (
+                                            <>
+                                                <button onClick={() => startEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><Edit size={14}/> Edit</button>
+                                                <button onClick={() => deleteItem('insight', item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg"><Trash2 size={16}/></button>
+                                            </>
+                                        ) : (
+                                            <div className="flex-1 py-2 bg-white/5 text-gray-500 rounded-lg text-sm font-bold flex items-center justify-center gap-2 cursor-not-allowed">
+                                                <Lock size={14}/> View Only
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                    {/* SERVICES TAB (Admin Only) */}
+                    {activeTab === 'services' && isSuperAdmin && services.map(item => (
                         <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4 relative overflow-hidden">
                             <div className={`absolute top-0 left-0 w-1 h-full ${item.color}`}></div>
                             <div className="pl-3">
