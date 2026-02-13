@@ -116,44 +116,35 @@ const Services: React.FC = () => {
     setItems(services);
   }, [services]);
 
-  // URL Sync Effect
+  // Handle Hash Routing
   useEffect(() => {
-    // 1. Check URL on mount
-    const params = new URLSearchParams(window.location.search);
-    const serviceId = params.get('service');
-    if (serviceId) {
-        const found = services.find(s => s.id === serviceId);
-        if (found) setSelectedService(found);
-    }
-
-    // 2. Handle Back Button
-    const handlePopState = () => {
-        const p = new URLSearchParams(window.location.search);
-        const sId = p.get('service');
-        if (sId) {
-            const found = services.find(s => s.id === sId);
+    const handleHashChange = () => {
+        const hash = window.location.hash;
+        if (hash.startsWith('#services/')) {
+            const id = hash.replace('#services/', '');
+            const found = services.find(s => s.id === id);
             if (found) setSelectedService(found);
-        } else {
+        } else if (hash === '#services' && selectedService) {
             setSelectedService(null);
         }
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    // Initial check
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, [services]);
 
   const handleOpenService = (service: Service) => {
       setSelectedService(service);
-      const url = new URL(window.location.href);
-      url.searchParams.set('service', service.id);
-      window.history.pushState({}, '', url);
+      window.location.hash = `services/${service.id}`;
   };
 
   const handleCloseService = () => {
       setSelectedService(null);
-      const url = new URL(window.location.href);
-      url.searchParams.delete('service');
-      window.history.pushState({}, '', url);
+      // Push state to avoid scroll jump that sometimes happens with window.location.hash
+      window.history.pushState(null, '', '#services');
   };
 
   // Sensors for Drag and Drop
