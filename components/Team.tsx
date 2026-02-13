@@ -6,43 +6,28 @@ import { TeamMember, Post } from '../types';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import { MemberDetailModal, AuthorArticlesModal, ArticleDetailModal } from './TeamModals';
 import RevealOnScroll from './RevealOnScroll';
+import { useRouter } from '../hooks/useRouter';
 
 const Team: React.FC = () => {
   const { t } = useLanguage();
   const { team, insights } = useData();
+  
+  // Use Router Hook: Section 'team', Prefix 't' (e.g. t1 -> 1)
+  const { activeId, openItem, closeItem } = useRouter('team', 't');
+  
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [authorPosts, setAuthorPosts] = useState<Post[] | null>(null);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
 
-  // Handle Hash Routing
+  // Sync Router Active ID with Data
   useEffect(() => {
-    const handleHashChange = () => {
-        const hash = window.location.hash;
-        if (hash.startsWith('#team/')) {
-            const id = hash.replace('#team/', '');
-            const found = team.find(m => m.id === id);
-            if (found) setSelectedMember(found);
-        } else if (hash === '#team' && selectedMember) {
-            setSelectedMember(null);
-        }
-    };
-
-    // Initial check
-    handleHashChange();
-
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [team]);
-
-  const handleOpenMember = (member: TeamMember) => {
-      setSelectedMember(member);
-      window.location.hash = `team/${member.id}`;
-  };
-
-  const handleCloseMember = () => {
-      setSelectedMember(null);
-      window.history.pushState(null, '', '#team');
-  };
+      if (activeId) {
+          const found = team.find(m => m.id === activeId);
+          setSelectedMember(found || null);
+      } else {
+          setSelectedMember(null);
+      }
+  }, [activeId, team]);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -88,7 +73,7 @@ const Team: React.FC = () => {
                 <div 
                   key={member.id} 
                   className="group relative bg-white/5 rounded-2xl p-6 border border-white/5 hover:border-white/20 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-                  onClick={() => handleOpenMember(member)}
+                  onClick={() => openItem(member.id)}
                 >
                   <div className="absolute top-4 right-4 text-gray-500 group-hover:text-indigo-400 transition-colors">
                       <Info size={20} />
@@ -138,7 +123,7 @@ const Team: React.FC = () => {
       {selectedMember && (
           <MemberDetailModal 
             member={selectedMember} 
-            onClose={handleCloseMember}
+            onClose={closeItem}
             onShowArticles={handleShowArticles}
           />
       )}
