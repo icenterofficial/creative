@@ -69,9 +69,9 @@ const Header: React.FC = () => {
           const newSection = entry.target.id;
           setActiveSection(newSection);
           
-          // Update URL Hash without scrolling
-          if (history.pushState) {
-              // Only update if it's different to prevent spamming history
+          // Update URL Hash without scrolling ONLY if not in a deep link (modal)
+          // We check if the current hash contains a '/' which implies a modal is open (e.g. #insights/1)
+          if (history.pushState && !window.location.hash.includes('/')) {
               if (window.location.hash !== `#${newSection}`) {
                  window.history.replaceState(null, '', `#${newSection}`);
               }
