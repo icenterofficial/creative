@@ -73,9 +73,13 @@ const Header: React.FC = () => {
           const currentHash = window.location.hash;
           const isSpecialRoute = currentHash === '#admin' || currentHash.includes('/');
 
-          if (history.pushState && !isSpecialRoute) {
+          if (history.replaceState && !isSpecialRoute) {
               if (currentHash !== `#${newSection}`) {
-                 window.history.replaceState(null, '', `#${newSection}`);
+                 try {
+                    window.history.replaceState(null, '', `#${newSection}`);
+                 } catch (e) {
+                    // Ignore SecurityError in sandboxed environments
+                 }
               }
           }
         }
@@ -121,7 +125,12 @@ const Header: React.FC = () => {
       setActiveSection(href.substring(1));
       
       // Update URL immediately on click
-      window.history.pushState(null, '', href);
+      try {
+        window.history.pushState(null, '', href);
+      } catch (e) {
+        // Fallback to simple hash update if pushState fails
+        window.location.hash = href;
+      }
 
       const headerOffset = 80;
       const elementPosition = element.getBoundingClientRect().top;
