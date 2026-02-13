@@ -7,6 +7,7 @@ import { useData } from '../contexts/DataContext';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
 import { MemberDetailModal, AuthorArticlesModal, ArticleDetailModal, ContentRenderer } from './TeamModals';
+import { useRouter } from '../hooks/useRouter';
 
 // Helper to count comments recursively
 const getTotalCommentCount = (comments: Comment[]): number => {
@@ -108,9 +109,16 @@ const CommentItem: React.FC<{ comment: Comment, isReply?: boolean, isLast?: bool
 }
 
 const Insights: React.FC = () => {
+  const { t } = useLanguage();
+  const { insights, team } = useData();
+
+  // Use Router Hook for Posts: Section 'insights', No prefix
+  const { activeId, openItem, closeItem } = useRouter('insights');
+  
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<TeamMember | null>(null);
   const [authorPosts, setAuthorPosts] = useState<Post[] | null>(null);
+  
   const [isViewAllOpen, setIsViewAllOpen] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showInlineShare, setShowInlineShare] = useState(false);
@@ -120,9 +128,16 @@ const Insights: React.FC = () => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newCommentText, setNewCommentText] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  
-  const { t } = useLanguage();
-  const { insights, team } = useData();
+
+  // Sync Router Active ID with Data
+  useEffect(() => {
+      if (activeId) {
+          const found = insights.find(p => p.id === activeId);
+          setSelectedPost(found || null);
+      } else {
+          setSelectedPost(null);
+      }
+  }, [activeId, insights]);
 
   // Reset comments when post changes
   useEffect(() => {
@@ -130,36 +145,6 @@ const Insights: React.FC = () => {
         setComments(selectedPost.comments || []);
     }
   }, [selectedPost]);
-
-  // Handle Hash Routing
-  useEffect(() => {
-    const handleHashChange = () => {
-        const hash = window.location.hash;
-        if (hash.startsWith('#insights/')) {
-            const id = hash.replace('#insights/', '');
-            const found = insights.find(p => p.id === id);
-            if (found) setSelectedPost(found);
-        } else if (hash === '#insights' && selectedPost) {
-            setSelectedPost(null);
-        }
-    };
-
-    // Initial check
-    handleHashChange();
-
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [insights]);
-
-  const handleOpenPost = (post: Post) => {
-      setSelectedPost(post);
-      window.location.hash = `insights/${post.id}`;
-  };
-
-  const handleClosePost = () => {
-      setSelectedPost(null);
-      window.history.pushState(null, '', '#insights');
-  };
 
   // Lock body scroll when any modal is open
   useEffect(() => {
@@ -175,7 +160,7 @@ const Insights: React.FC = () => {
 
   const handleShare = (platform: 'facebook' | 'telegram' | 'copy') => {
     if (!selectedPost) return;
-    const url = window.location.href; // Now uses the correct URL with params
+    const url = window.location.href; 
     const text = selectedPost.title;
 
     if (platform === 'facebook') {
@@ -207,11 +192,12 @@ const Insights: React.FC = () => {
   const handleAuthorClick = (authorId: string) => {
     const author = team.find(t => t.id === authorId);
     if (author) {
-      setSelectedPost(null); // Close the article
-      setSelectedAuthor(author); // Show author profile
-      
-      // Clean up URL
-      window.history.pushState(null, '', '#team');
+      // Close the article modal via URL update (clearing post ID)
+      // but showing Author modal is separate state logic or route logic?
+      // For now, we'll just open the team member modal which will update URL to #team/id
+      // This switches contexts
+      const urlId = authorId.replace(/^t/, ''); // Simple manual strip or import toUrlId
+      window.location.hash = `team/${urlId}`;
     }
   };
 
@@ -233,7 +219,7 @@ const Insights: React.FC = () => {
       setTimeout(() => {
           const newComment: Comment = {
               id: Date.now().toString(),
-              user: "Guest User", // In a real app, this would be the logged-in user
+              user: "Guest User", 
               avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100",
               content: newCommentText,
               date: "Just now",
@@ -289,7 +275,7 @@ const Insights: React.FC = () => {
               <article 
                 key={post.id} 
                 className="group flex flex-col h-full bg-white/5 border border-white/5 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:-translate-y-2 cursor-pointer"
-                onClick={() => handleOpenPost(post)}
+                onClick={() => openItem(post.id)}
               >
                 {/* Image Container */}
                 <div className="relative h-60 overflow-hidden">
@@ -325,7 +311,7 @@ const Insights: React.FC = () => {
 
                   <div className="pt-6 border-t border-white/5">
                      <button 
-                       onClick={(e) => { e.stopPropagation(); handleOpenPost(post); }}
+                       onClick={(e) => { e.stopPropagation(); openItem(post.id); }}
                        className="inline-flex items-center gap-2 text-sm font-bold text-white hover:text-indigo-400 transition-colors font-khmer"
                      >
                        {t('Read Article', 'អានអត្ថបទ')} <ArrowRight size={16} />
@@ -376,7 +362,7 @@ const Insights: React.FC = () => {
                              <article 
                                 key={post.id} 
                                 className="group flex flex-col bg-white/5 border border-white/5 rounded-xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-                                onClick={() => handleOpenPost(post)}
+                                onClick={() => openItem(post.id)}
                             >
                                 <div className="relative h-48 overflow-hidden">
                                     <img 
@@ -416,14 +402,14 @@ const Insights: React.FC = () => {
         <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
           <div 
             className="absolute inset-0 bg-gray-950/90 backdrop-blur-xl animate-fade-in" 
-            onClick={handleClosePost} 
+            onClick={closeItem} 
           />
           <div className="relative w-full max-w-7xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10 flex flex-col">
               
               {/* Mobile Header (Close, Comment, Share) */}
               <div className="absolute top-0 left-0 right-0 z-50 flex justify-between items-center p-4 md:hidden pointer-events-none">
                   <button 
-                    onClick={handleClosePost} 
+                    onClick={closeItem} 
                     className="pointer-events-auto p-2 bg-black/40 hover:bg-black/60 text-white rounded-full backdrop-blur-md border border-white/10"
                   >
                       <X size={20} />
@@ -453,7 +439,7 @@ const Insights: React.FC = () => {
                       
                       {/* Desktop Close Button */}
                       <button 
-                        onClick={handleClosePost} 
+                        onClick={closeItem} 
                         className="hidden md:block absolute top-6 right-6 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all border border-white/10 z-20"
                       >
                           <X size={24} />
@@ -592,7 +578,7 @@ const Insights: React.FC = () => {
                               <div className="mt-8 md:mt-12 pt-8 border-t border-white/10 flex justify-between items-center">
                                   <span className="text-gray-500 text-sm hidden md:inline">Thanks for reading!</span>
                                   <button 
-                                    onClick={handleClosePost}
+                                    onClick={closeItem}
                                     className="w-full md:w-auto px-6 py-3 bg-white text-gray-950 rounded-full font-bold hover:bg-indigo-500 hover:text-white transition-all font-khmer"
                                   >
                                     {t('Close Article', 'បិទអត្ថបទ')}
@@ -787,7 +773,7 @@ const Insights: React.FC = () => {
                              <article 
                                 key={post.id} 
                                 className="group flex flex-col bg-white/5 border border-white/5 rounded-xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-                                onClick={() => handleOpenPost(post)}
+                                onClick={() => openItem(post.id)}
                             >
                                 <div className="relative h-40 overflow-hidden">
                                     <img 
