@@ -93,7 +93,7 @@ const Team: React.FC = () => {
                         <p className="text-gray-400 text-sm font-khmer mb-2">{t(member.role, member.roleKm)}</p>
                         
                         {postCount > 0 && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-[10px] font-bold uppercase tracking-wide">
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-900/50 border border-indigo-500/30 text-indigo-200 text-[10px] font-bold uppercase tracking-wider shadow-sm">
                                 <FileText size={10} /> {postCount} {t('Articles', 'អត្ថបទ')}
                             </span>
                         )}
