@@ -25,13 +25,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
   // GitHub Config Form State
   const [repoConfig, setRepoConfig] = useState({
-      username: githubConfig?.username || '',
-      repo: githubConfig?.repo || '',
+      username: githubConfig?.username || 'icenterofficial',
+      repo: githubConfig?.repo || 'creative',
       branch: githubConfig?.branch || 'main',
       token: githubConfig?.token || ''
   });
 
   const handleSync = async () => {
+      if (!githubConfig?.token) {
+          alert("Please configure your GitHub Token in the Settings tab first.");
+          setActiveTab('settings');
+          return;
+      }
       setIsSyncing(true);
       setSyncStatus(null);
       const result = await syncToGitHub();
@@ -45,6 +50,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   };
   
   const handleFetch = async () => {
+      if (!githubConfig?.token) {
+          alert("Please configure your GitHub Token in the Settings tab first.");
+          setActiveTab('settings');
+          return;
+      }
       setIsSyncing(true);
       await fetchFromGitHub();
       setIsSyncing(false);
@@ -287,8 +297,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                         </h3>
                         <p className="text-gray-400 text-sm mb-6 leading-relaxed">
                             To allow team members to post articles that are visible to everyone, you must connect this admin panel to your GitHub repository.<br/><br/>
-                            1. Create a <a href="https://github.com/settings/tokens" target="_blank" className="text-indigo-400 underline">Personal Access Token (Classic)</a> with <code>repo</code> scope.<br/>
-                            2. Enter your details below.<br/>
+                            1. You already have a Token: <code className="text-indigo-400">ghp_QOY9...</code><br/>
+                            2. Enter it below (We do not save it on our servers, only in your browser).<br/>
                             3. Click "Save Config". Then click "Push to Live" in the top bar to publish current data.
                         </p>
                         
@@ -331,6 +341,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                                     value={repoConfig.token}
                                     onChange={(e) => setRepoConfig({...repoConfig, token: e.target.value})}
                                 />
+                                <p className="text-[10px] text-gray-500 mt-1">Use your Classic Token starting with ghp_</p>
                             </div>
                             
                             <button type="submit" className="w-full py-3 bg-white text-gray-950 font-bold rounded-lg hover:bg-gray-200 transition-colors">
