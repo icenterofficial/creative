@@ -116,6 +116,46 @@ const Services: React.FC = () => {
     setItems(services);
   }, [services]);
 
+  // URL Sync Effect
+  useEffect(() => {
+    // 1. Check URL on mount
+    const params = new URLSearchParams(window.location.search);
+    const serviceId = params.get('service');
+    if (serviceId) {
+        const found = services.find(s => s.id === serviceId);
+        if (found) setSelectedService(found);
+    }
+
+    // 2. Handle Back Button
+    const handlePopState = () => {
+        const p = new URLSearchParams(window.location.search);
+        const sId = p.get('service');
+        if (sId) {
+            const found = services.find(s => s.id === sId);
+            if (found) setSelectedService(found);
+        } else {
+            setSelectedService(null);
+        }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [services]);
+
+  const handleOpenService = (service: Service) => {
+      setSelectedService(service);
+      const url = new URL(window.location.href);
+      url.searchParams.set('service', service.id);
+      window.history.pushState({}, '', url);
+  };
+
+  const handleCloseService = () => {
+      setSelectedService(null);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('service');
+      window.history.pushState({}, '', url);
+  };
+
   // Sensors for Drag and Drop
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -210,7 +250,7 @@ const Services: React.FC = () => {
                             key={service.id} 
                             service={service} 
                             index={index} 
-                            onSelect={setSelectedService}
+                            onSelect={handleOpenService}
                             t={t}
                         />
                     ))}
@@ -233,7 +273,7 @@ const Services: React.FC = () => {
           {/* Backdrop with strong blur to focus attention */}
           <div 
             className="absolute inset-0 bg-gray-950/80 backdrop-blur-lg animate-fade-in" 
-            onClick={() => setSelectedService(null)}
+            onClick={handleCloseService}
           />
           
           {/* Modal Content */}
@@ -244,7 +284,7 @@ const Services: React.FC = () => {
             <div className="p-8 md:p-10 relative overflow-y-auto max-h-[85vh] md:max-h-auto scrollbar-hide">
                {/* Close Button */}
                <button 
-                onClick={() => setSelectedService(null)}
+                onClick={handleCloseService}
                 className="absolute top-6 right-6 p-2 rounded-full bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all z-20"
                >
                  <X size={24} />
@@ -283,7 +323,7 @@ const Services: React.FC = () => {
                  <div className="pt-6 border-t border-white/10 flex justify-end">
                     <a 
                       href="#contact" 
-                      onClick={() => setSelectedService(null)}
+                      onClick={handleCloseService}
                       className="px-6 py-3 rounded-full bg-white text-gray-950 font-bold hover:scale-105 transition-transform flex items-center gap-2 font-khmer"
                     >
                       {t('Get Started', 'ចាប់ផ្តើម')}
