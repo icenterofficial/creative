@@ -6,12 +6,16 @@ import { X, ExternalLink, Tag } from 'lucide-react';
 import { Project } from '../types';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
+import { useRouter } from '../hooks/useRouter';
 
 const Portfolio: React.FC = () => {
   const [filter, setFilter] = useState<string>('all');
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const { t } = useLanguage();
   const { projects } = useData();
+
+  // Use Router Hook: Section 'portfolio', Prefix 'p' (e.g. p1 -> 1)
+  const { activeId, openItem, closeItem } = useRouter('portfolio', 'p');
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const categories = [
     { id: 'all', label: t('All Work', 'ទាំងអស់') },
@@ -26,35 +30,15 @@ const Portfolio: React.FC = () => {
     ? projects 
     : projects.filter(p => p.category === filter);
 
-  // Handle Hash Routing
+  // Sync Router Active ID with Data
   useEffect(() => {
-    const handleHashChange = () => {
-        const hash = window.location.hash;
-        if (hash.startsWith('#portfolio/')) {
-            const id = hash.replace('#portfolio/', '');
-            const found = projects.find(p => p.id === id);
-            if (found) setSelectedProject(found);
-        } else if (hash === '#portfolio' && selectedProject) {
-            setSelectedProject(null);
-        }
-    };
-
-    // Initial check
-    handleHashChange();
-
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [projects]);
-
-  const handleOpenProject = (project: Project) => {
-      setSelectedProject(project);
-      window.location.hash = `portfolio/${project.id}`;
-  };
-
-  const handleCloseProject = () => {
-      setSelectedProject(null);
-      window.history.pushState(null, '', '#portfolio');
-  };
+      if (activeId) {
+          const found = projects.find(p => p.id === activeId);
+          setSelectedProject(found || null);
+      } else {
+          setSelectedProject(null);
+      }
+  }, [activeId, projects]);
 
   // Lock body scroll when modal is open
   useEffect(() => {
@@ -109,7 +93,7 @@ const Portfolio: React.FC = () => {
           {filteredProjects.map((project, index) => (
             <RevealOnScroll key={project.id} delay={index * 100} variant="zoom-in" duration={600}>
               <div 
-                onClick={() => handleOpenProject(project)}
+                onClick={() => openItem(project.id)}
                 className="group relative rounded-2xl overflow-hidden break-inside-avoid bg-gray-800 transition-transform duration-500 hover:-translate-y-2 hover:rotate-1 hover:shadow-2xl hover:shadow-indigo-500/20 cursor-pointer"
               >
                 <img 
@@ -152,12 +136,12 @@ const Portfolio: React.FC = () => {
            {/* Backdrop */}
            <div 
              className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
-             onClick={handleCloseProject}
+             onClick={closeItem}
            />
 
            {/* Close Button - Fixed Position */}
            <button 
-              onClick={handleCloseProject}
+              onClick={closeItem}
               className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all z-50 border border-white/10"
            >
               <X size={24} />
