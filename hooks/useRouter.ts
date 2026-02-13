@@ -86,8 +86,13 @@ export const useAdminRouter = () => {
     }, []);
 
     const closeAdmin = () => {
-        // Remove hash cleanly
-        history.pushState("", document.title, window.location.pathname + window.location.search);
+        // Remove hash cleanly using pushState, fallback to hash manipulation if it fails
+        try {
+            history.pushState("", document.title, window.location.pathname + window.location.search);
+        } catch (e) {
+            // If pushState fails (SecurityError in sandbox), just clear the hash
+            window.location.hash = '';
+        }
         // Trigger event manually since pushState doesn't trigger hashchange
         window.dispatchEvent(new Event('hashchange'));
     };
