@@ -6,6 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
+import { useRouter } from '../hooks/useRouter';
 
 // DnD Kit Imports
 import {
@@ -105,47 +106,30 @@ const SortableServiceItem: React.FC<SortableServiceItemProps> = ({ service, inde
 
 
 const Services: React.FC = () => {
-  const [selectedService, setSelectedService] = useState<Service | null>(null);
   const { services } = useData();
+  const { t } = useLanguage();
+  
+  // Use Router Hook: Section 'services', No prefix (Ids are strings)
+  const { activeId, openItem, closeItem } = useRouter('services');
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+
   const [items, setItems] = useState<Service[]>(services);
   const [hasReordered, setHasReordered] = useState(false);
-  const { t } = useLanguage();
 
   // Sync with context if services change externally
   useEffect(() => {
     setItems(services);
   }, [services]);
 
-  // Handle Hash Routing
+  // Sync Router Active ID with Data
   useEffect(() => {
-    const handleHashChange = () => {
-        const hash = window.location.hash;
-        if (hash.startsWith('#services/')) {
-            const id = hash.replace('#services/', '');
-            const found = services.find(s => s.id === id);
-            if (found) setSelectedService(found);
-        } else if (hash === '#services' && selectedService) {
-            setSelectedService(null);
-        }
-    };
-
-    // Initial check
-    handleHashChange();
-
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [services]);
-
-  const handleOpenService = (service: Service) => {
-      setSelectedService(service);
-      window.location.hash = `services/${service.id}`;
-  };
-
-  const handleCloseService = () => {
-      setSelectedService(null);
-      // Push state to avoid scroll jump that sometimes happens with window.location.hash
-      window.history.pushState(null, '', '#services');
-  };
+      if (activeId) {
+          const found = services.find(s => s.id === activeId);
+          setSelectedService(found || null);
+      } else {
+          setSelectedService(null);
+      }
+  }, [activeId, services]);
 
   // Sensors for Drag and Drop
   const sensors = useSensors(
@@ -241,7 +225,7 @@ const Services: React.FC = () => {
                             key={service.id} 
                             service={service} 
                             index={index} 
-                            onSelect={handleOpenService}
+                            onSelect={(s) => openItem(s.id)}
                             t={t}
                         />
                     ))}
@@ -264,7 +248,7 @@ const Services: React.FC = () => {
           {/* Backdrop with strong blur to focus attention */}
           <div 
             className="absolute inset-0 bg-gray-950/80 backdrop-blur-lg animate-fade-in" 
-            onClick={handleCloseService}
+            onClick={closeItem}
           />
           
           {/* Modal Content */}
@@ -275,7 +259,7 @@ const Services: React.FC = () => {
             <div className="p-8 md:p-10 relative overflow-y-auto max-h-[85vh] md:max-h-auto scrollbar-hide">
                {/* Close Button */}
                <button 
-                onClick={handleCloseService}
+                onClick={closeItem}
                 className="absolute top-6 right-6 p-2 rounded-full bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all z-20"
                >
                  <X size={24} />
@@ -314,7 +298,7 @@ const Services: React.FC = () => {
                  <div className="pt-6 border-t border-white/10 flex justify-end">
                     <a 
                       href="#contact" 
-                      onClick={handleCloseService}
+                      onClick={closeItem}
                       className="px-6 py-3 rounded-full bg-white text-gray-950 font-bold hover:scale-105 transition-transform flex items-center gap-2 font-khmer"
                     >
                       {t('Get Started', 'ចាប់ផ្តើម')}
