@@ -26,6 +26,15 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+// ==========================================
+// ⚠️ IMPORTANT: UPDATE THIS FOR PUBLIC VIEW ⚠️
+// Change these values to YOUR GitHub username and repo 
+// so the public can see the data you pushed!
+// ==========================================
+const DEFAULT_USER = 'icenterofficial'; 
+const DEFAULT_REPO = 'creative';
+const DEFAULT_BRANCH = 'main';
+
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [services, setServices] = useState<Service[]>(SERVICES);
   const [projects, setProjects] = useState<Project[]>(PROJECTS);
@@ -44,19 +53,25 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
-  // INITIAL LOAD: Try to fetch 'site-data.json' from the root (Public View)
-  // OR fallback to LocalStorage/Constants
+  // INITIAL LOAD: Fetch directly from GitHub Raw to get live data immediately
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
       try {
-        // 1. Try fetching live data file (Works on GitHub Pages if file exists)
-        // We use a timestamp to bust cache
-        const response = await fetch(`./site-data.json?t=${Date.now()}`);
+        // Construct Raw URL: https://raw.githubusercontent.com/USER/REPO/BRANCH/site-data.json
+        // Using config if available (Admin), otherwise default to the known repo (Public)
+        const user = githubConfig?.username || DEFAULT_USER;
+        const repo = githubConfig?.repo || DEFAULT_REPO;
+        const branch = githubConfig?.branch || DEFAULT_BRANCH;
+        
+        const rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/site-data.json`;
+        
+        // Add timestamp to bypass caching
+        const response = await fetch(`${rawUrl}?t=${Date.now()}`);
         
         if (response.ok) {
             const data = await response.json();
-            console.log("Loaded data from site-data.json");
+            console.log("Loaded live data from GitHub Raw:", rawUrl);
             
             // Restore Icons for Services (since JSON doesn't store React Elements)
             if (data.services) {
@@ -73,9 +88,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             
             setIsLoading(false);
             return; // Success!
+        } else {
+            console.warn("Live data not found on GitHub, using defaults.");
         }
       } catch (e) {
-         console.log("Could not load site-data.json, falling back to local storage.");
+         console.log("Could not load live data, falling back to local storage/constants.");
       }
 
       // 2. Fallback to Local Storage (if user edited locally before)
@@ -108,7 +125,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     loadData();
-  }, []);
+  }, [githubConfig]); // Re-run if config changes (Admin login)
 
   // Persist to LocalStorage as backup
   useEffect(() => {
@@ -138,8 +155,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             lastUpdated: new Date().toLocaleString()
         };
 
-        // Convert to Base64 (required by GitHub API)
-        // Use a safe unicode encoding method
         const jsonString = JSON.stringify(content, null, 2);
         const utf8Bytes = new TextEncoder().encode(jsonString);
         const base64Content = btoa(String.fromCharCode(...utf8Bytes));
@@ -161,7 +176,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 sha = getData.sha;
             }
         } catch (e) {
-            // File might not exist yet, which is fine
+            // File might not exist yet
         }
 
         // 2. PUT (Create or Update)
@@ -198,20 +213,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!githubConfig) return;
       setIsLoading(true);
       try {
-          // Fetch raw content via API to bypass cache
           const fileName = "site-data.json";
           const apiUrl = `https://api.github.com/repos/${githubConfig.username}/${githubConfig.repo}/contents/${fileName}?ref=${githubConfig.branch}`;
           
           const res = await fetch(apiUrl, {
               headers: { 
                     Authorization: `Bearer ${githubConfig.token}`,
-                    Accept: "application/vnd.github.v3.raw" // Ask for raw content
+                    Accept: "application/vnd.github.v3.raw"
                 }
           });
 
           if (res.ok) {
                const data = await res.json();
-               // Apply data (same logic as initial load)
                 if (data.services) {
                     const restoredServices = data.services.map((s: Service) => {
                         const original = SERVICES.find(os => os.id === s.id);
