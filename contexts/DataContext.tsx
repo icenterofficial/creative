@@ -28,13 +28,14 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 // ==========================================
-// ⚠️ IMPORTANT: UPDATE THIS FOR PUBLIC VIEW ⚠️
-// Change these values to YOUR GitHub username and repo 
-// so the public can see the data you pushed!
+// ⚠️ ដាក់ព័ត៌មាន GitHub របស់អ្នកនៅទីនេះ ដើម្បីឱ្យ Team ទាំងអស់អាច Save បាន ⚠️
 // ==========================================
-const DEFAULT_USER = 'icenterofficial'; 
-const DEFAULT_REPO = 'creative';
-const DEFAULT_BRANCH = 'main';
+const HARDCODED_CONFIG: GitHubConfig = {
+    username: 'icenterofficial', // ដាក់ឈ្មោះ GitHub Username របស់អ្នក
+    repo: 'creative',            // ដាក់ឈ្មោះ Repository របស់អ្នក
+    branch: 'main',              // ដាក់ឈ្មោះ Branch (ធម្មតាគឺ main)
+    token: ''                    // ⚠️ សំខាន់៖ ដាក់ GitHub Token (ghp_...) របស់អ្នកនៅទីនេះ
+};
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [services, setServices] = useState<Service[]>(SERVICES);
@@ -48,9 +49,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Helper to load config
   useEffect(() => {
+    // 1. ព្យាយាមរកក្នុង LocalStorage ជាមុន
     const savedConfig = localStorage.getItem('github_config');
     if (savedConfig) {
         setGithubConfigState(JSON.parse(savedConfig));
+    } 
+    // 2. ប្រសិនបើគ្មានក្នុង LocalStorage ទេ ប្រើ HARDCODED_CONFIG
+    // (លុះត្រាតែអ្នកមិនទាន់បានដាក់ Token)
+    else if (HARDCODED_CONFIG.token && HARDCODED_CONFIG.token !== '') {
+        setGithubConfigState(HARDCODED_CONFIG);
+        console.log("Using Hardcoded GitHub Config");
     }
   }, []);
 
@@ -61,9 +69,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         // Construct Raw URL: https://raw.githubusercontent.com/USER/REPO/BRANCH/site-data.json
         // Using config if available (Admin), otherwise default to the known repo (Public)
-        const user = githubConfig?.username || DEFAULT_USER;
-        const repo = githubConfig?.repo || DEFAULT_REPO;
-        const branch = githubConfig?.branch || DEFAULT_BRANCH;
+        const user = githubConfig?.username || HARDCODED_CONFIG.username;
+        const repo = githubConfig?.repo || HARDCODED_CONFIG.repo;
+        const branch = githubConfig?.branch || HARDCODED_CONFIG.branch;
         
         const rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/site-data.json`;
         
@@ -146,7 +154,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // ADMIN: Push data to GitHub Repo
   // Accepts overrides to allow syncing *before* state update is processed
   const syncToGitHub = async (overrides?: { services?: Service[], projects?: Project[], team?: TeamMember[], insights?: Post[] }) => {
-    if (!githubConfig) return { success: false, message: "Configuration missing" };
+    // Check both state and hardcoded fallback
+    const config = githubConfig || (HARDCODED_CONFIG.token ? HARDCODED_CONFIG : null);
+
+    if (!config || !config.token) {
+        return { success: false, message: "GitHub Configuration/Token missing. Please configure in Settings or Hardcode in DataContext." };
+    }
 
     try {
         // Use overrides if provided, otherwise use current state
@@ -163,14 +176,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const base64Content = btoa(String.fromCharCode(...utf8Bytes));
 
         const fileName = "site-data.json";
-        const apiUrl = `https://api.github.com/repos/${githubConfig.username}/${githubConfig.repo}/contents/${fileName}`;
+        const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${fileName}`;
 
         // 1. Get current SHA (if file exists) to update it
         let sha = "";
         try {
             const getRes = await fetch(apiUrl, {
                 headers: { 
-                    Authorization: `Bearer ${githubConfig.token}`,
+                    Authorization: `Bearer ${config.token}`,
                     Accept: "application/vnd.github.v3+json"
                 }
             });
@@ -186,7 +199,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const putRes = await fetch(apiUrl, {
             method: "PUT",
             headers: {
-                Authorization: `Bearer ${githubConfig.token}`,
+                Authorization: `Bearer ${config.token}`,
                 "Content-Type": "application/json",
                 Accept: "application/vnd.github.v3+json"
             },
@@ -194,7 +207,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 message: `Update site content - ${new Date().toLocaleDateString()}`,
                 content: base64Content,
                 sha: sha || undefined,
-                branch: githubConfig.branch || 'main'
+                branch: config.branch || 'main'
             })
         });
 
@@ -213,15 +226,17 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // ADMIN: Pull fresh data from GitHub API directly
   const fetchFromGitHub = async () => {
-      if (!githubConfig) return;
+      const config = githubConfig || (HARDCODED_CONFIG.token ? HARDCODED_CONFIG : null);
+      if (!config) return;
+      
       setIsLoading(true);
       try {
           const fileName = "site-data.json";
-          const apiUrl = `https://api.github.com/repos/${githubConfig.username}/${githubConfig.repo}/contents/${fileName}?ref=${githubConfig.branch}`;
+          const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${fileName}?ref=${config.branch}`;
           
           const res = await fetch(apiUrl, {
               headers: { 
-                    Authorization: `Bearer ${githubConfig.token}`,
+                    Authorization: `Bearer ${config.token}`,
                     Accept: "application/vnd.github.v3.raw"
                 }
           });
