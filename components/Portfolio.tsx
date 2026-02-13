@@ -26,44 +26,34 @@ const Portfolio: React.FC = () => {
     ? projects 
     : projects.filter(p => p.category === filter);
 
-  // URL Sync Effect
+  // Handle Hash Routing
   useEffect(() => {
-    // 1. Check URL on mount
-    const params = new URLSearchParams(window.location.search);
-    const projectId = params.get('project');
-    if (projectId) {
-        const found = projects.find(p => p.id === projectId);
-        if (found) setSelectedProject(found);
-    }
-
-    // 2. Handle Back Button
-    const handlePopState = () => {
-        const p = new URLSearchParams(window.location.search);
-        const pId = p.get('project');
-        if (pId) {
-            const found = projects.find(prj => prj.id === pId);
+    const handleHashChange = () => {
+        const hash = window.location.hash;
+        if (hash.startsWith('#portfolio/')) {
+            const id = hash.replace('#portfolio/', '');
+            const found = projects.find(p => p.id === id);
             if (found) setSelectedProject(found);
-        } else {
+        } else if (hash === '#portfolio' && selectedProject) {
             setSelectedProject(null);
         }
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    // Initial check
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, [projects]);
 
   const handleOpenProject = (project: Project) => {
       setSelectedProject(project);
-      const url = new URL(window.location.href);
-      url.searchParams.set('project', project.id);
-      window.history.pushState({}, '', url);
+      window.location.hash = `portfolio/${project.id}`;
   };
 
   const handleCloseProject = () => {
       setSelectedProject(null);
-      const url = new URL(window.location.href);
-      url.searchParams.delete('project');
-      window.history.pushState({}, '', url);
+      window.history.pushState(null, '', '#portfolio');
   };
 
   // Lock body scroll when modal is open
