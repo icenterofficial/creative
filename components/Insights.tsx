@@ -131,44 +131,34 @@ const Insights: React.FC = () => {
     }
   }, [selectedPost]);
 
-  // URL Sync Effect for Post ID
+  // Handle Hash Routing
   useEffect(() => {
-    // 1. Check URL on mount
-    const params = new URLSearchParams(window.location.search);
-    const postId = params.get('post');
-    if (postId) {
-        const found = insights.find(p => p.id === postId);
-        if (found) setSelectedPost(found);
-    }
-
-    // 2. Handle Back Button
-    const handlePopState = () => {
-        const p = new URLSearchParams(window.location.search);
-        const pId = p.get('post');
-        if (pId) {
-            const found = insights.find(i => i.id === pId);
+    const handleHashChange = () => {
+        const hash = window.location.hash;
+        if (hash.startsWith('#insights/')) {
+            const id = hash.replace('#insights/', '');
+            const found = insights.find(p => p.id === id);
             if (found) setSelectedPost(found);
-        } else {
+        } else if (hash === '#insights' && selectedPost) {
             setSelectedPost(null);
         }
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    // Initial check
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, [insights]);
 
   const handleOpenPost = (post: Post) => {
       setSelectedPost(post);
-      const url = new URL(window.location.href);
-      url.searchParams.set('post', post.id);
-      window.history.pushState({}, '', url);
+      window.location.hash = `insights/${post.id}`;
   };
 
   const handleClosePost = () => {
       setSelectedPost(null);
-      const url = new URL(window.location.href);
-      url.searchParams.delete('post');
-      window.history.pushState({}, '', url);
+      window.history.pushState(null, '', '#insights');
   };
 
   // Lock body scroll when any modal is open
@@ -220,11 +210,8 @@ const Insights: React.FC = () => {
       setSelectedPost(null); // Close the article
       setSelectedAuthor(author); // Show author profile
       
-      // We don't deep link author profiles in this simple implementation, 
-      // but we do remove the ?post=id param so the URL is cleaner
-      const url = new URL(window.location.href);
-      url.searchParams.delete('post');
-      window.history.pushState({}, '', url);
+      // Clean up URL
+      window.history.pushState(null, '', '#team');
     }
   };
 
