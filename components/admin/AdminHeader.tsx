@@ -1,6 +1,6 @@
 import React from 'react';
-import { LogOut, RefreshCw, Shield, Users, Database } from 'lucide-react';
-import { CurrentUser } from '../../App';
+import { LogOut, RefreshCw, Shield, Users, Database, Globe } from 'lucide-react';
+import { CurrentUser } from '../../types';
 import { useData } from '../../contexts/DataContext';
 
 interface AdminHeaderProps {
@@ -12,10 +12,11 @@ interface AdminHeaderProps {
   onFetch: () => void;
   onSync: () => void;
   onLogout: () => void;
+  onViewSite?: () => void;
 }
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({
-  currentUser, isSuperAdmin, lastSyncTime, isSyncing, syncStatus, onFetch, onSync, onLogout
+  currentUser, isSuperAdmin, lastSyncTime, isSyncing, syncStatus, onFetch, onSync, onLogout, onViewSite
 }) => {
   const { isUsingSupabase } = useData();
 
@@ -32,6 +33,16 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-4">
+        {/* View Site Button */}
+        {onViewSite && (
+             <button
+              onClick={onViewSite}
+              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-sm border border-indigo-500/20"
+            >
+              <Globe size={14} /> View Live Site
+            </button>
+        )}
+
         {/* Data Source Indicator */}
         <div className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${isUsingSupabase ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'}`}>
             <Database size={10} />
