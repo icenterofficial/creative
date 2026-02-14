@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { DataProvider, useData } from './contexts/DataContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Partners from './components/Partners';
@@ -15,19 +16,16 @@ import Footer from './components/Footer';
 import ScrollButton from './components/ScrollButton';
 import Preloader from './components/Preloader';
 import AdminDashboard from './components/AdminDashboard';
-import { Lock, ArrowRight, X } from 'lucide-react';
+import { Lock, ArrowRight, X, ShieldCheck } from 'lucide-react';
 import { useAdminRouter } from './hooks/useRouter';
-
-// Define User Role Type
-export interface CurrentUser {
-    role: 'admin' | 'member';
-    id?: string; // Only for members
-    name?: string;
-}
+import { CurrentUser } from './types';
 
 function AppContent() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [isViewingSite, setIsViewingSite] = useState(false);
+  
+  // Auth from Context
+  const { currentUser, login, logout } = useAuth();
   
   // Admin Login States
   const { isAdminOpen, closeAdmin } = useAdminRouter();
@@ -38,7 +36,6 @@ function AppContent() {
   const { team } = useData();
 
   // MAPPING: Specific PINs for specific users
-  // This ensures precise login, not just choosing anyone.
   const MEMBER_PINS: Record<string, string> = {
       '1111': 't1', // Youshow
       '2222': 't2', // Samry
@@ -65,9 +62,10 @@ function AppContent() {
       
       // 1. SUPER ADMIN CHECK
       if (pin === '1234') {
-          setCurrentUser({ role: 'admin', name: 'Super Admin' });
+          login({ role: 'admin', name: 'Super Admin' });
           closeAdmin();
           setPin('');
+          setIsViewingSite(false); // Go to Dashboard
       } 
       // 2. SPECIFIC MEMBER CHECK
       else if (MEMBER_PINS[pin]) {
@@ -75,11 +73,11 @@ function AppContent() {
           const member = team.find(m => m.id === memberId);
           
           if (member) {
-              setCurrentUser({ role: 'member', id: member.id, name: member.name });
+              login({ role: 'member', id: member.id, name: member.name });
               closeAdmin();
               setPin('');
+              setIsViewingSite(false); // Go to Dashboard
           } else {
-              // Valid PIN but member not found in data (deleted?)
               setLoginError(true);
               setPin('');
               setTimeout(() => setLoginError(false), 500);
@@ -97,10 +95,15 @@ function AppContent() {
       setPin('');
   };
 
-  if (currentUser) {
+  // Render Admin Dashboard if logged in and NOT viewing site
+  if (currentUser && !isViewingSite) {
       return (
           <LanguageProvider>
-              <AdminDashboard currentUser={currentUser} onLogout={() => setCurrentUser(null)} />
+              <AdminDashboard 
+                currentUser={currentUser} 
+                onLogout={logout} 
+                onViewSite={() => setIsViewingSite(true)}
+              />
           </LanguageProvider>
       );
   }
@@ -121,6 +124,17 @@ function AppContent() {
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-[128px]" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[128px]" />
       </div>
+      
+      {/* Admin Floating Button when viewing site */}
+      {currentUser && (
+         <button 
+           onClick={() => setIsViewingSite(false)}
+           className="fixed bottom-6 left-6 z-[99999] px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-bold shadow-lg flex items-center gap-2 animate-bounce hover:animate-none transition-all"
+         >
+            <ShieldCheck size={18} /> Back to Dashboard
+         </button>
+      )}
+
       <Header />
       <main className="relative z-10">
         <Hero />
@@ -136,7 +150,7 @@ function AppContent() {
       <Footer />
       <ScrollButton />
       
-      {/* Admin Login Modal - Very High Z-Index to beat Cursor and Preloader */}
+      {/* Admin Login Modal */}
       {isAdminOpen && (
           <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-md animate-fade-in">
               <div className="bg-gray-900 border border-white/10 p-8 rounded-3xl shadow-2xl w-full max-w-sm relative animate-scale-up">
@@ -179,7 +193,7 @@ function AppContent() {
                       </button>
                   </form>
                   
-                  {/* Hint for Demo Purposes - Can be removed in production */}
+                  {/* Hint for Demo */}
                   <div className="mt-6 pt-6 border-t border-white/5 text-xs text-gray-600 text-center">
                       <p>Super Admin: 1234</p>
                       <p>Members: 1111, 2222, 3333, 4444...</p>
@@ -212,7 +226,9 @@ export default function App() {
   return (
     <DataProvider>
       <LanguageProvider>
-        <AppContent />
+        <AuthProvider>
+           <AppContent />
+        </AuthProvider>
       </LanguageProvider>
     </DataProvider>
   );
