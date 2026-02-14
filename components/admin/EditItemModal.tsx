@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { X, Save, Loader2, HelpCircle, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Save, Loader2, HelpCircle, Upload, Image as ImageIcon, Eye, Edit2 } from 'lucide-react';
 import { getSupabaseClient } from '../../lib/supabase';
+import { ContentRenderer } from '../TeamModals';
 
 interface EditItemModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
   isOpen, isAdding, activeTab, isSuperAdmin, editingItem, setEditingItem, onSave, onCancel, isSaving
 }) => {
   const [isUploading, setIsUploading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false); // Toggle for Write/Preview
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen || !editingItem) return null;
@@ -57,15 +59,15 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-sm animate-fade-in">
-      <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl animate-scale-up">
-        <div className="flex justify-between items-center mb-6">
+      <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl animate-scale-up flex flex-col">
+        <div className="flex justify-between items-center mb-6 shrink-0">
           <h3 className="text-xl font-bold text-white font-khmer">
             {isAdding ? 'បន្ថែមថ្មី' : 'កែសម្រួល'} ({activeTab})
           </h3>
           <button onClick={onCancel} className="text-gray-400 hover:text-white"><X /></button>
         </div>
 
-        <form onSubmit={onSave} className="space-y-4">
+        <form onSubmit={onSave} className="space-y-4 flex-1">
           {Object.keys(editingItem).map((key) => {
             if (['id', 'comments', 'replies', 'icon', 'created_at'].includes(key)) return null;
             if (key === 'authorId' && !isSuperAdmin) return null;
@@ -145,30 +147,71 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
               );
             }
 
-            // Text Areas
+            // Text Areas (Content/Bio)
             if (key === 'content' || key === 'description' || key === 'bio' || key === 'bioKm' || key === 'descriptionKm' || key === 'excerpt') {
                 const isContent = key === 'content';
-              return (
-                <div key={key}>
-                  <div className="flex justify-between items-center mb-1">
-                      <label className="block text-xs font-bold text-gray-400">{label}</label>
-                      {isContent && (
-                          <div className="flex items-center gap-2 text-[10px] text-indigo-400 bg-indigo-900/20 px-2 py-1 rounded">
-                              <HelpCircle size={10} /> Markdown Supported
+                
+                // SPECIAL EDITOR FOR CONTENT
+                if (isContent) {
+                  return (
+                    <div key={key} className="flex flex-col h-full">
+                       <div className="flex justify-between items-center mb-2">
+                          <label className="block text-xs font-bold text-gray-400">{label}</label>
+                          <div className="flex items-center gap-2 bg-gray-800 rounded-lg p-1 border border-white/10">
+                              <button
+                                type="button" 
+                                onClick={() => setShowPreview(false)}
+                                className={`px-3 py-1 rounded-md text-xs font-bold flex items-center gap-2 transition-colors ${!showPreview ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                              >
+                                <Edit2 size={12} /> Write
+                              </button>
+                              <button 
+                                type="button"
+                                onClick={() => setShowPreview(true)}
+                                className={`px-3 py-1 rounded-md text-xs font-bold flex items-center gap-2 transition-colors ${showPreview ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
+                              >
+                                <Eye size={12} /> Preview
+                              </button>
                           </div>
-                      )}
-                  </div>
-                  <textarea
-                    rows={isContent ? 10 : 4}
-                    className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-sm font-khmer"
-                    value={value || ''}
-                    onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })}
-                  />
-                </div>
-              );
+                       </div>
+                       
+                       <div className="bg-gray-800 border border-white/10 rounded-xl overflow-hidden min-h-[400px]">
+                          {showPreview ? (
+                            <div className="p-6 h-[400px] overflow-y-auto bg-gray-900">
+                               <ContentRenderer content={value || ''} />
+                            </div>
+                          ) : (
+                            <textarea
+                              className="w-full h-[400px] bg-gray-800 p-4 text-white focus:outline-none font-mono text-sm font-khmer resize-none"
+                              placeholder="Write your article in Markdown..."
+                              value={value || ''}
+                              onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })}
+                            />
+                          )}
+                       </div>
+                       <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-2 px-1">
+                          <HelpCircle size={12} /> 
+                          <span>Supported: **bold**, # Headers, - Lists, ![alt](url) Images, ```code blocks```</span>
+                       </div>
+                    </div>
+                  );
+                }
+
+                // Normal Textarea for other fields
+                return (
+                    <div key={key}>
+                    <label className="block text-xs font-bold text-gray-400 mb-1">{label}</label>
+                    <textarea
+                        rows={4}
+                        className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none font-mono text-sm font-khmer"
+                        value={value || ''}
+                        onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })}
+                    />
+                    </div>
+                );
             }
 
-            // Default
+            // Default Input
             return (
               <div key={key}>
                 <label className="block text-xs font-bold text-gray-400 mb-1">{label}</label>
@@ -181,7 +224,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
             );
           })}
 
-          <button type="submit" disabled={isSaving || isUploading} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-colors flex justify-center items-center gap-2 disabled:opacity-50 font-khmer">
+          <button type="submit" disabled={isSaving || isUploading} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-colors flex justify-center items-center gap-2 disabled:opacity-50 font-khmer mt-6">
             {isSaving ? <><Loader2 size={18} className="animate-spin" /> កំពុងរក្សាទុក...</> : <><Save size={18} /> រក្សាទុក & បង្ហោះ</>}
           </button>
         </form>
