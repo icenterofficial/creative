@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Save, Loader2, HelpCircle, Upload, Image as ImageIcon, Eye, Edit2 } from 'lucide-react';
+import { X, Save, Loader2, Upload, Image as ImageIcon, Eye, Edit2, Bold, Italic, Heading, List, ListOrdered, Code, Link, Quote, CheckSquare } from 'lucide-react';
 import { getSupabaseClient } from '../../lib/supabase';
 import { ContentRenderer } from '../ContentRenderer';
 
@@ -22,6 +22,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [showPreview, setShowPreview] = useState(false); // Toggle for Write/Preview
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   if (!isOpen || !editingItem) return null;
 
@@ -55,6 +56,30 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
       } finally {
           setIsUploading(false);
       }
+  };
+
+  // Helper to insert markdown at cursor position
+  const insertMarkdown = (prefix: string, suffix: string = '') => {
+      if (!textareaRef.current) return;
+      
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = editingItem.content || '';
+      
+      const before = text.substring(0, start);
+      const selection = text.substring(start, end);
+      const after = text.substring(end);
+
+      const newText = before + prefix + (selection || 'text') + suffix + after;
+      
+      setEditingItem({ ...editingItem, content: newText });
+
+      // Focus back after state update (setTimeout needed for React render cycle)
+      setTimeout(() => {
+          textarea.focus();
+          textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+      }, 0);
   };
 
   return (
@@ -151,47 +176,76 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
             if (key === 'content' || key === 'description' || key === 'bio' || key === 'bioKm' || key === 'descriptionKm' || key === 'excerpt') {
                 const isContent = key === 'content';
                 
-                // SPECIAL EDITOR FOR CONTENT
+                // NEW REDESIGNED EDITOR FOR CONTENT
                 if (isContent) {
                   return (
                     <div key={key} className="flex flex-col h-full">
-                       <div className="flex justify-between items-center mb-2">
-                          <label className="block text-xs font-bold text-gray-400">{label}</label>
-                          <div className="flex items-center gap-2 bg-gray-800 rounded-lg p-1 border border-white/10">
-                              <button
-                                type="button" 
-                                onClick={() => setShowPreview(false)}
-                                className={`px-3 py-1 rounded-md text-xs font-bold flex items-center gap-2 transition-colors ${!showPreview ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
-                              >
-                                <Edit2 size={12} /> Write
-                              </button>
-                              <button 
-                                type="button"
-                                onClick={() => setShowPreview(true)}
-                                className={`px-3 py-1 rounded-md text-xs font-bold flex items-center gap-2 transition-colors ${showPreview ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}
-                              >
-                                <Eye size={12} /> Preview
-                              </button>
-                          </div>
-                       </div>
+                       <label className="block text-xs font-bold text-gray-400 mb-2">{label}</label>
                        
-                       <div className="bg-gray-800 border border-white/10 rounded-xl overflow-hidden min-h-[400px]">
-                          {showPreview ? (
-                            <div className="p-6 h-[400px] overflow-y-auto bg-gray-900">
-                               <ContentRenderer content={value || ''} />
-                            </div>
-                          ) : (
-                            <textarea
-                              className="w-full h-[400px] bg-gray-800 p-4 text-white focus:outline-none font-mono text-sm font-khmer resize-none"
-                              placeholder="Write your article in Markdown..."
-                              value={value || ''}
-                              onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })}
-                            />
-                          )}
-                       </div>
-                       <div className="flex items-center gap-2 text-[10px] text-gray-500 mt-2 px-1">
-                          <HelpCircle size={12} /> 
-                          <span>Supported: **bold**, # Headers, - Lists, ![alt](url) Images, ```code blocks```</span>
+                       {/* Editor Container */}
+                       <div className="border border-indigo-500/50 rounded-xl overflow-hidden bg-[#0d1117] focus-within:ring-1 focus-within:ring-indigo-500 transition-all flex flex-col h-[500px]">
+                          
+                          {/* Toolbar */}
+                          <div className="flex items-center justify-between px-2 py-2 border-b border-white/10 bg-[#0d1117] shrink-0">
+                             {/* Tabs (Write/Preview) */}
+                             <div className="flex items-center">
+                                 <button
+                                   type="button" 
+                                   onClick={() => setShowPreview(false)}
+                                   className={`px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${!showPreview ? 'text-white border-indigo-500' : 'text-gray-400 border-transparent hover:text-gray-200'}`}
+                                 >
+                                   Write
+                                 </button>
+                                 <button 
+                                   type="button"
+                                   onClick={() => setShowPreview(true)}
+                                   className={`px-4 py-2 text-sm font-medium rounded-t-lg border-b-2 transition-colors ${showPreview ? 'text-white border-indigo-500' : 'text-gray-400 border-transparent hover:text-gray-200'}`}
+                                 >
+                                   Preview
+                                 </button>
+                             </div>
+                             
+                             {/* Formatting Icons (Only visible in Write mode) */}
+                             {!showPreview && (
+                                 <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
+                                     <button type="button" onClick={() => insertMarkdown('# ')} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded" title="Heading"><Heading size={16} /></button>
+                                     <button type="button" onClick={() => insertMarkdown('**', '**')} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded" title="Bold"><Bold size={16} /></button>
+                                     <button type="button" onClick={() => insertMarkdown('*', '*')} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded" title="Italic"><Italic size={16} /></button>
+                                     <div className="w-px h-4 bg-white/10 mx-1"></div>
+                                     <button type="button" onClick={() => insertMarkdown('- ')} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded" title="List"><List size={16} /></button>
+                                     <button type="button" onClick={() => insertMarkdown('1. ')} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded" title="Ordered List"><ListOrdered size={16} /></button>
+                                     <button type="button" onClick={() => insertMarkdown('- [ ] ')} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded" title="Task List"><CheckSquare size={16} /></button>
+                                     <div className="w-px h-4 bg-white/10 mx-1"></div>
+                                     <button type="button" onClick={() => insertMarkdown('> ')} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded" title="Quote"><Quote size={16} /></button>
+                                     <button type="button" onClick={() => insertMarkdown('```\n', '\n```')} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded" title="Code Block"><Code size={16} /></button>
+                                     <button type="button" onClick={() => insertMarkdown('[', '](url)')} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded" title="Link"><Link size={16} /></button>
+                                     <button type="button" onClick={() => insertMarkdown('![alt text](', ')')} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded" title="Image"><ImageIcon size={16} /></button>
+                                 </div>
+                             )}
+                          </div>
+                          
+                          {/* Input / Preview Area */}
+                          <div className="flex-1 relative bg-[#0d1117]">
+                             {showPreview ? (
+                               <div className="absolute inset-0 p-6 overflow-y-auto bg-[#0d1117]">
+                                  <ContentRenderer content={value || ''} />
+                               </div>
+                             ) : (
+                               <textarea
+                                 ref={textareaRef}
+                                 className="w-full h-full bg-[#0d1117] p-4 text-white focus:outline-none font-mono text-sm font-khmer resize-none leading-relaxed"
+                                 placeholder="Write your article in Markdown..."
+                                 value={value || ''}
+                                 onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })}
+                               />
+                             )}
+                          </div>
+                          
+                          {/* Footer Info */}
+                          <div className="px-4 py-2 bg-[#0d1117] border-t border-white/5 text-[10px] text-gray-600 flex justify-between items-center">
+                              <span>Markdown Supported</span>
+                              {!showPreview && <span>{(value || '').length} chars</span>}
+                          </div>
                        </div>
                     </div>
                   );
