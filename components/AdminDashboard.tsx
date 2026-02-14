@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Key, ExternalLink } from 'lucide-react';
+import { Plus, Settings, Database, ExternalLink, LogOut } from 'lucide-react';
 import { CurrentUser } from '../App';
-import { sanityClient } from '../lib/sanity';
+import { getSupabaseClient } from '../lib/supabase';
 import { useData } from '../contexts/DataContext';
 import AdminHeader from './admin/AdminHeader';
 import AdminSidebar from './admin/AdminSidebar';
@@ -17,9 +17,9 @@ interface AdminDashboardProps {
 type TabType = 'team' | 'projects' | 'insights' | 'services' | 'settings';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }) => {
-  const { isUsingSanity, team, projects, insights, services: localServices } = useData();
+  const { isUsingSupabase, team, projects, insights, services: localServices } = useData();
   const [activeTab, setActiveTab] = useState<TabType>('insights');
-  const [sanityToken, setSanityToken] = useState<string | null>(null);
+  const [dbConfig, setDbConfig] = useState<{url: string, key: string} | null>(null);
   
   // Data States (Local to Admin for immediate updates)
   const [adminTeam, setAdminTeam] = useState<TeamMember[]>(team);
@@ -34,31 +34,37 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Initialize: Load Token and Data
+  // Initialize: Load Config and Data
   useEffect(() => {
-      const storedToken = localStorage.getItem('sanity_token');
-      if (storedToken) setSanityToken(storedToken);
+      const url = localStorage.getItem('supabase_url');
+      const key = localStorage.getItem('supabase_key');
+      if (url && key) setDbConfig({ url, key });
 
-      // Sync local state with context data initially
       setAdminTeam(team);
       setAdminProjects(projects);
       setAdminInsights(insights);
       setAdminServices(localServices);
   }, [team, projects, insights, localServices]);
 
-  const handleTokenSave = (e: React.FormEvent) => {
+  const handleConfigSave = (e: React.FormEvent) => {
       e.preventDefault();
-      const input = (document.getElementById('tokenInput') as HTMLInputElement).value;
-      if (input) {
-          localStorage.setItem('sanity_token', input);
-          setSanityToken(input);
+      const urlInput = (document.getElementById('dbUrl') as HTMLInputElement).value;
+      const keyInput = (document.getElementById('dbKey') as HTMLInputElement).value;
+      
+      if (urlInput && keyInput) {
+          localStorage.setItem('supabase_url', urlInput);
+          localStorage.setItem('supabase_key', keyInput);
+          setDbConfig({ url: urlInput, key: keyInput });
+          window.location.reload(); // Reload to initialize client
       }
   };
 
-  const clearToken = () => {
-      if(window.confirm("Are you sure you want to clear the API Token?")) {
-          localStorage.removeItem('sanity_token');
-          setSanityToken(null);
+  const clearConfig = () => {
+      if(window.confirm("Disconnect Database?")) {
+          localStorage.removeItem('supabase_url');
+          localStorage.removeItem('supabase_key');
+          setDbConfig(null);
+          window.location.reload();
       }
   };
 
@@ -73,10 +79,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
     setIsAdding(true);
     // Default Templates
     const templates: any = {
-      team: { _type: 'team', name: '', role: '', roleKm: '', image: '', bio: '', bioKm: '', skills: [], experience: [], socials: {} },
-      projects: { _type: 'project', title: '', category: 'graphicdesign', image: '', client: '' },
-      insights: { _type: 'post', title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: currentUser.role === 'member' ? currentUser.id : 't1' },
-      services: { _type: 'service', title: '', titleKm: '', description: '', icon: '' }
+      team: { name: '', role: '', roleKm: '', image: '', bio: '', bioKm: '', skills: [], experience: [], socials: {} },
+      projects: { title: '', category: 'graphicdesign', image: '', client: '' },
+      insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: currentUser.role === 'member' ? currentUser.id : 't1' },
+      services: { title: '', titleKm: '', description: '', icon: '' }
     };
     setEditingItem(templates[activeTab]);
     setIsModalOpen(true);
@@ -84,12 +90,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
 
   const handleDelete = async (type: string, id: string) => {
       if (!window.confirm("Are you sure you want to delete this item?")) return;
-      if (!sanityToken) return alert("You need a Sanity Token to delete.");
+      
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
 
       setIsSyncing(true);
       try {
-          const client = sanityClient.withConfig({ token: sanityToken, useCdn: false });
-          await client.delete(id);
+          let table = '';
+          if (type === 'team') table = 'team';
+          if (type === 'project') table = 'projects';
+          if (type === 'insight') table = 'insights';
+
+          const { error } = await supabase.from(table).delete().eq('id', id);
+
+          if (error) throw error;
           
           // Optimistic Update
           if (type === 'team') setAdminTeam(prev => prev.filter(i => i.id !== id));
@@ -99,7 +113,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
           alert("Item deleted!");
       } catch (err) {
           console.error(err);
-          alert("Failed to delete.");
+          alert("Failed to delete. Check console.");
       } finally {
           setIsSyncing(false);
       }
@@ -107,50 +121,64 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
 
   const handleSave = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!sanityToken) return alert("You need a Sanity Token to save.");
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
 
       setIsSaving(true);
       try {
-          const client = sanityClient.withConfig({ token: sanityToken, useCdn: false });
+          const item = { ...editingItem };
           
-          const doc = { ...editingItem };
-          
-          // Map local ID to _id if editing, or let Sanity generate for new
-          if (!isAdding && doc.id) {
-              doc._id = doc.id;
+          // Prepare payload based on table structure
+          let table = '';
+          let payload: any = {};
+
+          if (activeTab === 'projects') {
+              table = 'projects';
+              payload = { title: item.title, category: item.category, image: item.image, client: item.client };
+          } else if (activeTab === 'team') {
+              table = 'team';
+              payload = { 
+                  name: item.name, role: item.role, role_km: item.roleKm, image: item.image, 
+                  bio: item.bio, bio_km: item.bioKm, skills: item.skills, experience: item.experience, socials: item.socials 
+              };
+          } else if (activeTab === 'insights') {
+              table = 'insights';
+              payload = { 
+                  title: item.title, title_km: item.titleKm, excerpt: item.excerpt, content: item.content, 
+                  date: item.date, category: item.category, image: item.image, author_id: item.authorId 
+              };
           }
-          // Remove local-only fields
-          delete doc.id; 
-          
+
+          let res;
           if (isAdding) {
-              const res = await client.create(doc);
-              // Update state with new item
-              const newItem = { ...doc, id: res._id };
-              if (activeTab === 'team') setAdminTeam([newItem, ...adminTeam]);
-              if (activeTab === 'projects') setAdminProjects([newItem, ...adminProjects]);
-              if (activeTab === 'insights') setAdminInsights([newItem, ...adminInsights]);
+              res = await supabase.from(table).insert([payload]).select();
           } else {
-              // For update, we use patch
-              await client.patch(doc._id).set(doc).commit();
-               // Update local state
-               const updater = (list: any[]) => list.map(i => i.id === doc._id ? { ...doc, id: doc._id } : i);
-               if (activeTab === 'team') setAdminTeam(updater(adminTeam));
-               if (activeTab === 'projects') setAdminProjects(updater(adminProjects));
-               if (activeTab === 'insights') setAdminInsights(updater(adminInsights));
+              res = await supabase.from(table).update(payload).eq('id', item.id).select();
           }
+
+          if (res.error) throw res.error;
+
+          const newItem = { ...item, ...res.data[0] }; // Merge response
+          
+          // Update local state
+          const updater = (list: any[]) => isAdding ? [newItem, ...list] : list.map(i => i.id === newItem.id ? newItem : i);
+          
+          if (activeTab === 'team') setAdminTeam(updater(adminTeam));
+          if (activeTab === 'projects') setAdminProjects(updater(adminProjects));
+          if (activeTab === 'insights') setAdminInsights(updater(adminInsights));
 
           setIsModalOpen(false);
           alert("Saved successfully!");
-      } catch (err) {
+      } catch (err: any) {
           console.error(err);
-          alert("Failed to save. Check your token and console.");
+          alert("Failed to save: " + err.message);
       } finally {
           setIsSaving(false);
       }
   };
 
-  // If no token, show setup screen
-  if (!sanityToken) {
+  // Setup Screen
+  if (!dbConfig) {
       return (
           <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-6 relative">
                <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
@@ -159,42 +187,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
                
                <div className="relative z-10 max-w-md w-full bg-gray-900 border border-white/10 rounded-3xl p-8 shadow-2xl">
                    <div className="flex justify-center mb-6">
-                       <div className="p-4 bg-indigo-600/20 rounded-2xl text-indigo-400">
-                           <Key size={32} />
+                       <div className="p-4 bg-green-500/20 rounded-2xl text-green-400">
+                           <Database size={32} />
                        </div>
                    </div>
-                   <h2 className="text-2xl font-bold text-center font-khmer mb-2">Connect to Database</h2>
+                   <h2 className="text-2xl font-bold text-center font-khmer mb-2">Connect Supabase</h2>
                    <p className="text-gray-400 text-center text-sm mb-6">
-                       To manage content directly on this website, you need a <strong>Sanity Write Token</strong>.
+                       Enter your Supabase credentials to manage content.
                    </p>
 
-                   <form onSubmit={handleTokenSave} className="space-y-4">
+                   <form onSubmit={handleConfigSave} className="space-y-4">
                        <div>
-                           <label className="block text-xs font-bold text-gray-500 mb-1">Sanity API Token (Editor/Write)</label>
-                           <input 
-                                id="tokenInput"
-                                type="password" 
-                                className="w-full bg-gray-800 border border-white/10 rounded-xl p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none"
-                                placeholder="sk-..."
-                                required
-                           />
+                           <label className="block text-xs font-bold text-gray-500 mb-1">Project URL</label>
+                           <input id="dbUrl" type="text" className="w-full bg-gray-800 border border-white/10 rounded-xl p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="https://xyz.supabase.co" required />
                        </div>
-                       <button type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition-all font-khmer">
-                           Access Admin Panel
+                       <div>
+                           <label className="block text-xs font-bold text-gray-500 mb-1">Anon / Public Key</label>
+                           <input id="dbKey" type="password" className="w-full bg-gray-800 border border-white/10 rounded-xl p-3 text-white focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="eyJh..." required />
+                       </div>
+                       <button type="submit" className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl transition-all font-khmer">
+                           Connect
                        </button>
                    </form>
-                   
-                   <div className="mt-6 pt-6 border-t border-white/5 text-center">
-                       <a href="https://www.sanity.io/manage" target="_blank" className="text-xs text-indigo-400 hover:underline flex items-center justify-center gap-1">
-                           Get Token from Sanity Manage <ExternalLink size={10} />
-                       </a>
-                   </div>
+                   <button onClick={onLogout} className="absolute top-6 right-6 text-gray-500 hover:text-white flex items-center gap-2">Exit</button>
                </div>
-               
-               {/* Logout from Admin Page */}
-               <button onClick={onLogout} className="absolute top-6 right-6 text-gray-500 hover:text-white flex items-center gap-2">
-                   Exit
-               </button>
           </div>
       );
   }
@@ -238,13 +254,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
 
              {activeTab === 'settings' ? (
                  <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 max-w-xl">
-                     <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Key size={20} className="text-indigo-400"/> API Configuration</h3>
-                     <p className="text-gray-400 text-sm mb-4">
-                         You are currently authenticated with a Sanity Token. This allows you to post directly from this website.
-                     </p>
-                     <button onClick={clearToken} className="px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg hover:bg-red-500/20 text-sm font-bold">
-                         Clear Token & Logout
-                     </button>
+                     <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Database size={20} className="text-green-400"/> Database Config</h3>
+                     <p className="text-gray-400 text-sm mb-4">Connected to: <span className="text-green-400">{dbConfig.url}</span></p>
+                     <button onClick={clearConfig} className="px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg hover:bg-red-500/20 text-sm font-bold">Disconnect</button>
                  </div>
              ) : (
                  <ContentGrid 
@@ -269,7 +281,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
           onSave={handleSave}
           onCancel={() => setIsModalOpen(false)}
           isSaving={isSaving}
-          apiToken={sanityToken}
+          apiToken={dbConfig.key} // Not used directly in modal, client is grabbed from lib
        />
     </div>
   );
