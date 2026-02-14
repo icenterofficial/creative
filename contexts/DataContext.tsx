@@ -3,6 +3,7 @@ import { SERVICES, PROJECTS, TEAM, INSIGHTS } from '../constants';
 import { Service, Project, TeamMember, Post } from '../types';
 import { getSupabaseClient } from '../lib/supabase';
 import { Database } from 'lucide-react';
+import { slugify } from '../utils/format';
 
 interface DataContextType {
   services: Service[];
@@ -56,7 +57,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  title: p.title,
                  category: p.category,
                  image: p.image,
-                 client: p.client
+                 client: p.client,
+                 slug: p.slug || slugify(p.title) // Fallback slug generation
              })));
         }
 
@@ -74,7 +76,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  skills: t.skills || [],
                  experience: t.experience || [],
                  experienceKm: t.experience || [], // Fallback
-                 socials: t.socials || {}
+                 socials: t.socials || {},
+                 slug: t.slug || slugify(t.name) // Fallback slug generation
              })));
         }
 
@@ -90,8 +93,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  category: i.category,
                  image: i.image,
                  authorId: i.author_id,
+                 link: i.link || '#',
                  content: i.content,
-                 comments: [] // Comments would need a separate table in a full setup
+                 comments: [],
+                 slug: i.slug || slugify(i.title) // Fallback slug generation
              })));
         }
 
