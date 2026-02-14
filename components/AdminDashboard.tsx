@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Settings, Database, ExternalLink, LogOut } from 'lucide-react';
-import { getSupabaseClient } from '../lib/supabase';
+import { getSupabaseClient, DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY } from '../lib/supabase';
 import { useData } from '../contexts/DataContext';
 import AdminHeader from './admin/AdminHeader';
 import AdminSidebar from './admin/AdminSidebar';
@@ -36,9 +36,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
 
   // Initialize: Load Config and Data
   useEffect(() => {
-      const url = localStorage.getItem('supabase_url');
-      const key = localStorage.getItem('supabase_key');
-      if (url && key) setDbConfig({ url, key });
+      // Use LocalStorage if available, otherwise fallback to defaults from lib/supabase.ts
+      const url = localStorage.getItem('supabase_url') || DEFAULT_SUPABASE_URL;
+      const key = localStorage.getItem('supabase_key') || DEFAULT_SUPABASE_KEY;
+      
+      if (url && key) {
+          setDbConfig({ url, key });
+      }
 
       setAdminTeam(team);
       setAdminProjects(projects);
@@ -63,7 +67,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       if(window.confirm("Disconnect Database?")) {
           localStorage.removeItem('supabase_url');
           localStorage.removeItem('supabase_key');
-          setDbConfig(null);
+          // If we disconnect, we might fall back to defaults, 
+          // so explicit null might be needed or a reload to show local data only if defaults weren't there.
+          // Since defaults exist, reloading will just reconnect to defaults.
           window.location.reload();
       }
   };
@@ -257,7 +263,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                  <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 max-w-xl">
                      <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Database size={20} className="text-green-400"/> Database Config</h3>
                      <p className="text-gray-400 text-sm mb-4">Connected to: <span className="text-green-400">{dbConfig.url}</span></p>
-                     <button onClick={clearConfig} className="px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg hover:bg-red-500/20 text-sm font-bold">Disconnect</button>
+                     {/* 
+                        Use the constants to check if we are using defaults. 
+                        If local storage has items, allow disconnect (clearing local storage).
+                        If using defaults (no local storage), showing disconnect might be confusing, but effectively it just reloads.
+                     */}
+                     <button onClick={clearConfig} className="px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg hover:bg-red-500/20 text-sm font-bold">
+                        {localStorage.getItem('supabase_url') ? "Reset to Defaults" : "Reload Connection"}
+                     </button>
                  </div>
              ) : (
                  <ContentGrid 
