@@ -123,42 +123,49 @@ export const PROJECTS: Project[] = [
     title: 'Book Art Design',
     category: 'website',
     image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi81tg3VCyPdGdmmHdbUTf5GeNwi0bI28uJ6F5H-_Jj8TSGZFchga1miJvW0blcvp0e33B0SyNoxGRNp-sf7gev3yZSx8YR8giKDUmxfX_ffqmM6ZdM-xtrXwNburJn3r6g-Rr_DX5IEGSht-0N9eSQzh7pXgLstekmoRUM5q4drRghQTLAdRh6b2B6dqA/s1600/fb%20cover.jpg',
+    slug: 'book-art-design'
   },
   {
     id: 'p2',
     title: 'Social Media Poster',
     category: 'graphicdesign',
-    image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgBNO6soY5uydiJo7csDhel8zSlg3q7DIFAA6rSIF44qJyBsv2WD8eUGu5ZYDuJu1I1NppTG70NNW0PIHbXxjvBTygXJGVMBLIpjID9_SVIA_Roox9_A8Z6yqBYsSBXRQoRfPotUJnTBo8c_1YG6Ui3Aa5ohGt-7z7f-ciJQwEIwA7njLehAGhClTflSzs/s1600/ponloe.poster.jpg',
+    image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgBNO6soY5uydiJo7csDhel8zSlg3q7DIFAA6rSIF44qJyBsv2WD8eUGu5ZYDuJu1I1NppTG70NNW0PIHbXxjvBTygXJGVMBLIpjID9__SVIA_Roox9_A8Z6yqBYsSBXRQoRfPotUJnTBo8c_1YG6Ui3Aa5ohGt-7z7f-ciJQwEIwA7njLehAGhClTflSzs/s1600/ponloe.poster.jpg',
+    slug: 'social-media-poster'
   },
   {
     id: 'p3',
     title: 'Ponloe Creative Web',
     category: 'webapp',
     image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiuEcfaETv68lAV6WDzh7Gub7lzi2fwpPjmPmcq0EMklRIUB4K8t4rHJBcB7uAK_LMpvQnJpuFV8T_XjnDSoSEIII9FDpOFBU4i1hRpWCxYW5QQQmFoRTRneazGjdgZT8ZME6cDx652INDsd2s6FnV9DiiKyo40XwgHA5gRXn1QM0pD0gr440JEjV1pock/s1600/ponloe.jpg',
+    slug: 'ponloe-creative-web'
   },
   {
     id: 'p4',
     title: 'Islamic School',
     category: 'architecture',
     image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7Ps8IhveUmB9RFKJYQCvOzWQH3j5nb7cByL7PjJD3tIN7oRsEkP0HLIKB0j1sNyVPrJF6c6M8rv7CH2XUI38_6x7xgecWFFZy07bLfh3kodS1759LxMRcghxElhyj3AJCMoCbRpW5-JlllAG6iAaYOP4UXFbAQtcnAHFOs-F-zBtiOkGKXTeBqPFz1xc/s320/near%20pic.png',
+    slug: 'islamic-school-architecture'
   },
   {
     id: 'p5',
     title: 'Air System',
     category: 'mvac',
     image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEigqOTALAa-2e4EfpXN9r_wBNE6ZdiSf69XjUIrkVioxdSVafgPdvfJLglejFykZ4XUrrdxZUunKv8cFE-pFT1EMqWtj-BTLmgiE8LHrG3-oLfVZ72B7WRe6JxxHLQKqSfe1qRuo1Xf6TaeCFLqZbEnbZnN5PYss-2uc6Fej9cZy53ZrQjj9ubeSDVZpz4/s320/image_2025-11-23_23-35-04.png',
+    slug: 'air-system-design'
   },
    {
     id: 'p6',
     title: 'Arabic Calligraphy Art',
     category: 'arabiccalligraphy',
     image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgdO1wHd0pb8bMDmGo2Br1-wfWpBvUfvlm6Ze6pu0je9j8cUwNlEeCeAhUXHr7H1eKv_ptkZr-RQv5HLqB-r77Rex_Lxpzs9vr1a3S7ICb61ycbSwX_DeeWMOlFFrEy1ljUu9pUu2DjWyEjKZ4me6WWSXDXuCmgB2K_XeMNMNglN4-GqBVIydnFx0qxDYQ/s1600/486282539_1128936618973719_3554373107042098501_n.jpg',
+    slug: 'arabic-calligraphy-art'
   },
   {
     id: 'p7',
     title: 'Gohome App',
     category: 'webapp',
     image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi_utIYD5sz6iR93lfrMGuMmO9K-0UZf8i7rNbnmJRfuFtng7gOWiqF2McMUptkaVOk04KkBxAyZxo1YGFWg6QqbrcsZ7W-H4LohazfWeNsttcjN2rPsdAQ8jAoicidnXtPz_S6lqNBb8JOGbiu48ZdM-xtrXwNburJn3r6g-Rr_DX5IEGSht-0N9eSQzh7pXgLstekmoRUM5q4drRghQTLAdRh6b2B6dqA/s1600/Gohome.jpg',
+    slug: 'gohome-app'
   }
 ];
 
@@ -174,7 +181,8 @@ export const TEAM: TeamMember[] = [
     bioKm: 'អ្នកអភិវឌ្ឍន៍ Full-stack ដែលមានចំណង់ចំណូលចិត្តក្នុងការបង្កើតកម្មវិធីវេបសាយ និងទូរស័ព្ទដែលមានគុណភាពខ្ពស់។',
     skills: ['React', 'Next.js', 'Flutter', 'Node.js', 'PostgreSQL'],
     experience: ['Lead Developer at Ponloe (5 Years)', 'Freelance Senior Dev (3 Years)', 'Tech Consultant'],
-    experienceKm: ['អ្នកអភិវឌ្ឍន៍នាំមុខនៅ Ponloe (៥ ឆ្នាំ)', 'អ្នកអភិវឌ្ឍន៍ឯករាជ្យជាន់ខ្ពស់ (៣ ឆ្នាំ)', 'ទីប្រឹក្សាបច្ចេកវិទ្យា']
+    experienceKm: ['អ្នកអភិវឌ្ឍន៍នាំមុខនៅ Ponloe (៥ ឆ្នាំ)', 'អ្នកអភិវឌ្ឍន៍ឯករាជ្យជាន់ខ្ពស់ (៣ ឆ្នាំ)', 'ទីប្រឹក្សាបច្ចេកវិទ្យា'],
+    slug: 'youshow'
   },
   {
     id: 't2',
@@ -187,7 +195,8 @@ export const TEAM: TeamMember[] = [
     bioKm: 'អ្នកមានគំនិតច្នៃប្រឌិតក្នុងការប្រែក្លាយគំនិតទៅជាការពិតតាមរយៈការបង្កើតម៉ាកយីហោ និងការរចនាក្រាហ្វិក។',
     skills: ['Adobe Photoshop', 'Illustrator', 'Brand Identity', 'UI Design', 'Typography'],
     experience: ['Senior Graphic Designer (4 Years)', 'Art Director', 'Freelance Illustrator'],
-    experienceKm: ['អ្នករចនាក្រាហ្វិកជាន់ខ្ពស់ (៤ ឆ្នាំ)', 'នាយកសិល្បៈ', 'អ្នកគូររូបឯករាជ្យ']
+    experienceKm: ['អ្នករចនាក្រាហ្វិកជាន់ខ្ពស់ (៤ ឆ្នាំ)', 'នាយកសិល្បៈ', 'អ្នកគូររូបឯករាជ្យ'],
+    slug: 'samry'
   },
   {
     id: 't3',
@@ -200,7 +209,8 @@ export const TEAM: TeamMember[] = [
     bioKm: 'ស្ថាបត្យករដែលប្តេជ្ញាចិត្តចំពោះការរចនាដែលមាននិរន្តរភាព និងមុខងារប្រើប្រាស់ ដោយគោរពតាមវប្បធម៌ក្នុងស្រុក។',
     skills: ['AutoCAD', 'SketchUp', 'Lumion', 'Interior Design', 'Project Planning'],
     experience: ['Lead Architect (3 Years)', 'Residential Project Manager', 'Urban Planning Intern'],
-    experienceKm: ['ស្ថាបត្យករនាំមុខ (៣ ឆ្នាំ)', 'អ្នកគ្រប់គ្រងគម្រោងលំនៅដ្ឋាន', 'កម្មសិក្សាការរៀបចំផែនការទីក្រុង']
+    experienceKm: ['ស្ថាបត្យករនាំមុខ (៣ ឆ្នាំ)', 'អ្នកគ្រប់គ្រងគម្រោងលំនៅដ្ឋាន', 'កម្មសិក្សាការរៀបចំផែនការទីក្រុង'],
+    slug: 'sreyneang'
   },
   {
     id: 't4',
@@ -213,7 +223,8 @@ export const TEAM: TeamMember[] = [
     bioKm: 'អ្នកជំនាញភាសាដែលផ្សារភ្ជាប់គម្លាតទំនាក់ទំនងរវាងអ្នកនិយាយភាសាអារ៉ាប់ អង់គ្លេស និងខ្មែរ។',
     skills: ['Simultaneous Interpretation', 'Document Translation', 'Editing', 'Cultural Consulting'],
     experience: ['Certified Translator (5 Years)', 'Education Consultant', 'Language Instructor'],
-    experienceKm: ['អ្នកបកប្រែដែលមានការទទួលស្គាល់ (៥ ឆ្នាំ)', 'ទីប្រឹក្សាអប់រំ', 'គ្រូបង្រៀនភាសា']
+    experienceKm: ['អ្នកបកប្រែដែលមានការទទួលស្គាល់ (៥ ឆ្នាំ)', 'ទីប្រឹក្សាអប់រំ', 'គ្រូបង្រៀនភាសា'],
+    slug: 'faisol'
   },
    {
     id: 't5',
@@ -226,7 +237,8 @@ export const TEAM: TeamMember[] = [
     bioKm: 'អ្នកបកប្រែដែលយកចិត្តទុកដាក់ធានានូវភាពត្រឹមត្រូវ និងភាពសមស្របតាមវប្បធម៌នៅក្នុងឯកសារនីមួយៗ។',
     skills: ['Translation', 'Proofreading', 'Content Localization', 'Research'],
     experience: ['Translation Specialist (2 Years)', 'Content Writer', 'Editor'],
-    experienceKm: ['អ្នកឯកទេសបកប្រែ (២ ឆ្នាំ)', 'អ្នកសរសេរអត្ថបទ', 'អ្នកកែសម្រួល']
+    experienceKm: ['អ្នកឯកទេសបកប្រែ (២ ឆ្នាំ)', 'អ្នកសរសេរអត្ថបទ', 'អ្នកកែសម្រួល'],
+    slug: 'adib-gazaly'
   },
   {
     id: 't6',
@@ -239,7 +251,8 @@ export const TEAM: TeamMember[] = [
     bioKm: 'វិស្វករដែលផ្តោតលើប្រព័ន្ធគ្រប់គ្រងអាកាសធាតុប្រកបដោយប្រសិទ្ធភាព និងផាសុកភាព។',
     skills: ['HVAC Design', 'AutoCAD MEP', 'Energy Efficiency', 'System Installation'],
     experience: ['MVAC Engineer (3 Years)', 'Site Supervisor', 'System Analyst'],
-    experienceKm: ['វិស្វករ MVAC (៣ ឆ្នាំ)', 'អ្នកត្រួតពិនិត្យការដ្ឋាន', 'អ្នកវិភាគប្រព័ន្ធ']
+    experienceKm: ['វិស្វករ MVAC (៣ ឆ្នាំ)', 'អ្នកត្រួតពិនិត្យការដ្ឋាន', 'អ្នកវិភាគប្រព័ន្ធ'],
+    slug: 'sait-abdulvasea'
   }
 ];
 
@@ -257,7 +270,8 @@ export const INSIGHTS: Post[] = [
     content: "Creating a stunning glassmorphism effect is easier than you think. It adds depth and a premium feel to your UI.\n\nHere is the exact CSS snippet we use at Ponloe Creative for our cards and modals:\n\n" + 
              "```css\n/* Glassmorphism Card Style */\n.glass-panel {\n  background: rgba(255, 255, 255, 0.05);\n  backdrop-filter: blur(16px);\n  -webkit-backdrop-filter: blur(16px);\n  border: 1px solid rgba(255, 255, 255, 0.1);\n  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);\n  border-radius: 24px;\n}\n\n/* Dark Mode Support */\n@media (prefers-color-scheme: dark) {\n  .glass-panel {\n    background: rgba(0, 0, 0, 0.2);\n    border: 1px solid rgba(255, 255, 255, 0.05);\n  }\n}\n```" +
              "\n\nSimply copy this class into your stylesheet and apply it to any `div` element. The `backdrop-filter` property does the heavy lifting by blurring whatever is behind the element.\n\n**Pro Tip:** Add a subtle noise texture overlay to make it look even more cinematic!",
-    comments: []
+    comments: [],
+    slug: 'modern-css-glassmorphism-generator'
   },
   {
     id: 'post_design_1',
@@ -274,7 +288,8 @@ export const INSIGHTS: Post[] = [
              "\n\nTo help you practice, we have created a free, high-quality PSD template that follows these exact rules. It includes organized layers and smart objects.\n\n" +
              "[[DOWNLOAD:https://drive.google.com/uc?id=123456:Download Free PSD Template]]" +
              "\n\nDownload it, open it in Photoshop, and try changing the image and text to see how the layout holds up!",
-    comments: []
+    comments: [],
+    slug: 'mastering-poster-composition'
   },
   {
     id: 'post1',
@@ -333,7 +348,8 @@ export const INSIGHTS: Post[] = [
         content: 'Great insights on the font selection. Kantumruy Pro is indeed a game changer for legibility.',
         date: '5 hours ago'
       }
-    ]
+    ],
+    slug: 'future-khmer-web-design'
   },
   {
     id: 'post2',
@@ -351,7 +367,8 @@ export const INSIGHTS: Post[] = [
 
     One major focus is passive cooling. By orienting buildings to maximize airflow and minimize direct sunlight, we can significantly reduce indoor temperatures without using a single watt of electricity. Green roofs and vertical gardens are also gaining popularity, serving as natural insulation while bringing nature back into the urban jungle.
 
-    Materials matter too. Bamboo, locally sourced timber, and compressed earth blocks are sustainable alternatives to concrete that have a lower carbon footprint and better thermal properties. This shift isn't just about saving the planet; it's about creating living spaces that are healthier, more comfortable, and harmoniously integrated with the Cambodian environment.`
+    Materials matter too. Bamboo, locally sourced timber, and compressed earth blocks are sustainable alternatives to concrete that have a lower carbon footprint and better thermal properties. This shift isn't just about saving the planet; it's about creating living spaces that are healthier, more comfortable, and harmoniously integrated with the Cambodian environment.`,
+    slug: 'sustainable-architecture-cambodia'
   },
   {
     id: 'post3',
@@ -369,7 +386,8 @@ export const INSIGHTS: Post[] = [
 
     Furthermore, apps can leverage device features like the camera, GPS, and biometrics to create smoother, more personalized user experiences. Imagine a real-estate app that uses GPS to show nearby properties, or an e-commerce store that lets users try on products virtually.
 
-    Customer retention is another huge benefit. An icon on a user's home screen is a constant reminder of your business. Loyalty programs integrated directly into the app encourage repeat purchases and foster a community around your brand. While the initial investment might be higher, the long-term ROI in terms of customer loyalty and brand value is undeniable.`
+    Customer retention is another huge benefit. An icon on a user's home screen is a constant reminder of your business. Loyalty programs integrated directly into the app encourage repeat purchases and foster a community around your brand. While the initial investment might be higher, the long-term ROI in terms of customer loyalty and brand value is undeniable.`,
+    slug: 'business-needs-mobile-app'
   },
   {
     id: 'post4',
@@ -385,7 +403,8 @@ export const INSIGHTS: Post[] = [
 
     Tools like Midjourney and ChatGPT are revolutionizing our workflow. For designers, AI can generate mood boards and color palettes in seconds, allowing more time for refining the core creative concept. For developers, AI assistants like GitHub Copilot help write cleaner code and debug faster.
 
-    The human touch remains irreplaceable. AI can generate an image, but it takes a human eye to understand emotional resonance, cultural context, and brand alignment. The future belongs to those who learn to collaborate with these intelligent tools to push the boundaries of what is possible.`
+    The human touch remains irreplaceable. AI can generate an image, but it takes a human eye to understand emotional resonance, cultural context, and brand alignment. The future belongs to those who learn to collaborate with these intelligent tools to push the boundaries of what is possible.`,
+    slug: 'rise-of-ai-creative-industries'
   },
   {
     id: 'post5',
@@ -401,7 +420,8 @@ export const INSIGHTS: Post[] = [
 
     Blue, for instance, often signifies trust and professionalism, which is why it's popular among banks and tech companies. Red evokes excitement and urgency, common in food and clearance sales. Green is synonymous with nature, health, and growth.
 
-    However, context matters. In Cambodia, certain colors have specific cultural meanings. Gold represents wealth and prosperity, while white is traditionally associated with mourning but has evolved to symbolize purity in modern contexts. Understanding these nuances is essential for localizing a global brand or building a local one that resonates deeply with the audience.`
+    However, context matters. In Cambodia, certain colors have specific cultural meanings. Gold represents wealth and prosperity, while white is traditionally associated with mourning but has evolved to symbolize purity in modern contexts. Understanding these nuances is essential for localizing a global brand or building a local one that resonates deeply with the audience.`,
+    slug: 'color-psychology-branding'
   },
   {
     id: 'post6',
@@ -417,7 +437,8 @@ export const INSIGHTS: Post[] = [
 
     One major trend is "Social Commerce." Platforms like Facebook, TikTok, and Telegram are no longer just for socializing; they are marketplaces. Live selling has become a phenomenon, allowing businesses to interact with customers in real-time, demonstrate products, and close sales instantly.
 
-    Another key factor is the rise of digital payments. KHQR in Cambodia has simplified transactions, making it easier than ever for businesses of all sizes to accept cashless payments. To succeed in this market, businesses must adopt an omnichannel approach, integrating their social media presence with robust e-commerce platforms for a seamless customer journey.`
+    Another key factor is the rise of digital payments. KHQR in Cambodia has simplified transactions, making it easier than ever for businesses of all sizes to accept cashless payments. To succeed in this market, businesses must adopt an omnichannel approach, integrating their social media presence with robust e-commerce platforms for a seamless customer journey.`,
+    slug: 'ecommerce-trends-southeast-asia'
   }
 ];
 
