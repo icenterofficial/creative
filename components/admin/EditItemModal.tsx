@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { X, Save, Loader2, HelpCircle, Upload, Image as ImageIcon, Eye, Edit2 } from 'lucide-react';
 import { getSupabaseClient } from '../../lib/supabase';
-import { ContentRenderer } from '../TeamModals';
+import { ContentRenderer } from '../ContentRenderer';
 
 interface EditItemModalProps {
   isOpen: boolean;
