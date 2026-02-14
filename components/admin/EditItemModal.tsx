@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, Save, Loader2, HelpCircle, Upload, Image as ImageIcon } from 'lucide-react';
-import { sanityClient } from '../../lib/sanity';
+import { getSupabaseClient } from '../../lib/supabase';
 
 interface EditItemModalProps {
   isOpen: boolean;
@@ -16,7 +16,7 @@ interface EditItemModalProps {
 }
 
 const EditItemModal: React.FC<EditItemModalProps> = ({
-  isOpen, isAdding, activeTab, isSuperAdmin, editingItem, setEditingItem, onSave, onCancel, isSaving, apiToken
+  isOpen, isAdding, activeTab, isSuperAdmin, editingItem, setEditingItem, onSave, onCancel, isSaving
 }) => {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -25,21 +25,31 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file || !apiToken) return;
+      if (!file) return;
+
+      const supabase = getSupabaseClient();
+      if (!supabase) return alert("Database not connected");
 
       setIsUploading(true);
       try {
-          // Use a client with the write token
-          const client = sanityClient.withConfig({ token: apiToken, useCdn: false });
-          
-          const asset = await client.assets.upload('image', file, {
-              filename: file.name
-          });
+          const fileExt = file.name.split('.').pop();
+          const fileName = `${Math.random()}.${fileExt}`;
+          const filePath = `${fileName}`;
 
-          setEditingItem({ ...editingItem, image: asset.url });
-      } catch (error) {
+          const { error: uploadError } = await supabase.storage
+            .from('uploads')
+            .upload(filePath, file);
+
+          if (uploadError) throw uploadError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('uploads')
+            .getPublicUrl(filePath);
+
+          setEditingItem({ ...editingItem, image: publicUrl });
+      } catch (error: any) {
           console.error("Upload failed:", error);
-          alert("Image upload failed. Please try again.");
+          alert("Upload failed: " + error.message);
       } finally {
           setIsUploading(false);
       }
@@ -57,13 +67,13 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
 
         <form onSubmit={onSave} className="space-y-4">
           {Object.keys(editingItem).map((key) => {
-            if (key === 'id' || key === 'comments' || key === 'replies' || key === 'icon' || key === '_id' || key === '_type' || key === '_createdAt' || key === '_updatedAt' || key === '_rev') return null;
+            if (['id', 'comments', 'replies', 'icon', 'created_at'].includes(key)) return null;
             if (key === 'authorId' && !isSuperAdmin) return null;
 
             const value = editingItem[key];
             const label = key.charAt(0).toUpperCase() + key.slice(1);
 
-            // IMAGE UPLOAD HANDLING
+            // IMAGE UPLOAD
             if (key === 'image') {
                 return (
                     <div key={key} className="space-y-2">
@@ -95,13 +105,12 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                                      <button 
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
-                                        disabled={isUploading || !apiToken}
+                                        disabled={isUploading}
                                         className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-gray-300 flex items-center gap-2 transition-colors disabled:opacity-50"
                                      >
                                         {isUploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
                                         {isUploading ? 'Uploading...' : 'Upload File'}
                                      </button>
-                                     {!apiToken && <span className="text-xs text-red-400 self-center">Token required to upload</span>}
                                  </div>
                              </div>
                          </div>
@@ -109,7 +118,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
 
-            // Array inputs (Skills, etc)
+            // Array inputs
             if (Array.isArray(value)) {
               return (
                 <div key={key}>
@@ -123,7 +132,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
               );
             }
 
-            // Socials Object
+            // Socials
             if (key === 'socials' && typeof value === 'object') {
               return (
                 <div key={key} className="space-y-2 border border-white/5 p-3 rounded-lg">
@@ -136,7 +145,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
               );
             }
 
-            // Long Text Areas (Content/Bio)
+            // Text Areas
             if (key === 'content' || key === 'description' || key === 'bio' || key === 'bioKm' || key === 'descriptionKm' || key === 'excerpt') {
                 const isContent = key === 'content';
               return (
@@ -159,7 +168,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
               );
             }
 
-            // Default Text Input
+            // Default
             return (
               <div key={key}>
                 <label className="block text-xs font-bold text-gray-400 mb-1">{label}</label>
