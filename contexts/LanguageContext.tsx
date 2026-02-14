@@ -46,14 +46,19 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (SUPPORTED_LANGUAGES.includes(path)) {
         setLanguageState(path);
         setGoogleCookie(path);
+        // Ensure trailing slash exists if missing
+        if (!window.location.pathname.endsWith('/')) {
+             const hash = window.location.hash;
+             window.history.replaceState(null, '', `/${path}/${hash}`);
+        }
     } else {
         // If root "/" or invalid, default to 'en' or saved pref, then rewrite URL
         const savedLang = (localStorage.getItem('app_lang') as Language) || 'en';
         setLanguageState(savedLang);
         
-        // Rewrite URL to include lang without reloading
+        // Rewrite URL to include lang with trailing slash without reloading
         const hash = window.location.hash;
-        window.history.replaceState(null, '', `/${savedLang}${hash}`);
+        window.history.replaceState(null, '', `/${savedLang}/${hash}`);
         setGoogleCookie(savedLang);
     }
   }, []);
@@ -63,9 +68,10 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     setLanguageState(newLang);
     localStorage.setItem('app_lang', newLang);
 
-    // Update URL
+    // Update URL with trailing slash
     const hash = window.location.hash;
-    window.history.pushState(null, '', `/${newLang}${hash}`);
+    // Always format as /lang/#hash to maintain cleanliness
+    window.history.pushState(null, '', `/${newLang}/${hash}`);
 
     const isPrevGoogle = GOOGLE_LANGUAGES.includes(prevLang);
     const isNewGoogle = GOOGLE_LANGUAGES.includes(newLang);
