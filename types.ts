@@ -100,3 +100,9 @@ export interface Partner {
   name: string;
   icon: React.ReactNode;
 }
+
+export interface CurrentUser {
+    role: 'admin' | 'member';
+    id?: string; // Only for members
+    name?: string;
+}
