@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogOut, Cloud, RefreshCw, Shield, Users } from 'lucide-react';
+import { LogOut, Cloud, RefreshCw, Shield, Users, Database } from 'lucide-react';
 import { CurrentUser } from '../../App';
 import { useData } from '../../contexts/DataContext';
 
@@ -17,7 +17,7 @@ interface AdminHeaderProps {
 const AdminHeader: React.FC<AdminHeaderProps> = ({
   currentUser, isSuperAdmin, lastSyncTime, isSyncing, syncStatus, onFetch, onSync, onLogout
 }) => {
-  const { lastUpdatedBy } = useData();
+  const { lastUpdatedBy, isUsingLive } = useData();
 
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-gray-900 border-b border-white/10 flex items-center justify-between px-6 z-50">
@@ -32,6 +32,12 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-4">
+        {/* Data Source Indicator */}
+        <div className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${isUsingLive ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'}`}>
+            <Database size={10} />
+            {isUsingLive ? 'Source: GitHub Live' : 'Source: Local Default'}
+        </div>
+
         {lastSyncTime && (
           <div className="hidden lg:flex flex-col items-end mr-2">
             <span className="text-xs text-green-400 flex items-center gap-1">
