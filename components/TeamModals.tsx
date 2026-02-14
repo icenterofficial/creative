@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Facebook, Send, FileText, User, Code, Briefcase, Calendar, Tag, MessageCircle, Share2, Check, Copy, Download } from 'lucide-react';
+import { X, Facebook, Send, FileText, User, Code, Briefcase, Calendar, Tag, MessageCircle, Share2, Check, Copy, Download, Loader2 } from 'lucide-react';
 import { TeamMember, Post, Comment } from '../types';
 import { useData } from '../contexts/DataContext';
 import { useLanguage } from '../contexts/LanguageContext';
-
-// --- Helper Functions ---
-// Moved getPostCount logic inside components or passed as prop to avoid context issue outside component tree
-// But for cleaner code here, we export a hook-friendly version or just use the hook inside the modal.
+import { getSupabaseClient } from '../lib/supabase';
 
 // Helper to count comments recursively
 const getTotalCommentCount = (comments: Comment[]): number => {
@@ -409,16 +406,52 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
     const { t } = useLanguage();
     const [showShare, setShowShare] = useState(false);
     const [copied, setCopied] = useState(false);
+    
+    // Comments State
     const [comments, setComments] = useState<Comment[]>(post.comments || []);
     const [newCommentText, setNewCommentText] = useState('');
+    const [commentUser, setCommentUser] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoadingComments, setIsLoadingComments] = useState(false);
 
-    // Helper for author name lookup
-    const getAuthorName = (id: string) => {
-       const { team } = useData();
-       const member = team.find(m => m.id === id);
-       return member?.name || 'Author';
-    };
+    // FETCH COMMENTS FROM DB
+    React.useEffect(() => {
+        const fetchComments = async () => {
+            const supabase = getSupabaseClient();
+            if(!supabase) return; // Fallback to local 'post.comments' if no DB
+
+            setIsLoadingComments(true);
+            try {
+                const { data, error } = await supabase
+                    .from('comments')
+                    .select('*')
+                    .eq('post_id', post.id)
+                    .order('created_at', { ascending: false });
+
+                if(error) throw error;
+                
+                if(data) {
+                    // Transform DB structure to UI structure
+                    const dbComments: Comment[] = data.map((c:any) => ({
+                        id: c.id,
+                        user: c.user_name,
+                        avatar: c.user_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.user_name)}&background=random`,
+                        content: c.content,
+                        date: new Date(c.created_at).toLocaleDateString(),
+                        replies: [] // Flat structure for simplicity in this update
+                    }));
+                    setComments(dbComments);
+                }
+            } catch(err) {
+                console.error("Error fetching comments:", err);
+            } finally {
+                setIsLoadingComments(false);
+            }
+        };
+
+        fetchComments();
+    }, [post.id]);
+
 
     const handleShare = (platform: 'facebook' | 'telegram' | 'copy') => {
         const url = window.location.href;
@@ -431,22 +464,60 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
         }
     };
 
-    const handleSendComment = () => {
+    const handleSendComment = async () => {
         if (!newCommentText.trim()) return;
+        const supabase = getSupabaseClient();
+
         setIsSubmitting(true);
-        setTimeout(() => {
-            const newComment: Comment = {
-                id: Date.now().toString(),
-                user: "Guest User",
-                avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100",
-                content: newCommentText,
-                date: "Just now",
-                replies: []
-            };
-            setComments(prev => [...prev, newComment]);
+        
+        const finalUserName = commentUser.trim() || "Guest User";
+        const finalAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(finalUserName)}&background=random`;
+
+        try {
+            if (supabase) {
+                // Insert to DB
+                const { data, error } = await supabase.from('comments').insert({
+                    post_id: post.id,
+                    user_name: finalUserName,
+                    user_avatar: finalAvatar,
+                    content: newCommentText
+                }).select();
+                
+                if (error) throw error;
+
+                // Add to local state immediately
+                if(data) {
+                    const newComment: Comment = {
+                        id: data[0].id,
+                        user: data[0].user_name,
+                        avatar: data[0].user_avatar,
+                        content: data[0].content,
+                        date: "Just now",
+                        replies: []
+                    };
+                    setComments(prev => [newComment, ...prev]);
+                }
+            } else {
+                 // Fallback Local
+                 const newComment: Comment = {
+                    id: Date.now().toString(),
+                    user: finalUserName,
+                    avatar: finalAvatar,
+                    content: newCommentText,
+                    date: "Just now",
+                    replies: []
+                };
+                setComments(prev => [newComment, ...prev]);
+            }
+
             setNewCommentText('');
+            // setCommentUser(''); // Keep user name for convenience if they want to comment again
+        } catch (err) {
+            console.error(err);
+            alert("Failed to post comment.");
+        } finally {
             setIsSubmitting(false);
-        }, 600);
+        }
     };
 
     const totalComments = getTotalCommentCount(comments);
@@ -512,29 +583,63 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
                                     <ContentRenderer content={post.content || post.excerpt} />
                                 </div>
                                 
-                                {/* Simple Comments View for Reuse */}
+                                {/* Comments Section */}
                                 <div>
                                     <h3 className="text-xl font-bold text-white mb-4 font-khmer">{t('Comments', 'មតិយោបល់')} ({totalComments})</h3>
-                                    <div className="flex gap-3 mb-6">
-                                        <input 
-                                            value={newCommentText} 
-                                            onChange={e => setNewCommentText(e.target.value)}
-                                            onKeyDown={e => e.key === 'Enter' && handleSendComment()}
-                                            placeholder={t('Write a comment...', 'សរសេរមតិយោបល់...')} 
-                                            className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:ring-1 focus:ring-indigo-500 font-khmer"
-                                        />
-                                        <button onClick={handleSendComment} disabled={!newCommentText.trim() || isSubmitting} className="p-3 rounded-xl bg-indigo-600 text-white disabled:opacity-50"><Send size={20} /></button>
+                                    
+                                    {/* Comment Form */}
+                                    <div className="bg-white/5 rounded-2xl p-4 mb-8 border border-white/5">
+                                        <div className="mb-3">
+                                            <input 
+                                                value={commentUser}
+                                                onChange={e => setCommentUser(e.target.value)}
+                                                placeholder={t('Your Name (Optional)', 'ឈ្មោះរបស់អ្នក (មិនចាំបាច់)')}
+                                                className="w-full bg-transparent text-sm text-white placeholder-gray-500 outline-none border-b border-white/10 pb-2 focus:border-indigo-500 transition-colors font-khmer"
+                                            />
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <textarea
+                                                value={newCommentText} 
+                                                onChange={e => setNewCommentText(e.target.value)}
+                                                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSendComment()}
+                                                placeholder={t('Write a comment...', 'សរសេរមតិយោបល់...')} 
+                                                rows={1}
+                                                className="flex-1 bg-transparent text-white outline-none resize-none pt-2 placeholder-gray-500 font-khmer min-h-[40px]"
+                                            />
+                                            <button 
+                                                onClick={handleSendComment} 
+                                                disabled={!newCommentText.trim() || isSubmitting} 
+                                                className="p-3 rounded-xl bg-indigo-600 text-white disabled:opacity-50 hover:bg-indigo-500 transition-colors"
+                                            >
+                                                {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+                                            </button>
+                                        </div>
                                     </div>
+
+                                    {/* Comments List */}
                                     <div className="space-y-4">
-                                        {comments.map(c => (
-                                            <div key={c.id} className="flex gap-3">
-                                                <img src={c.avatar} className="w-8 h-8 rounded-full" />
-                                                <div className="bg-white/5 p-3 rounded-xl">
-                                                    <p className="font-bold text-sm text-white">{c.user}</p>
-                                                    <p className="text-gray-300 text-sm">{c.content}</p>
+                                        {isLoadingComments ? (
+                                             <div className="text-center py-4 text-gray-500"><Loader2 className="animate-spin inline mr-2"/> Loading comments...</div>
+                                        ) : comments.length > 0 ? (
+                                            comments.map(c => (
+                                                <div key={c.id} className="flex gap-4 group">
+                                                    <img src={c.avatar} className="w-10 h-10 rounded-full border border-white/10 bg-gray-800" alt="Avatar" />
+                                                    <div className="flex-1">
+                                                        <div className="bg-white/5 p-4 rounded-2xl rounded-tl-none border border-white/5 hover:bg-white/10 transition-colors">
+                                                            <div className="flex justify-between items-start mb-1">
+                                                                <p className="font-bold text-sm text-white">{c.user}</p>
+                                                                <span className="text-[10px] text-gray-500">{c.date}</span>
+                                                            </div>
+                                                            <p className="text-gray-300 text-sm whitespace-pre-wrap">{c.content}</p>
+                                                        </div>
+                                                    </div>
                                                 </div>
+                                            ))
+                                        ) : (
+                                            <div className="text-center py-8 text-gray-600 font-khmer text-sm border-2 border-dashed border-white/5 rounded-2xl">
+                                                {t('No comments yet. Be the first to share your thoughts!', 'មិនទាន់មានមតិយោបល់ទេ។ ចែករំលែកមតិរបស់អ្នកមុនគេ!')}
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
                                 </div>
 
