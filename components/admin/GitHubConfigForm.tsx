@@ -11,6 +11,17 @@ interface GitHubConfigFormProps {
 const GitHubConfigForm: React.FC<GitHubConfigFormProps> = ({ initialConfig, onSave, onReset }) => {
   const [repoConfig, setRepoConfig] = useState<GitHubConfig>(initialConfig);
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Trim values to avoid accidental spaces from copy-pasting
+    onSave({
+        username: repoConfig.username.trim(),
+        repo: repoConfig.repo.trim(),
+        branch: repoConfig.branch.trim(),
+        token: repoConfig.token.trim()
+    });
+  };
+
   return (
     <div className="max-w-2xl">
       <div className="bg-gray-900 border border-white/10 rounded-2xl p-6">
@@ -22,7 +33,7 @@ const GitHubConfigForm: React.FC<GitHubConfigFormProps> = ({ initialConfig, onSa
            Token is stored locally in your browser.
         </p>
 
-        <form onSubmit={(e) => { e.preventDefault(); onSave(repoConfig); }} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-gray-500 mb-1">GitHub Username</label>
