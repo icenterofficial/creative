@@ -12,8 +12,8 @@ const Team: React.FC = () => {
   const { t } = useLanguage();
   const { team, insights } = useData();
   
-  // Use Router Hook: Section 'team', Prefix 't' (e.g. t1 -> 1)
-  const { activeId, openItem, closeItem } = useRouter('team', 't');
+  // Use Router Hook: Section 'team', No prefix
+  const { activeId, openItem, closeItem } = useRouter('team');
   
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [authorPosts, setAuthorPosts] = useState<Post[] | null>(null);
@@ -22,7 +22,7 @@ const Team: React.FC = () => {
   // Sync Router Active ID with Data
   useEffect(() => {
       if (activeId) {
-          const found = team.find(m => m.id === activeId);
+          const found = team.find(m => m.slug === activeId || m.id === activeId);
           setSelectedMember(found || null);
       } else {
           setSelectedMember(null);
@@ -73,7 +73,7 @@ const Team: React.FC = () => {
                 <div 
                   key={member.id} 
                   className="group relative bg-white/5 rounded-2xl p-6 border border-white/5 hover:border-white/20 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-                  onClick={() => openItem(member.id)}
+                  onClick={() => openItem(member.slug || member.id)}
                 >
                   <div className="absolute top-4 right-4 text-gray-500 group-hover:text-indigo-400 transition-colors">
                       <Info size={20} />
@@ -133,7 +133,7 @@ const Team: React.FC = () => {
              author={selectedMember}
              posts={authorPosts}
              onClose={() => setAuthorPosts(null)}
-             onSelectPost={setSelectedPost}
+             onSelectPost={(post) => setSelectedPost(post)}
           />
       )}
 
