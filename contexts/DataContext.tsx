@@ -10,7 +10,8 @@ interface DataContextType {
   githubConfig: GitHubConfig | null;
   isLoading: boolean;
   lastSyncTime: string | null;
-  lastUpdatedBy: string | null; // New Field
+  lastUpdatedBy: string | null;
+  isUsingLive: boolean; // New: True if data came from GitHub
   updateService: (id: string, data: Service) => void;
   updateProject: (id: string, data: Project) => void;
   updateTeamMember: (id: string, data: TeamMember) => void;
@@ -40,12 +41,23 @@ const HARDCODED_CONFIG: GitHubConfig = {
     token: '' // 🔴 ដាក់ GitHub Token (ghp_...) នៅទីនេះ 🔴
 };
 
-// Safe Base64 Encoder for Unicode (Khmer) text
+// --- UTILS FOR UNICODE SUPPORT ---
 const safeBase64Encode = (str: string) => {
     return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
         function toSolidBytes(match, p1) {
             return String.fromCharCode(parseInt(p1, 16));
     }));
+};
+
+const safeBase64Decode = (str: string) => {
+    try {
+        return decodeURIComponent(atob(str).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+    } catch (e) {
+        console.error("Base64 Decode Error:", e);
+        return "{}";
+    }
 };
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -58,6 +70,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [lastUpdatedBy, setLastUpdatedBy] = useState<string | null>(null);
+  const [isUsingLive, setIsUsingLive] = useState(false);
 
   // Load Config
   useEffect(() => {
@@ -70,50 +83,90 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, []);
 
-  // INITIAL LOAD
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        const user = githubConfig?.username || HARDCODED_CONFIG.username;
-        const repo = githubConfig?.repo || HARDCODED_CONFIG.repo;
-        const branch = githubConfig?.branch || HARDCODED_CONFIG.branch;
-        
-        // Use raw.githubusercontent.com for faster reading without API limits
-        const rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/site-data.json`;
-        
-        // Cache Busting: ?t=TIMESTAMP
-        const response = await fetch(`${rawUrl}?t=${Date.now()}`, {
-            cache: 'no-store',
-            headers: { 'Pragma': 'no-cache', 'Cache-Control': 'no-cache' }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
+  // Main Data Loading Logic
+  const loadData = async () => {
+    setIsLoading(true);
+    const config = githubConfig || (HARDCODED_CONFIG.token ? HARDCODED_CONFIG : null);
+    
+    // Default to defaults first
+    let loadedData: any = null;
+
+    try {
+        if (config && config.token) {
+            // 1. ADMIN MODE: Fetch via API (Bypasses Cache)
+            console.log("Fetching via API (Admin Mode)...");
+            const fileName = "site-data.json";
+            const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${fileName}?ref=${config.branch}&t=${Date.now()}`;
             
-            if (data.services) {
-                const restoredServices = data.services.map((s: Service) => {
+            const res = await fetch(apiUrl, {
+                headers: { 
+                    Authorization: `Bearer ${config.token}`, 
+                    Accept: "application/vnd.github.v3+json",
+                    "Cache-Control": "no-cache"
+                }
+            });
+
+            if (res.ok) {
+                const json = await res.json();
+                if (json.content) {
+                    const decodedContent = safeBase64Decode(json.content);
+                    loadedData = JSON.parse(decodedContent);
+                }
+            } else {
+                console.warn(`API Fetch failed (${res.status}), trying raw...`);
+                // Fallback to raw if API fails (e.g. permission issue)
+                throw new Error("API failed"); 
+            }
+
+        } else {
+            // 2. PUBLIC MODE: Fetch via Raw (Cached)
+             // Use hardcoded defaults if no config in localstorage, but try to construct raw url if username/repo known
+             const user = config?.username || HARDCODED_CONFIG.username;
+             const repo = config?.repo || HARDCODED_CONFIG.repo;
+             const branch = config?.branch || HARDCODED_CONFIG.branch;
+
+             const rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/site-data.json`;
+             const res = await fetch(`${rawUrl}?t=${Date.now()}`);
+             if (res.ok) {
+                 loadedData = await res.json();
+             }
+        }
+
+        // 3. Process Loaded Data
+        if (loadedData) {
+            if (loadedData.services) {
+                // Merge icons from constants because JSON can't store React Nodes
+                const restoredServices = loadedData.services.map((s: Service) => {
                     const original = SERVICES.find(os => os.id === s.id);
                     return { ...s, icon: original ? original.icon : s.icon };
                 });
                 setServices(restoredServices);
             }
-            if (data.projects) setProjects(data.projects);
-            if (data.team) setTeam(data.team);
-            if (data.insights) setInsights(data.insights);
-            if (data.lastUpdated) setLastSyncTime(data.lastUpdated);
-            if (data.lastUpdatedBy) setLastUpdatedBy(data.lastUpdatedBy);
+            if (loadedData.projects) setProjects(loadedData.projects);
+            if (loadedData.team) setTeam(loadedData.team);
+            if (loadedData.insights) {
+                // Sort by date descending (assuming string date comparison works or just new items on top)
+                setInsights(loadedData.insights);
+            }
+            if (loadedData.lastUpdated) setLastSyncTime(loadedData.lastUpdated);
+            if (loadedData.lastUpdatedBy) setLastUpdatedBy(loadedData.lastUpdatedBy);
             
-            setIsLoading(false);
-            return; 
+            setIsUsingLive(true);
+        } else {
+            setIsUsingLive(false); // Using local constants
         }
-      } catch (e) {
-         console.log("Could not load live data, falling back to defaults.");
-      }
-      setIsLoading(false);
-    };
 
-    loadData();
+    } catch (e) {
+         console.error("Load Error:", e);
+         setIsUsingLive(false);
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  // Trigger load on config change or mount
+  useEffect(() => {
+      loadData();
   }, [githubConfig]);
 
   // Sync Strategy
@@ -127,14 +180,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { success: false, message: "Token missing. Please check configuration." };
     }
 
-    // Prepare content
     const content = {
         services: overrides?.services || services,
         projects: overrides?.projects || projects,
         team: overrides?.team || team,
         insights: overrides?.insights || insights,
         lastUpdated: new Date().toLocaleString(),
-        lastUpdatedBy: authorName // Save who did it
+        lastUpdatedBy: authorName
     };
 
     try {
@@ -144,7 +196,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const fileName = "site-data.json";
         const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${fileName}`;
 
-        // 1. GET SHA (CRITICAL STEP)
+        // 1. GET SHA
         let sha = undefined;
         try {
             const getRes = await fetch(`${apiUrl}?ref=${config.branch}&t=${Date.now()}`, {
@@ -162,11 +214,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             } else if (getRes.status === 404) {
                 sha = undefined;
             } else {
-                const errorText = await getRes.text();
-                return { success: false, message: `Verification Failed (${getRes.status}): ${errorText}` };
+                 const err = await getRes.json();
+                 return { success: false, message: `Check Failed: ${err.message}` };
             }
         } catch (e: any) {
-            return { success: false, message: `Network Error while checking file: ${e.message}` };
+            return { success: false, message: `Network Error: ${e.message}` };
         }
 
         // 2. PUT Data
@@ -189,17 +241,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setLastSyncTime(new Date().toLocaleString());
             setLastUpdatedBy(authorName);
             
-            // Optimistic Update
+            // Update local state immediately
             if (overrides?.services) setServices(overrides.services);
             if (overrides?.projects) setProjects(overrides.projects);
             if (overrides?.team) setTeam(overrides.team);
             if (overrides?.insights) setInsights(overrides.insights);
+            
+            setIsUsingLive(true);
             return { success: true, message: "Published successfully!" };
         } else {
             const err = await putRes.json();
-            if (err.message && err.message.includes("sha")) {
-                 return { success: false, message: "Sync Conflict: Please click 'Fetch' first." };
-            }
             return { success: false, message: `GitHub Error: ${err.message}` };
         }
 
@@ -209,31 +260,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const fetchFromGitHub = async () => {
-      const config = githubConfig || (HARDCODED_CONFIG.token ? HARDCODED_CONFIG : null);
-      if (!config) return;
-      setIsLoading(true);
-      try {
-          const fileName = "site-data.json";
-          const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${fileName}?ref=${config.branch}&t=${Date.now()}`;
-          const res = await fetch(apiUrl, {
-              headers: { Authorization: `Bearer ${config.token}`, Accept: "application/vnd.github.v3.raw", "Cache-Control": "no-cache" }
-          });
-          if (res.ok) {
-               const data = await res.json();
-                if (data.services) {
-                    const restoredServices = data.services.map((s: Service) => {
-                        const original = SERVICES.find(os => os.id === s.id);
-                        return { ...s, icon: original ? original.icon : s.icon };
-                    });
-                    setServices(restoredServices);
-                }
-                if (data.projects) setProjects(data.projects);
-                if (data.team) setTeam(data.team);
-                if (data.insights) setInsights(data.insights);
-                if (data.lastUpdated) setLastSyncTime(data.lastUpdated);
-                if (data.lastUpdatedBy) setLastUpdatedBy(data.lastUpdatedBy);
-          }
-      } catch (e) { console.error(e); } finally { setIsLoading(false); }
+      await loadData();
   };
 
   const updateService = (id: string, data: Service) => setServices(prev => prev.map(item => item.id === id ? data : item));
@@ -261,7 +288,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   return (
     <DataContext.Provider value={{
-      services, projects, team, insights, githubConfig, isLoading, lastSyncTime, lastUpdatedBy,
+      services, projects, team, insights, githubConfig, isLoading, lastSyncTime, lastUpdatedBy, isUsingLive,
       updateService, updateProject, updateTeamMember, updateInsight,
       addProject, addTeamMember, addInsight, deleteItem,
       resetData, setGithubConfig, syncToGitHub, fetchFromGitHub
