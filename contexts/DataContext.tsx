@@ -10,6 +10,7 @@ interface DataContextType {
   githubConfig: GitHubConfig | null;
   isLoading: boolean;
   lastSyncTime: string | null;
+  lastUpdatedBy: string | null; // New Field
   updateService: (id: string, data: Service) => void;
   updateProject: (id: string, data: Project) => void;
   updateTeamMember: (id: string, data: TeamMember) => void;
@@ -56,6 +57,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [githubConfig, setGithubConfigState] = useState<GitHubConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [lastUpdatedBy, setLastUpdatedBy] = useState<string | null>(null);
 
   // Load Config
   useEffect(() => {
@@ -100,6 +102,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (data.team) setTeam(data.team);
             if (data.insights) setInsights(data.insights);
             if (data.lastUpdated) setLastSyncTime(data.lastUpdated);
+            if (data.lastUpdatedBy) setLastUpdatedBy(data.lastUpdatedBy);
             
             setIsLoading(false);
             return; 
@@ -130,7 +133,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         projects: overrides?.projects || projects,
         team: overrides?.team || team,
         insights: overrides?.insights || insights,
-        lastUpdated: new Date().toLocaleString()
+        lastUpdated: new Date().toLocaleString(),
+        lastUpdatedBy: authorName // Save who did it
     };
 
     try {
@@ -141,8 +145,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${fileName}`;
 
         // 1. GET SHA (CRITICAL STEP)
-        // We must successfully determine if the file exists or not.
-        // We add timestamp to bypass caching.
         let sha = undefined;
         try {
             const getRes = await fetch(`${apiUrl}?ref=${config.branch}&t=${Date.now()}`, {
@@ -158,12 +160,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const getData = await getRes.json();
                 sha = getData.sha;
             } else if (getRes.status === 404) {
-                // File does not exist yet. This is normal for first time.
-                console.log("File not found on GitHub, creating new...");
                 sha = undefined;
             } else {
-                // Any other error (401, 403, 500) is a problem we shouldn't ignore.
-                // If we ignore this and try to PUT, we get the "sha missing" error if file actually existed.
                 const errorText = await getRes.text();
                 return { success: false, message: `Verification Failed (${getRes.status}): ${errorText}` };
             }
@@ -182,13 +180,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             body: JSON.stringify({
                 message: `Update by ${authorName} - ${new Date().toLocaleDateString()}`,
                 content: base64Content,
-                sha: sha, // Explicitly pass the SHA we found (or undefined if new)
+                sha: sha, 
                 branch: config.branch || 'main'
             })
         });
 
         if (putRes.ok) {
             setLastSyncTime(new Date().toLocaleString());
+            setLastUpdatedBy(authorName);
+            
             // Optimistic Update
             if (overrides?.services) setServices(overrides.services);
             if (overrides?.projects) setProjects(overrides.projects);
@@ -197,10 +197,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return { success: true, message: "Published successfully!" };
         } else {
             const err = await putRes.json();
-            
-            // If we still get the SHA error, it means a race condition occurred or our check failed subtly.
             if (err.message && err.message.includes("sha")) {
-                 return { success: false, message: "Sync Conflict: Please click 'Fetch' first to get the latest version." };
+                 return { success: false, message: "Sync Conflict: Please click 'Fetch' first." };
             }
             return { success: false, message: `GitHub Error: ${err.message}` };
         }
@@ -216,7 +214,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(true);
       try {
           const fileName = "site-data.json";
-          // Add timestamp to ensure fresh data
           const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${fileName}?ref=${config.branch}&t=${Date.now()}`;
           const res = await fetch(apiUrl, {
               headers: { Authorization: `Bearer ${config.token}`, Accept: "application/vnd.github.v3.raw", "Cache-Control": "no-cache" }
@@ -234,6 +231,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (data.team) setTeam(data.team);
                 if (data.insights) setInsights(data.insights);
                 if (data.lastUpdated) setLastSyncTime(data.lastUpdated);
+                if (data.lastUpdatedBy) setLastUpdatedBy(data.lastUpdatedBy);
           }
       } catch (e) { console.error(e); } finally { setIsLoading(false); }
   };
@@ -263,7 +261,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   return (
     <DataContext.Provider value={{
-      services, projects, team, insights, githubConfig, isLoading, lastSyncTime,
+      services, projects, team, insights, githubConfig, isLoading, lastSyncTime, lastUpdatedBy,
       updateService, updateProject, updateTeamMember, updateInsight,
       addProject, addTeamMember, addInsight, deleteItem,
       resetData, setGithubConfig, syncToGitHub, fetchFromGitHub
