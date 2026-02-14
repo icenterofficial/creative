@@ -22,10 +22,10 @@ const Insights: React.FC = () => {
   
   const [isViewAllOpen, setIsViewAllOpen] = useState(false);
 
-  // Sync Router Active ID with Data
+  // Sync Router Active ID with Data (Support finding by ID or Slug)
   useEffect(() => {
       if (activeId) {
-          const found = insights.find(p => p.id === activeId);
+          const found = insights.find(p => p.slug === activeId || p.id === activeId);
           setSelectedPost(found || null);
       } else {
           setSelectedPost(null);
@@ -96,7 +96,7 @@ const Insights: React.FC = () => {
               <article 
                 key={post.id} 
                 className="group flex flex-col h-full bg-white/5 border border-white/5 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:-translate-y-2 cursor-pointer"
-                onClick={() => openItem(post.id)}
+                onClick={() => openItem(post.slug || post.id)}
               >
                 {/* Image Container */}
                 <div className="relative h-60 overflow-hidden">
@@ -132,7 +132,7 @@ const Insights: React.FC = () => {
 
                   <div className="pt-6 border-t border-white/5">
                      <button 
-                       onClick={(e) => { e.stopPropagation(); openItem(post.id); }}
+                       onClick={(e) => { e.stopPropagation(); openItem(post.slug || post.id); }}
                        className="inline-flex items-center gap-2 text-sm font-bold text-white hover:text-indigo-400 transition-colors font-khmer"
                      >
                        {t('Read Article', 'អានអត្ថបទ')} <ArrowRight size={16} />
@@ -183,7 +183,7 @@ const Insights: React.FC = () => {
                              <article 
                                 key={post.id} 
                                 className="group flex flex-col bg-white/5 border border-white/5 rounded-xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-                                onClick={() => openItem(post.id)}
+                                onClick={() => openItem(post.slug || post.id)}
                             >
                                 <div className="relative h-48 overflow-hidden">
                                     <img 
@@ -242,7 +242,7 @@ const Insights: React.FC = () => {
              onClose={() => setAuthorPosts(null)}
              onSelectPost={(post) => {
                  setAuthorPosts(null);
-                 openItem(post.id);
+                 openItem(post.slug || post.id);
              }}
           />
       )}
