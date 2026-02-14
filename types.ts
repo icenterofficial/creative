@@ -20,6 +20,7 @@ export interface Service {
   descriptionKm?: string;
   features: string[];
   featuresKm?: string[];
+  slug?: string;
 }
 
 export interface Project {
@@ -28,6 +29,7 @@ export interface Project {
   category: 'graphicdesign' | 'webapp' | 'architecture' | 'mvac' | 'arabiccalligraphy' | 'translator' | 'website';
   image: string;
   client?: string;
+  slug?: string;
 }
 
 export interface TeamMember {
@@ -45,6 +47,7 @@ export interface TeamMember {
   skills: string[];
   experience: string[];
   experienceKm?: string[];
+  slug?: string;
 }
 
 export interface Comment {
@@ -68,6 +71,7 @@ export interface Post {
   authorId: string;
   content?: string;
   comments?: Comment[];
+  slug?: string;
 }
 
 export interface NavItem {
