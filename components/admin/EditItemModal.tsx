@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { X, Save, Loader2, Upload, Image as ImageIcon, Eye, Edit2, Bold, Italic, Heading, List, ListOrdered, Code, Link, Quote, CheckSquare } from 'lucide-react';
+import { X, Save, Loader2, Upload, Image as ImageIcon, Edit2, Bold, Italic, Heading, List, ListOrdered, Code, Link, Quote, CheckSquare } from 'lucide-react';
 import { getSupabaseClient } from '../../lib/supabase';
-import { ContentRenderer } from '../ContentRenderer';
+import ContentRenderer from '../ContentRenderer';
 
 interface EditItemModalProps {
   isOpen: boolean;
@@ -20,7 +20,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
   isOpen, isAdding, activeTab, isSuperAdmin, editingItem, setEditingItem, onSave, onCancel, isSaving
 }) => {
   const [isUploading, setIsUploading] = useState(false);
-  const [showPreview, setShowPreview] = useState(false); // Toggle for Write/Preview
+  const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -58,14 +58,14 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
       }
   };
 
-  // Helper to insert markdown at cursor position
   const insertMarkdown = (prefix: string, suffix: string = '') => {
       if (!textareaRef.current) return;
       
       const textarea = textareaRef.current;
       const start = textarea.selectionStart;
       const end = textarea.selectionEnd;
-      const text = editingItem.content || '';
+      // Ensure we treat content as string
+      const text = typeof editingItem.content === 'string' ? editingItem.content : '';
       
       const before = text.substring(0, start);
       const selection = text.substring(start, end);
@@ -75,10 +75,11 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
       
       setEditingItem({ ...editingItem, content: newText });
 
-      // Focus back after state update (setTimeout needed for React render cycle)
       setTimeout(() => {
-          textarea.focus();
-          textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+          if (textarea) {
+            textarea.focus();
+            textarea.setSelectionRange(start + prefix.length, end + prefix.length);
+          }
       }, 0);
   };
 
@@ -94,13 +95,15 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
 
         <form onSubmit={onSave} className="space-y-4 flex-1">
           {Object.keys(editingItem).map((key) => {
+            // Filter out system fields
             if (['id', 'comments', 'replies', 'icon', 'created_at'].includes(key)) return null;
             if (key === 'authorId' && !isSuperAdmin) return null;
 
             const value = editingItem[key];
             const label = key.charAt(0).toUpperCase() + key.slice(1);
 
-            // IMAGE UPLOAD
+            // SPECIAL FIELD HANDLERS
+            
             if (key === 'image') {
                 return (
                     <div key={key} className="space-y-2">
@@ -122,13 +125,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                                     onChange={(e) => setEditingItem({ ...editingItem, image: e.target.value })}
                                  />
                                  <div className="flex gap-2">
-                                     <input 
-                                        type="file" 
-                                        ref={fileInputRef}
-                                        className="hidden" 
-                                        accept="image/*"
-                                        onChange={handleImageUpload}
-                                     />
+                                     <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                                      <button 
                                         type="button"
                                         onClick={() => fileInputRef.current?.click()}
@@ -145,7 +142,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
 
-            // Array inputs
             if (Array.isArray(value)) {
               return (
                 <div key={key}>
@@ -159,35 +155,29 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
               );
             }
 
-            // Socials
             if (key === 'socials' && typeof value === 'object') {
               return (
                 <div key={key} className="space-y-2 border border-white/5 p-3 rounded-lg">
                   <label className="block text-xs font-bold text-gray-400">Social Links</label>
                   <input placeholder="Facebook URL" className="w-full bg-gray-800 border border-white/10 rounded-lg p-2 text-white text-sm"
-                    value={value.facebook || ''} onChange={(e) => setEditingItem({ ...editingItem, socials: { ...value, facebook: e.target.value } })} />
+                    value={value?.facebook || ''} onChange={(e) => setEditingItem({ ...editingItem, socials: { ...value, facebook: e.target.value } })} />
                   <input placeholder="Telegram URL" className="w-full bg-gray-800 border border-white/10 rounded-lg p-2 text-white text-sm"
-                    value={value.telegram || ''} onChange={(e) => setEditingItem({ ...editingItem, socials: { ...value, telegram: e.target.value } })} />
+                    value={value?.telegram || ''} onChange={(e) => setEditingItem({ ...editingItem, socials: { ...value, telegram: e.target.value } })} />
                 </div>
               );
             }
 
-            // Text Areas (Content/Bio)
+            // MARKDOWN EDITOR FOR TEXTAREAS
             if (key === 'content' || key === 'description' || key === 'bio' || key === 'bioKm' || key === 'descriptionKm' || key === 'excerpt') {
                 const isContent = key === 'content';
                 
-                // NEW REDESIGNED EDITOR FOR CONTENT
                 if (isContent) {
                   return (
                     <div key={key} className="flex flex-col h-full">
                        <label className="block text-xs font-bold text-gray-400 mb-2">{label}</label>
                        
-                       {/* Editor Container */}
                        <div className="border border-indigo-500/50 rounded-xl overflow-hidden bg-[#0d1117] focus-within:ring-1 focus-within:ring-indigo-500 transition-all flex flex-col h-[500px]">
-                          
-                          {/* Toolbar */}
                           <div className="flex items-center justify-between px-2 py-2 border-b border-white/10 bg-[#0d1117] shrink-0">
-                             {/* Tabs (Write/Preview) */}
                              <div className="flex items-center">
                                  <button
                                    type="button" 
@@ -205,7 +195,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                                  </button>
                              </div>
                              
-                             {/* Formatting Icons (Only visible in Write mode) */}
                              {!showPreview && (
                                  <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
                                      <button type="button" onClick={() => insertMarkdown('# ')} className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded" title="Heading"><Heading size={16} /></button>
@@ -224,11 +213,11 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                              )}
                           </div>
                           
-                          {/* Input / Preview Area */}
                           <div className="flex-1 relative bg-[#0d1117]">
                              {showPreview ? (
                                <div className="absolute inset-0 p-6 overflow-y-auto bg-[#0d1117]">
-                                  <ContentRenderer content={value || ''} />
+                                  {/* Ensure ContentRenderer gets a string, even if undefined */}
+                                  <ContentRenderer content={String(value || '')} />
                                </div>
                              ) : (
                                <textarea
@@ -241,17 +230,15 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                              )}
                           </div>
                           
-                          {/* Footer Info */}
                           <div className="px-4 py-2 bg-[#0d1117] border-t border-white/5 text-[10px] text-gray-600 flex justify-between items-center">
                               <span>Markdown Supported</span>
-                              {!showPreview && <span>{(value || '').length} chars</span>}
+                              {!showPreview && <span>{String(value || '').length} chars</span>}
                           </div>
                        </div>
                     </div>
                   );
                 }
 
-                // Normal Textarea for other fields
                 return (
                     <div key={key}>
                     <label className="block text-xs font-bold text-gray-400 mb-1">{label}</label>
@@ -264,8 +251,10 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                     </div>
                 );
             }
+            
+            // Skip unexpected objects (like array or nested object not handled above) to prevent crash
+            if (typeof value === 'object' && value !== null) return null;
 
-            // Default Input
             return (
               <div key={key}>
                 <label className="block text-xs font-bold text-gray-400 mb-1">{label}</label>
