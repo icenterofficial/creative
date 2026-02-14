@@ -13,8 +13,8 @@ const Portfolio: React.FC = () => {
   const { t } = useLanguage();
   const { projects } = useData();
 
-  // Use Router Hook: Section 'portfolio', Prefix 'p' (e.g. p1 -> 1)
-  const { activeId, openItem, closeItem } = useRouter('portfolio', 'p');
+  // Use Router Hook: Section 'portfolio', No Prefix needed if using slugs
+  const { activeId, openItem, closeItem } = useRouter('portfolio');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   const categories = [
@@ -30,10 +30,10 @@ const Portfolio: React.FC = () => {
     ? projects 
     : projects.filter(p => p.category === filter);
 
-  // Sync Router Active ID with Data
+  // Sync Router Active ID with Data (Support finding by ID or Slug)
   useEffect(() => {
       if (activeId) {
-          const found = projects.find(p => p.id === activeId);
+          const found = projects.find(p => p.slug === activeId || p.id === activeId);
           setSelectedProject(found || null);
       } else {
           setSelectedProject(null);
@@ -93,7 +93,7 @@ const Portfolio: React.FC = () => {
           {filteredProjects.map((project, index) => (
             <RevealOnScroll key={project.id} delay={index * 100} variant="zoom-in" duration={600}>
               <div 
-                onClick={() => openItem(project.id)}
+                onClick={() => openItem(project.slug || project.id)}
                 className="group relative rounded-2xl overflow-hidden break-inside-avoid bg-gray-800 transition-transform duration-500 hover:-translate-y-2 hover:rotate-1 hover:shadow-2xl hover:shadow-indigo-500/20 cursor-pointer"
               >
                 <img 
