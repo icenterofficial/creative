@@ -20,7 +20,6 @@ interface DataContextType {
   deleteItem: (type: 'service' | 'project' | 'team' | 'insight', id: string) => void;
   resetData: () => void;
   setGithubConfig: (config: GitHubConfig) => void;
-  // Updated signature to accept overrides and author name
   syncToGitHub: (
       overrides?: { services?: Service[], projects?: Project[], team?: TeamMember[], insights?: Post[] },
       authorName?: string
@@ -31,13 +30,13 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 // ==========================================
-// ⚠️ ដាក់ព័ត៌មាន GitHub របស់អ្នកនៅទីនេះ ⚠️
+// ⚠️ HARDCODED CONFIGURATION ZONE ⚠️
 // ==========================================
 const HARDCODED_CONFIG: GitHubConfig = {
     username: 'icenterofficial', 
     repo: 'creative',            
     branch: 'main',              
-    token: '' // ⚠️ ដាក់ Token នៅទីនេះប្រសិនបើអ្នកចង់អោយ Team Member ទាំងអស់ Save បាន
+    token: '' // 🔴 ដាក់ GitHub Token (ghp_...) នៅទីនេះ 🔴
 };
 
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -50,16 +49,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
 
+  // Load Config
   useEffect(() => {
     const savedConfig = localStorage.getItem('github_config');
     if (savedConfig) {
         setGithubConfigState(JSON.parse(savedConfig));
     } else if (HARDCODED_CONFIG.token && HARDCODED_CONFIG.token !== '') {
+        console.log("Using Hardcoded GitHub Config");
         setGithubConfigState(HARDCODED_CONFIG);
     }
   }, []);
 
-  // INITIAL LOAD: Fetch directly from GitHub Raw with Cache Busting
+  // INITIAL LOAD
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
@@ -70,13 +71,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         const rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/site-data.json`;
         
-        // SMART DEV TRICK: Add a random timestamp to FORCE valid data (Bypass Cache)
+        // Cache Busting: ?t=TIMESTAMP
         const response = await fetch(`${rawUrl}?t=${Date.now()}`, {
             cache: 'no-store',
-            headers: {
-                'Pragma': 'no-cache',
-                'Cache-Control': 'no-cache'
-            }
+            headers: { 'Pragma': 'no-cache', 'Cache-Control': 'no-cache' }
         });
         
         if (response.ok) {
@@ -95,10 +93,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (data.lastUpdated) setLastSyncTime(data.lastUpdated);
             
             setIsLoading(false);
-            return;
+            return; 
         }
       } catch (e) {
-         console.log("Could not load live data, falling back.");
+         console.log("Could not load live data, falling back to defaults.");
       }
       setIsLoading(false);
     };
@@ -106,22 +104,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loadData();
   }, [githubConfig]);
 
-  // Persist to LocalStorage
-  useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem('app_services', JSON.stringify(services));
-      localStorage.setItem('app_projects', JSON.stringify(projects));
-      localStorage.setItem('app_team', JSON.stringify(team));
-      localStorage.setItem('app_insights', JSON.stringify(insights));
-    }
-  }, [services, projects, team, insights, isLoading]);
-
-  const setGithubConfig = (config: GitHubConfig) => {
-      setGithubConfigState(config);
-      localStorage.setItem('github_config', JSON.stringify(config));
-  };
-
-  // ROBUST SYNC STRATEGY: Get SHA -> Put Data
+  // Sync Strategy
   const syncToGitHub = async (
       overrides?: { services?: Service[], projects?: Project[], team?: TeamMember[], insights?: Post[] },
       authorName: string = 'Admin'
@@ -129,11 +112,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const config = githubConfig || (HARDCODED_CONFIG.token ? HARDCODED_CONFIG : null);
 
     if (!config || !config.token) {
-        return { success: false, message: "GitHub Token missing." };
+        return { success: false, message: "Token missing. Please check DataContext.tsx" };
     }
 
     try {
-        // 1. Prepare Content
         const content = {
             services: overrides?.services || services,
             projects: overrides?.projects || projects,
@@ -149,8 +131,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const fileName = "site-data.json";
         const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${fileName}`;
 
-        // 2. CRITICAL STEP: Fetch the latest SHA immediately before saving.
-        // This ensures we are updating the current version of the file, not an old cached one.
+        // 1. Get SHA (Locking mechanism)
         let sha = "";
         try {
             const getRes = await fetch(`${apiUrl}?ref=${config.branch}`, {
@@ -158,18 +139,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 headers: { 
                     Authorization: `Bearer ${config.token}`,
                     Accept: "application/vnd.github.v3+json",
-                    "Cache-Control": "no-cache" // Don't use cached SHA
+                    "Cache-Control": "no-cache"
                 }
             });
             if (getRes.ok) {
                 const getData = await getRes.json();
                 sha = getData.sha;
             }
-        } catch (e) {
-            console.warn("Could not fetch SHA, assuming new file.");
-        }
+        } catch (e) {}
 
-        // 3. PUT (Update with the fresh SHA)
+        // 2. Put Data
         const putRes = await fetch(apiUrl, {
             method: "PUT",
             headers: {
@@ -178,7 +157,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 Accept: "application/vnd.github.v3+json"
             },
             body: JSON.stringify({
-                message: `Update by ${authorName} - ${new Date().toLocaleDateString()}`, // Tagging the commit
+                message: `Update by ${authorName} - ${new Date().toLocaleDateString()}`,
                 content: base64Content,
                 sha: sha || undefined,
                 branch: config.branch || 'main'
@@ -187,15 +166,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (putRes.ok) {
             setLastSyncTime(new Date().toLocaleString());
-            
-            // OPTIMISTIC UPDATE:
-            // Since we successfully saved, we update our local state immediately to match.
+            // Optimistic Update
             if (overrides?.services) setServices(overrides.services);
             if (overrides?.projects) setProjects(overrides.projects);
             if (overrides?.team) setTeam(overrides.team);
             if (overrides?.insights) setInsights(overrides.insights);
-
-            return { success: true, message: "Published successfully to GitHub!" };
+            return { success: true, message: "Published successfully!" };
         } else {
             const err = await putRes.json();
             return { success: false, message: `GitHub Error: ${err.message}` };
@@ -209,21 +185,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const fetchFromGitHub = async () => {
       const config = githubConfig || (HARDCODED_CONFIG.token ? HARDCODED_CONFIG : null);
       if (!config) return;
-      
       setIsLoading(true);
       try {
           const fileName = "site-data.json";
-          // Add timestamp to query to prevent caching
           const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${fileName}?ref=${config.branch}&t=${Date.now()}`;
-          
           const res = await fetch(apiUrl, {
-              headers: { 
-                    Authorization: `Bearer ${config.token}`,
-                    Accept: "application/vnd.github.v3.raw",
-                    "Cache-Control": "no-cache"
-                }
+              headers: { Authorization: `Bearer ${config.token}`, Accept: "application/vnd.github.v3.raw", "Cache-Control": "no-cache" }
           });
-
           if (res.ok) {
                const data = await res.json();
                 if (data.services) {
@@ -238,49 +206,30 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (data.insights) setInsights(data.insights);
                 if (data.lastUpdated) setLastSyncTime(data.lastUpdated);
           }
-      } catch (e) {
-          console.error("Failed to fetch from GitHub API", e);
-      } finally {
-          setIsLoading(false);
-      }
+      } catch (e) { console.error(e); } finally { setIsLoading(false); }
   };
 
-  const updateService = (id: string, data: Service) => {
-    setServices(prev => prev.map(item => item.id === id ? data : item));
-  };
-  const updateProject = (id: string, data: Project) => {
-    setProjects(prev => prev.map(item => item.id === id ? data : item));
-  };
-  const updateTeamMember = (id: string, data: TeamMember) => {
-    setTeam(prev => prev.map(item => item.id === id ? data : item));
-  };
-  const updateInsight = (id: string, data: Post) => {
-    setInsights(prev => prev.map(item => item.id === id ? data : item));
-  };
-  const addProject = (data: Project) => {
-    setProjects(prev => [data, ...prev]);
-  };
-  const addTeamMember = (data: TeamMember) => {
-    setTeam(prev => [...prev, data]);
-  };
-  const addInsight = (data: Post) => {
-    setInsights(prev => [data, ...prev]);
-  };
+  const updateService = (id: string, data: Service) => setServices(prev => prev.map(item => item.id === id ? data : item));
+  const updateProject = (id: string, data: Project) => setProjects(prev => prev.map(item => item.id === id ? data : item));
+  const updateTeamMember = (id: string, data: TeamMember) => setTeam(prev => prev.map(item => item.id === id ? data : item));
+  const updateInsight = (id: string, data: Post) => setInsights(prev => prev.map(item => item.id === id ? data : item));
+  const addProject = (data: Project) => setProjects(prev => [data, ...prev]);
+  const addTeamMember = (data: TeamMember) => setTeam(prev => [...prev, data]);
+  const addInsight = (data: Post) => setInsights(prev => [data, ...prev]);
   const deleteItem = (type: 'service' | 'project' | 'team' | 'insight', id: string) => {
-    if (type === 'service') return; 
     if (type === 'project') setProjects(prev => prev.filter(i => i.id !== id));
     if (type === 'team') setTeam(prev => prev.filter(i => i.id !== id));
     if (type === 'insight') setInsights(prev => prev.filter(i => i.id !== id));
   };
   const resetData = () => {
-    if(window.confirm("Are you sure? This will revert all data to the original code.")) {
-        setServices(SERVICES);
-        setProjects(PROJECTS);
-        setTeam(TEAM);
-        setInsights(INSIGHTS);
-        localStorage.clear();
-        window.location.reload();
+    if(window.confirm("Reset all data?")) {
+        setServices(SERVICES); setProjects(PROJECTS); setTeam(TEAM); setInsights(INSIGHTS);
+        localStorage.clear(); window.location.reload();
     }
+  };
+  const setGithubConfig = (config: GitHubConfig) => {
+      setGithubConfigState(config);
+      localStorage.setItem('github_config', JSON.stringify(config));
   };
 
   return (
@@ -297,8 +246,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 export const useData = () => {
   const context = useContext(DataContext);
-  if (!context) {
-    throw new Error('useData must be used within a DataProvider');
-  }
+  if (!context) throw new Error('useData must be used within a DataProvider');
   return context;
 };
