@@ -1,17 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { SERVICES, PROJECTS, TEAM, INSIGHTS } from '../constants';
-import { Service, Project, TeamMember, Post, GitHubConfig } from '../types';
+import { Service, Project, TeamMember, Post } from '../types';
+import { getSupabaseClient } from '../lib/supabase';
+import { Database } from 'lucide-react';
 
 interface DataContextType {
   services: Service[];
   projects: Project[];
   team: TeamMember[];
   insights: Post[];
-  githubConfig: GitHubConfig | null;
   isLoading: boolean;
-  lastSyncTime: string | null;
-  lastUpdatedBy: string | null;
-  isUsingLive: boolean; // New: True if data came from GitHub
+  isUsingSupabase: boolean;
+  
+  // Kept for compatibility
   updateService: (id: string, data: Service) => void;
   updateProject: (id: string, data: Project) => void;
   updateTeamMember: (id: string, data: TeamMember) => void;
@@ -21,277 +22,116 @@ interface DataContextType {
   addInsight: (data: Post) => void;
   deleteItem: (type: 'service' | 'project' | 'team' | 'insight', id: string) => void;
   resetData: () => void;
-  setGithubConfig: (config: GitHubConfig) => void;
-  syncToGitHub: (
-      overrides?: { services?: Service[], projects?: Project[], team?: TeamMember[], insights?: Post[] },
-      authorName?: string
-  ) => Promise<{ success: boolean; message: string }>;
-  fetchFromGitHub: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-// ==========================================
-// ⚠️ HARDCODED CONFIGURATION ZONE ⚠️
-// ==========================================
-const HARDCODED_CONFIG: GitHubConfig = {
-    username: 'icenterofficial', 
-    repo: 'creative',            
-    branch: 'main',              
-    token: '' // 🔴 ដាក់ GitHub Token (ghp_...) នៅទីនេះ 🔴
-};
-
-// --- UTILS FOR UNICODE SUPPORT ---
-const safeBase64Encode = (str: string) => {
-    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
-        function toSolidBytes(match, p1) {
-            return String.fromCharCode(parseInt(p1, 16));
-    }));
-};
-
-const safeBase64Decode = (str: string) => {
-    try {
-        return decodeURIComponent(atob(str).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-    } catch (e) {
-        console.error("Base64 Decode Error:", e);
-        return "{}";
-    }
-};
-
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Initialize with Constants (Fallback Data)
   const [services, setServices] = useState<Service[]>(SERVICES);
   const [projects, setProjects] = useState<Project[]>(PROJECTS);
   const [team, setTeam] = useState<TeamMember[]>(TEAM);
   const [insights, setInsights] = useState<Post[]>(INSIGHTS);
   
-  const [githubConfig, setGithubConfigState] = useState<GitHubConfig | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
-  const [lastUpdatedBy, setLastUpdatedBy] = useState<string | null>(null);
-  const [isUsingLive, setIsUsingLive] = useState(false);
+  const [isUsingSupabase, setIsUsingSupabase] = useState(false);
 
-  // Load Config
+  // Load Data from Supabase
   useEffect(() => {
-    const savedConfig = localStorage.getItem('github_config');
-    if (savedConfig) {
-        setGithubConfigState(JSON.parse(savedConfig));
-    } else if (HARDCODED_CONFIG.token && HARDCODED_CONFIG.token !== '') {
-        console.log("Using Hardcoded GitHub Config");
-        setGithubConfigState(HARDCODED_CONFIG);
-    }
-  }, []);
+    const fetchData = async () => {
+      const supabase = getSupabaseClient();
 
-  // Main Data Loading Logic
-  const loadData = async () => {
-    setIsLoading(true);
-    const config = githubConfig || (HARDCODED_CONFIG.token ? HARDCODED_CONFIG : null);
-    
-    // Default to defaults first
-    let loadedData: any = null;
+      if (!supabase) {
+          setIsLoading(false);
+          return; // Use local data if no credentials
+      }
 
-    try {
-        if (config && config.token) {
-            // 1. ADMIN MODE: Fetch via API (Bypasses Cache)
-            console.log("Fetching via API (Admin Mode)...");
-            const fileName = "site-data.json";
-            const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${fileName}?ref=${config.branch}&t=${Date.now()}`;
-            
-            const res = await fetch(apiUrl, {
-                headers: { 
-                    Authorization: `Bearer ${config.token}`, 
-                    Accept: "application/vnd.github.v3+json",
-                    "Cache-Control": "no-cache"
-                }
-            });
-
-            if (res.ok) {
-                const json = await res.json();
-                if (json.content) {
-                    const decodedContent = safeBase64Decode(json.content);
-                    loadedData = JSON.parse(decodedContent);
-                }
-            } else {
-                console.warn(`API Fetch failed (${res.status}), trying raw...`);
-                // Fallback to raw if API fails (e.g. permission issue)
-                throw new Error("API failed"); 
-            }
-
-        } else {
-            // 2. PUBLIC MODE: Fetch via Raw (Cached)
-             // Use hardcoded defaults if no config in localstorage, but try to construct raw url if username/repo known
-             const user = config?.username || HARDCODED_CONFIG.username;
-             const repo = config?.repo || HARDCODED_CONFIG.repo;
-             const branch = config?.branch || HARDCODED_CONFIG.branch;
-
-             const rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/site-data.json`;
-             const res = await fetch(`${rawUrl}?t=${Date.now()}`);
-             if (res.ok) {
-                 loadedData = await res.json();
-             }
+      setIsLoading(true);
+      try {
+        // 1. Fetch Projects
+        const { data: dbProjects } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+        if (dbProjects && dbProjects.length > 0) {
+             setProjects(dbProjects.map((p: any) => ({
+                 id: p.id,
+                 title: p.title,
+                 category: p.category,
+                 image: p.image,
+                 client: p.client
+             })));
         }
 
-        // 3. Process Loaded Data
-        if (loadedData) {
-            if (loadedData.services) {
-                // Merge icons from constants because JSON can't store React Nodes
-                const restoredServices = loadedData.services.map((s: Service) => {
-                    const original = SERVICES.find(os => os.id === s.id);
-                    return { ...s, icon: original ? original.icon : s.icon };
-                });
-                setServices(restoredServices);
-            }
-            if (loadedData.projects) setProjects(loadedData.projects);
-            if (loadedData.team) setTeam(loadedData.team);
-            if (loadedData.insights) {
-                // Sort by date descending (assuming string date comparison works or just new items on top)
-                setInsights(loadedData.insights);
-            }
-            if (loadedData.lastUpdated) setLastSyncTime(loadedData.lastUpdated);
-            if (loadedData.lastUpdatedBy) setLastUpdatedBy(loadedData.lastUpdatedBy);
-            
-            setIsUsingLive(true);
-        } else {
-            setIsUsingLive(false); // Using local constants
+        // 2. Fetch Team
+        const { data: dbTeam } = await supabase.from('team').select('*').order('created_at', { ascending: true });
+        if (dbTeam && dbTeam.length > 0) {
+             setTeam(dbTeam.map((t: any) => ({
+                 id: t.id,
+                 name: t.name,
+                 role: t.role,
+                 roleKm: t.role_km,
+                 image: t.image,
+                 bio: t.bio,
+                 bioKm: t.bio_km,
+                 skills: t.skills || [],
+                 experience: t.experience || [],
+                 experienceKm: t.experience || [], // Fallback
+                 socials: t.socials || {}
+             })));
         }
 
-    } catch (e) {
-         console.error("Load Error:", e);
-         setIsUsingLive(false);
-    } finally {
+        // 3. Fetch Insights
+        const { data: dbInsights } = await supabase.from('insights').select('*').order('created_at', { ascending: false });
+        if (dbInsights && dbInsights.length > 0) {
+             setInsights(dbInsights.map((i: any) => ({
+                 id: i.id,
+                 title: i.title,
+                 titleKm: i.title_km,
+                 excerpt: i.excerpt,
+                 date: i.date,
+                 category: i.category,
+                 image: i.image,
+                 authorId: i.author_id,
+                 content: i.content,
+                 comments: [] // Comments would need a separate table in a full setup
+             })));
+        }
+
+        setIsUsingSupabase(true);
+      } catch (error) {
+        console.warn("⚠️ Failed to fetch from Supabase. Falling back to local data.", error);
+        setIsUsingSupabase(false);
+      } finally {
         setIsLoading(false);
-    }
-  };
-
-  // Trigger load on config change or mount
-  useEffect(() => {
-      loadData();
-  }, [githubConfig]);
-
-  // Sync Strategy
-  const syncToGitHub = async (
-      overrides?: { services?: Service[], projects?: Project[], team?: TeamMember[], insights?: Post[] },
-      authorName: string = 'Admin'
-  ) => {
-    const config = githubConfig || (HARDCODED_CONFIG.token ? HARDCODED_CONFIG : null);
-
-    if (!config || !config.token) {
-        return { success: false, message: "Token missing. Please check configuration." };
-    }
-
-    const content = {
-        services: overrides?.services || services,
-        projects: overrides?.projects || projects,
-        team: overrides?.team || team,
-        insights: overrides?.insights || insights,
-        lastUpdated: new Date().toLocaleString(),
-        lastUpdatedBy: authorName
+      }
     };
 
-    try {
-        const jsonString = JSON.stringify(content, null, 2);
-        const base64Content = safeBase64Encode(jsonString);
+    fetchData();
+  }, []);
 
-        const fileName = "site-data.json";
-        const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${fileName}`;
-
-        // 1. GET SHA
-        let sha = undefined;
-        try {
-            const getRes = await fetch(`${apiUrl}?ref=${config.branch}&t=${Date.now()}`, {
-                method: "GET",
-                headers: { 
-                    Authorization: `Bearer ${config.token}`,
-                    Accept: "application/vnd.github.v3+json",
-                    "Cache-Control": "no-cache"
-                }
-            });
-            
-            if (getRes.ok) {
-                const getData = await getRes.json();
-                sha = getData.sha;
-            } else if (getRes.status === 404) {
-                sha = undefined;
-            } else {
-                 const err = await getRes.json();
-                 return { success: false, message: `Check Failed: ${err.message}` };
-            }
-        } catch (e: any) {
-            return { success: false, message: `Network Error: ${e.message}` };
-        }
-
-        // 2. PUT Data
-        const putRes = await fetch(apiUrl, {
-            method: "PUT",
-            headers: {
-                Authorization: `Bearer ${config.token}`,
-                "Content-Type": "application/json",
-                Accept: "application/vnd.github.v3+json"
-            },
-            body: JSON.stringify({
-                message: `Update by ${authorName} - ${new Date().toLocaleDateString()}`,
-                content: base64Content,
-                sha: sha, 
-                branch: config.branch || 'main'
-            })
-        });
-
-        if (putRes.ok) {
-            setLastSyncTime(new Date().toLocaleString());
-            setLastUpdatedBy(authorName);
-            
-            // Update local state immediately
-            if (overrides?.services) setServices(overrides.services);
-            if (overrides?.projects) setProjects(overrides.projects);
-            if (overrides?.team) setTeam(overrides.team);
-            if (overrides?.insights) setInsights(overrides.insights);
-            
-            setIsUsingLive(true);
-            return { success: true, message: "Published successfully!" };
-        } else {
-            const err = await putRes.json();
-            return { success: false, message: `GitHub Error: ${err.message}` };
-        }
-
-    } catch (error: any) {
-        return { success: false, message: `Network Error: ${error.message}` };
-    }
+  const showAlert = () => {
+      alert("Content is managed via Supabase. Please use the Admin Dashboard.");
   };
 
-  const fetchFromGitHub = async () => {
-      await loadData();
-  };
-
-  const updateService = (id: string, data: Service) => setServices(prev => prev.map(item => item.id === id ? data : item));
-  const updateProject = (id: string, data: Project) => setProjects(prev => prev.map(item => item.id === id ? data : item));
-  const updateTeamMember = (id: string, data: TeamMember) => setTeam(prev => prev.map(item => item.id === id ? data : item));
-  const updateInsight = (id: string, data: Post) => setInsights(prev => prev.map(item => item.id === id ? data : item));
-  const addProject = (data: Project) => setProjects(prev => [data, ...prev]);
-  const addTeamMember = (data: TeamMember) => setTeam(prev => [...prev, data]);
-  const addInsight = (data: Post) => setInsights(prev => [data, ...prev]);
-  const deleteItem = (type: 'service' | 'project' | 'team' | 'insight', id: string) => {
-    if (type === 'project') setProjects(prev => prev.filter(i => i.id !== id));
-    if (type === 'team') setTeam(prev => prev.filter(i => i.id !== id));
-    if (type === 'insight') setInsights(prev => prev.filter(i => i.id !== id));
-  };
+  const updateService = () => showAlert();
+  const updateProject = () => showAlert();
+  const updateTeamMember = () => showAlert();
+  const updateInsight = () => showAlert();
+  const addProject = () => showAlert();
+  const addTeamMember = () => showAlert();
+  const addInsight = () => showAlert();
+  const deleteItem = () => showAlert();
+  
   const resetData = () => {
-    if(window.confirm("Reset all data?")) {
-        setServices(SERVICES); setProjects(PROJECTS); setTeam(TEAM); setInsights(INSIGHTS);
-        localStorage.clear(); window.location.reload();
-    }
-  };
-  const setGithubConfig = (config: GitHubConfig) => {
-      setGithubConfigState(config);
-      localStorage.setItem('github_config', JSON.stringify(config));
+     if(window.confirm("Reload default local data?")) {
+         setServices(SERVICES); setProjects(PROJECTS); setTeam(TEAM); setInsights(INSIGHTS);
+     }
   };
 
   return (
     <DataContext.Provider value={{
-      services, projects, team, insights, githubConfig, isLoading, lastSyncTime, lastUpdatedBy, isUsingLive,
+      services, projects, team, insights, isLoading, isUsingSupabase,
       updateService, updateProject, updateTeamMember, updateInsight,
       addProject, addTeamMember, addInsight, deleteItem,
-      resetData, setGithubConfig, syncToGitHub, fetchFromGitHub
+      resetData
     }}>
       {children}
     </DataContext.Provider>
