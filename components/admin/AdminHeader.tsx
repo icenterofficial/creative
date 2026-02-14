@@ -1,5 +1,5 @@
 import React from 'react';
-import { LogOut, Cloud, RefreshCw, Shield, Users, Database } from 'lucide-react';
+import { LogOut, RefreshCw, Shield, Users, Database } from 'lucide-react';
 import { CurrentUser } from '../../App';
 import { useData } from '../../contexts/DataContext';
 
@@ -17,7 +17,7 @@ interface AdminHeaderProps {
 const AdminHeader: React.FC<AdminHeaderProps> = ({
   currentUser, isSuperAdmin, lastSyncTime, isSyncing, syncStatus, onFetch, onSync, onLogout
 }) => {
-  const { lastUpdatedBy, isUsingLive } = useData();
+  const { isUsingSupabase } = useData();
 
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-gray-900 border-b border-white/10 flex items-center justify-between px-6 z-50">
@@ -33,24 +33,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
 
       <div className="flex items-center gap-4">
         {/* Data Source Indicator */}
-        <div className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${isUsingLive ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'}`}>
+        <div className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${isUsingSupabase ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'}`}>
             <Database size={10} />
-            {isUsingLive ? 'Source: GitHub Live' : 'Source: Local Default'}
+            {isUsingSupabase ? 'Source: Supabase' : 'Source: Local Default'}
         </div>
-
-        {lastSyncTime && (
-          <div className="hidden lg:flex flex-col items-end mr-2">
-            <span className="text-xs text-green-400 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-              Live: {lastSyncTime}
-            </span>
-            {lastUpdatedBy && (
-              <span className="text-[10px] text-gray-500">
-                by <span className="text-gray-300 font-bold">{lastUpdatedBy}</span>
-              </span>
-            )}
-          </div>
-        )}
 
         {isSuperAdmin && (
           <>
@@ -59,19 +45,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
               disabled={isSyncing}
               className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 text-sm border border-white/10 disabled:opacity-50"
             >
-              <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} /> Fetch
-            </button>
-            <button
-              onClick={onSync}
-              disabled={isSyncing}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-white text-sm font-bold border transition-all ${
-                syncStatus?.success ? 'bg-green-600 border-green-500' : 
-                syncStatus?.success === false ? 'bg-red-600 border-red-500' : 
-                'bg-indigo-600 border-indigo-500 hover:bg-indigo-500'
-              } disabled:opacity-50`}
-            >
-              <Cloud size={14} />
-              {isSyncing ? 'Syncing...' : syncStatus?.success ? 'Live!' : 'Push Live'}
+              <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} /> Refresh Data
             </button>
           </>
         )}
