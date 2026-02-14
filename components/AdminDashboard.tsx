@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Settings, Database, ExternalLink, LogOut } from 'lucide-react';
-import { CurrentUser } from '../App';
 import { getSupabaseClient } from '../lib/supabase';
 import { useData } from '../contexts/DataContext';
 import AdminHeader from './admin/AdminHeader';
 import AdminSidebar from './admin/AdminSidebar';
 import ContentGrid from './admin/ContentGrid';
 import EditItemModal from './admin/EditItemModal';
-import { TeamMember, Project, Post, Service } from '../types';
+import { TeamMember, Project, Post, Service, CurrentUser } from '../types';
 
 interface AdminDashboardProps {
   onLogout: () => void;
   currentUser: CurrentUser;
+  onViewSite: () => void;
 }
 
 type TabType = 'team' | 'projects' | 'insights' | 'services' | 'settings';
 
-const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }) => {
+const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, onViewSite }) => {
   const { isUsingSupabase, team, projects, insights, services: localServices } = useData();
   const [activeTab, setActiveTab] = useState<TabType>('insights');
   const [dbConfig, setDbConfig] = useState<{url: string, key: string} | null>(null);
@@ -226,6 +226,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser }
           onFetch={() => window.location.reload()}
           onSync={() => {}}
           onLogout={onLogout}
+          onViewSite={onViewSite}
        />
 
        <div className="flex flex-1 pt-16">
