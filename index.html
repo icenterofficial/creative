@@ -17,7 +17,9 @@
         background-color: #030712;
         color: #F9FAFB;
         cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2 2l7 19.5 3-8.5 8.5-3L2 2z' fill='%236366f1' stroke='white' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, auto;
-        top: 0 !important;
+        /* FORCE BODY TO TOP */
+        top: 0px !important; 
+        position: static !important;
       }
       a, button, input, select, textarea, [role="button"], .cursor-pointer {
         cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2 2l7 19.5 3-8.5 8.5-3L2 2z' fill='%23ec4899' stroke='white' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, pointer;
@@ -38,12 +40,39 @@
       .animate-float { animation: float 6s ease-in-out infinite; }
       @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       .animate-spin-slow { animation: spin-slow 10s linear infinite; }
-      .goog-te-banner-frame.skiptranslate, .goog-tooltip, .goog-te-gadget-icon { display: none !important; } 
-      body { top: 0px !important; }
-      #google_translate_element { display: none; }
+      
+      /* HIDE GOOGLE TRANSLATE BANNER */
+      .goog-te-banner-frame.skiptranslate { display: none !important; } 
+      .goog-te-gadget-icon { display: none !important; } 
+      #google_translate_element { display: none !important; }
+      .goog-tooltip { display: none !important; }
+      .goog-te-balloon-frame { display: none !important; }
+      
+      /* Remove highlighted text background from google translate */
       font { background-color: transparent !important; box-shadow: none !important; box-sizing: border-box; }
+      
+      /* Ensure sticky header works correctly without the banner pushing it down */
+      body > .skiptranslate {
+          display: none !important;
+      }
     </style>
-
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.564.0",
+    "react-dom": "https://esm.sh/react-dom@^19.2.4",
+    "@dnd-kit/core": "https://esm.sh/@dnd-kit/core@^6.3.1",
+    "@dnd-kit/sortable": "https://esm.sh/@dnd-kit/sortable@^10.0.0",
+    "@dnd-kit/utilities": "https://esm.sh/@dnd-kit/utilities@^3.2.2",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.95.3",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4"
+  }
+}
+</script>
 </head>
   <body class="bg-grain">
     <div id="root"></div>
