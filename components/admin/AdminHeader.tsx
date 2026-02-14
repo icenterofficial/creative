@@ -1,6 +1,7 @@
 import React from 'react';
 import { LogOut, Cloud, RefreshCw, Shield, Users } from 'lucide-react';
 import { CurrentUser } from '../../App';
+import { useData } from '../../contexts/DataContext';
 
 interface AdminHeaderProps {
   currentUser: CurrentUser;
@@ -16,6 +17,8 @@ interface AdminHeaderProps {
 const AdminHeader: React.FC<AdminHeaderProps> = ({
   currentUser, isSuperAdmin, lastSyncTime, isSyncing, syncStatus, onFetch, onSync, onLogout
 }) => {
+  const { lastUpdatedBy } = useData();
+
   return (
     <header className="fixed top-0 left-0 right-0 h-16 bg-gray-900 border-b border-white/10 flex items-center justify-between px-6 z-50">
       <div className="flex items-center gap-3">
@@ -30,10 +33,17 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
 
       <div className="flex items-center gap-4">
         {lastSyncTime && (
-          <span className="text-xs text-green-400 hidden lg:inline flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-            Live: {lastSyncTime}
-          </span>
+          <div className="hidden lg:flex flex-col items-end mr-2">
+            <span className="text-xs text-green-400 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+              Live: {lastSyncTime}
+            </span>
+            {lastUpdatedBy && (
+              <span className="text-[10px] text-gray-500">
+                by <span className="text-gray-300 font-bold">{lastUpdatedBy}</span>
+              </span>
+            )}
+          </div>
         )}
 
         {isSuperAdmin && (
