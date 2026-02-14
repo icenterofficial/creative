@@ -12,8 +12,10 @@ interface LanguageContextType {
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
+const SUPPORTED_LANGUAGES: Language[] = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
+const GOOGLE_LANGUAGES: Language[] = ['fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
+
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Initialize from local storage or default to 'en'
   const [language, setLanguageState] = useState<Language>('en');
 
   // Helper to get cookie
@@ -25,61 +27,67 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     return null;
   };
 
+  const setGoogleCookie = (lang: Language) => {
+     // If it's a Google supported language (that we don't translate manually), set cookie
+     if (GOOGLE_LANGUAGES.includes(lang)) {
+         document.cookie = `googtrans=/en/${lang}; path=/;`;
+     } else {
+         // Clear cookie for EN/KM (Manual translation)
+         document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+         document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=${window.location.hostname}; path=/;`;
+     }
+  };
+
+  // INITIALIZATION
   useEffect(() => {
-    const googTrans = getCookie('googtrans');
-    if (googTrans) {
-      // Extract target language from /en/fr -> fr
-      const parts = googTrans.split('/');
-      const targetLang = parts[parts.length - 1] as Language;
-      if (['fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'].includes(targetLang)) {
-        setLanguageState(targetLang);
-      }
+    // 1. Check URL Path first (e.g., /fr, /km)
+    const path = window.location.pathname.split('/')[1] as Language;
+    
+    if (SUPPORTED_LANGUAGES.includes(path)) {
+        setLanguageState(path);
+        setGoogleCookie(path);
     } else {
-        // If no google translate cookie, check local storage for 'km'
-        const savedLang = localStorage.getItem('app_lang') as Language;
-        if (savedLang === 'km') setLanguageState('km');
+        // If root "/" or invalid, default to 'en' or saved pref, then rewrite URL
+        const savedLang = (localStorage.getItem('app_lang') as Language) || 'en';
+        setLanguageState(savedLang);
+        
+        // Rewrite URL to include lang without reloading
+        const hash = window.location.hash;
+        window.history.replaceState(null, '', `/${savedLang}${hash}`);
+        setGoogleCookie(savedLang);
     }
   }, []);
 
   const setLanguage = (newLang: Language) => {
-    const currentIsGoogle = ['fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'].includes(language);
-    const newIsGoogle = ['fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'].includes(newLang);
-    const googTransCookie = getCookie('googtrans');
-
-    // 1. SCENARIO: Switching between Manual Languages (EN <-> KM) AND Google is NOT active
-    // This allows for INSTANT switching without reload
-    if (!newIsGoogle && !googTransCookie) {
-        setLanguageState(newLang);
-        localStorage.setItem('app_lang', newLang);
-        return; // Stop here, no reload needed!
-    }
-
-    // 2. SCENARIO: Switching TO or FROM a Google Language, OR cleaning up Google Cookie
-    // We must update state and reload the page
+    const prevLang = language;
     setLanguageState(newLang);
     localStorage.setItem('app_lang', newLang);
 
-    if (!newIsGoogle) {
-        // We are going back to EN or KM from a Google Lang
-        // Clear cookies for path / and domain
-        document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        document.cookie = `googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=${window.location.hostname}; path=/;`;
-        
-        // Reload to remove Google's DOM injections
+    // Update URL
+    const hash = window.location.hash;
+    window.history.pushState(null, '', `/${newLang}${hash}`);
+
+    const isPrevGoogle = GOOGLE_LANGUAGES.includes(prevLang);
+    const isNewGoogle = GOOGLE_LANGUAGES.includes(newLang);
+
+    // Handling Google Translate Logic
+    if (isNewGoogle) {
+        setGoogleCookie(newLang);
+        // We need to reload to trigger the Google Script if we weren't already in a Google mode
+        // OR if we are switching between Google modes (e.g. FR -> JA) to update the iframe
         setTimeout(() => window.location.reload(), 50);
     } else {
-        // We are switching TO a Google Lang
-        // Set Google Translate Cookie: /auto/target_lang or /en/target_lang
-        document.cookie = `googtrans=/en/${newLang}; path=/;`;
-        
-        // Reload to trigger translation script
-        setTimeout(() => window.location.reload(), 50);
+        // Switching to Manual (EN/KM)
+        setGoogleCookie(newLang);
+        if (isPrevGoogle) {
+            // If we were in Google mode, we MUST reload to remove the iframe/DOM injections
+            setTimeout(() => window.location.reload(), 50);
+        }
+        // If switching EN <-> KM, no reload needed, React handles it instantly
     }
   };
 
   // The translation function
-  // Logic: If current language is 'km', use the manual Khmer string.
-  // For ALL other languages (including 'en'), use the English string.
   const t = (en: string, km: string) => {
     return language === 'km' ? km : en;
   };
