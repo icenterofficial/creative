@@ -1,14 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
 
-// We allow the user to input keys in the Admin Dashboard, stored in localStorage.
-// Or you can hardcode them here if you prefer.
+// Default credentials for public access
+export const DEFAULT_SUPABASE_URL = 'https://pbwglhuettzbhuvrvhuq.supabase.co';
+export const DEFAULT_SUPABASE_KEY = 'sb_publishable_G6RXQLU8wmf_IncoyKWUXA_9KFRZ36e';
+
 const getSupabaseCredentials = () => {
+    let url = DEFAULT_SUPABASE_URL;
+    let key = DEFAULT_SUPABASE_KEY;
+
+    // Check for local overrides (dev mode or admin overrides)
     if (typeof window !== 'undefined') {
-        const url = localStorage.getItem('supabase_url');
-        const key = localStorage.getItem('supabase_key');
-        return { url, key };
+        const localUrl = localStorage.getItem('supabase_url');
+        const localKey = localStorage.getItem('supabase_key');
+        if (localUrl && localKey) {
+            url = localUrl;
+            key = localKey;
+        }
     }
-    return { url: null, key: null };
+    return { url, key };
 };
 
 const { url, key } = getSupabaseCredentials();
