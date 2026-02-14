@@ -39,6 +39,14 @@ const HARDCODED_CONFIG: GitHubConfig = {
     token: '' // 🔴 ដាក់ GitHub Token (ghp_...) នៅទីនេះ 🔴
 };
 
+// Safe Base64 Encoder for Unicode (Khmer) text
+const safeBase64Encode = (str: string) => {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+        function toSolidBytes(match, p1) {
+            return String.fromCharCode(parseInt(p1, 16));
+    }));
+};
+
 export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [services, setServices] = useState<Service[]>(SERVICES);
   const [projects, setProjects] = useState<Project[]>(PROJECTS);
@@ -69,6 +77,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const repo = githubConfig?.repo || HARDCODED_CONFIG.repo;
         const branch = githubConfig?.branch || HARDCODED_CONFIG.branch;
         
+        // Use raw.githubusercontent.com for faster reading without API limits
         const rawUrl = `https://raw.githubusercontent.com/${user}/${repo}/${branch}/site-data.json`;
         
         // Cache Busting: ?t=TIMESTAMP
@@ -112,29 +121,31 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const config = githubConfig || (HARDCODED_CONFIG.token ? HARDCODED_CONFIG : null);
 
     if (!config || !config.token) {
-        return { success: false, message: "Token missing. Please check DataContext.tsx" };
+        return { success: false, message: "Token missing. Please check configuration." };
     }
 
-    try {
-        const content = {
-            services: overrides?.services || services,
-            projects: overrides?.projects || projects,
-            team: overrides?.team || team,
-            insights: overrides?.insights || insights,
-            lastUpdated: new Date().toLocaleString()
-        };
+    // Prepare content
+    const content = {
+        services: overrides?.services || services,
+        projects: overrides?.projects || projects,
+        team: overrides?.team || team,
+        insights: overrides?.insights || insights,
+        lastUpdated: new Date().toLocaleString()
+    };
 
+    try {
         const jsonString = JSON.stringify(content, null, 2);
-        const utf8Bytes = new TextEncoder().encode(jsonString);
-        const base64Content = btoa(String.fromCharCode(...utf8Bytes));
+        const base64Content = safeBase64Encode(jsonString);
 
         const fileName = "site-data.json";
         const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${fileName}`;
 
-        // 1. Get SHA (Locking mechanism)
-        let sha = "";
+        // 1. GET SHA (CRITICAL STEP)
+        // We must successfully determine if the file exists or not.
+        // We add timestamp to bypass caching.
+        let sha = undefined;
         try {
-            const getRes = await fetch(`${apiUrl}?ref=${config.branch}`, {
+            const getRes = await fetch(`${apiUrl}?ref=${config.branch}&t=${Date.now()}`, {
                 method: "GET",
                 headers: { 
                     Authorization: `Bearer ${config.token}`,
@@ -142,13 +153,25 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     "Cache-Control": "no-cache"
                 }
             });
+            
             if (getRes.ok) {
                 const getData = await getRes.json();
                 sha = getData.sha;
+            } else if (getRes.status === 404) {
+                // File does not exist yet. This is normal for first time.
+                console.log("File not found on GitHub, creating new...");
+                sha = undefined;
+            } else {
+                // Any other error (401, 403, 500) is a problem we shouldn't ignore.
+                // If we ignore this and try to PUT, we get the "sha missing" error if file actually existed.
+                const errorText = await getRes.text();
+                return { success: false, message: `Verification Failed (${getRes.status}): ${errorText}` };
             }
-        } catch (e) {}
+        } catch (e: any) {
+            return { success: false, message: `Network Error while checking file: ${e.message}` };
+        }
 
-        // 2. Put Data
+        // 2. PUT Data
         const putRes = await fetch(apiUrl, {
             method: "PUT",
             headers: {
@@ -159,7 +182,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             body: JSON.stringify({
                 message: `Update by ${authorName} - ${new Date().toLocaleDateString()}`,
                 content: base64Content,
-                sha: sha || undefined,
+                sha: sha, // Explicitly pass the SHA we found (or undefined if new)
                 branch: config.branch || 'main'
             })
         });
@@ -174,6 +197,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return { success: true, message: "Published successfully!" };
         } else {
             const err = await putRes.json();
+            
+            // If we still get the SHA error, it means a race condition occurred or our check failed subtly.
+            if (err.message && err.message.includes("sha")) {
+                 return { success: false, message: "Sync Conflict: Please click 'Fetch' first to get the latest version." };
+            }
             return { success: false, message: `GitHub Error: ${err.message}` };
         }
 
@@ -188,6 +216,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(true);
       try {
           const fileName = "site-data.json";
+          // Add timestamp to ensure fresh data
           const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${fileName}?ref=${config.branch}&t=${Date.now()}`;
           const res = await fetch(apiUrl, {
               headers: { Authorization: `Bearer ${config.token}`, Accept: "application/vnd.github.v3.raw", "Cache-Control": "no-cache" }
