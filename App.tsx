@@ -20,9 +20,15 @@ import { Lock, ArrowRight, X, ShieldCheck } from 'lucide-react';
 import { useAdminRouter } from './hooks/useRouter';
 import { CurrentUser } from './types';
 
+// Pages
+import About from './components/About';
+import Careers from './components/Careers';
+import PrivacyPolicy from './components/PrivacyPolicy';
+
 function AppContent() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isViewingSite, setIsViewingSite] = useState(false);
+  const [activePage, setActivePage] = useState<string | null>(null);
   
   // Auth from Context
   const { currentUser, login, logout } = useAuth();
@@ -56,6 +62,36 @@ function AppContent() {
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
+
+  // Handle Page Routing via Hash
+  useEffect(() => {
+    const handleHashChange = () => {
+        const hash = window.location.hash;
+        if (hash === '#about') setActivePage('about');
+        else if (hash === '#careers') setActivePage('careers');
+        else if (hash === '#privacy') setActivePage('privacy');
+        else {
+            // Only clear active page if it's NOT a section link like #team or #portfolio
+            // AND not a deep link like #team/1
+            // Actually, we want to clear the overlay if we navigate away to a normal section
+            if (!['#about', '#careers', '#privacy'].includes(hash)) {
+                setActivePage(null);
+            }
+        }
+    };
+    
+    // Initial check
+    handleHashChange();
+    
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const closePage = () => {
+      // Clear hash to close page
+      // Using history.pushState to remove hash without jump if possible, or just empty hash
+      window.location.hash = ''; 
+  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
       e.preventDefault();
@@ -149,6 +185,11 @@ function AppContent() {
       </main>
       <Footer />
       <ScrollButton />
+      
+      {/* Full Screen Page Overlays */}
+      {activePage === 'about' && <About onClose={closePage} />}
+      {activePage === 'careers' && <Careers onClose={closePage} />}
+      {activePage === 'privacy' && <PrivacyPolicy onClose={closePage} />}
       
       {/* Admin Login Modal */}
       {isAdminOpen && (
