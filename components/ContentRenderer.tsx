@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Check, Copy, Download } from 'lucide-react';
+import { Check, Copy, Download, ExternalLink, Quote } from 'lucide-react';
 
 interface CodeBlockProps {
     code: string;
@@ -101,8 +101,9 @@ const ContentRenderer: React.FC<{ content: string }> = ({ content }) => {
                     // Blockquotes
                     if (trimmed.startsWith('> ')) {
                         return (
-                            <blockquote key={key} className="border-l-4 border-indigo-500 pl-4 italic text-gray-400 my-4 bg-white/5 p-4 rounded-r-lg">
-                                {trimmed.substring(2)}
+                            <blockquote key={key} className="border-l-4 border-indigo-500 pl-6 italic text-gray-400 my-6 bg-indigo-900/10 p-6 rounded-r-2xl border-y border-r border-indigo-500/10 relative">
+                                <Quote className="absolute top-4 right-4 text-indigo-500/10 rotate-180" size={40}/>
+                                <span className="relative z-10">{trimmed.substring(2)}</span>
                             </blockquote>
                         );
                     }
@@ -111,29 +112,43 @@ const ContentRenderer: React.FC<{ content: string }> = ({ content }) => {
                     if (imgMatch) {
                         const [_, alt, src] = imgMatch;
                         return (
-                            <div key={key} className="my-8 rounded-2xl overflow-hidden border border-white/10 shadow-xl bg-gray-900">
-                                <img src={src} alt={alt} className="w-full h-auto object-cover" />
-                                {alt && <p className="text-center text-sm text-gray-500 mt-2 p-2">{alt}</p>}
+                            <div key={key} className="my-8 rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-gray-900 group">
+                                <img src={src} alt={alt} className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-[1.02]" />
+                                {alt && <p className="text-center text-xs text-gray-500 mt-2 p-3 bg-gray-950/50 italic border-t border-white/5">{alt}</p>}
                             </div>
                         );
                     }
 
+                    // --- NEW PROFESSIONAL DOWNLOAD CARD RENDERER ---
                     const dlMatch = trimmed.match(/\[\[DOWNLOAD:(.*?):(.*?)\]\]/);
                     if (dlMatch) {
                         const [_, url, label] = dlMatch;
                         return (
-                            <div key={key} className="my-10 flex justify-center">
+                            <div key={key} className="my-8">
                                 <a 
                                     href={url} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className="group relative inline-flex items-center gap-4 px-8 py-4 bg-gray-900 border border-white/10 rounded-2xl text-white font-bold text-lg hover:scale-105 transition-all"
+                                    className="group relative flex items-center justify-between p-1 rounded-2xl bg-gradient-to-r from-indigo-500/20 to-purple-500/20 border border-white/10 hover:border-indigo-500/50 transition-all duration-300 overflow-hidden"
                                 >
-                                    <div className="flex flex-col text-left">
-                                        <span className="text-xs text-indigo-400 font-bold uppercase tracking-wider">Free Resource</span>
-                                        <span className="font-bold font-khmer">{label}</span>
+                                    {/* Hover Glow */}
+                                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-600/10 to-purple-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                    
+                                    <div className="flex items-center gap-5 p-4 md:p-5 relative z-10">
+                                        <div className="w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-600/20 shrink-0 group-hover:scale-110 transition-transform duration-300">
+                                            <Download size={24} />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-lg font-bold text-white group-hover:text-indigo-300 transition-colors font-khmer">{label}</h4>
+                                            <p className="text-xs text-indigo-300/70 uppercase tracking-wider font-bold flex items-center gap-1 mt-1">
+                                                Click to Download
+                                            </p>
+                                        </div>
                                     </div>
-                                    <Download size={24} />
+
+                                    <div className="pr-6 text-gray-500 group-hover:text-white transition-colors relative z-10 hidden md:block">
+                                        <ExternalLink size={20} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+                                    </div>
                                 </a>
                             </div>
                         );
@@ -143,28 +158,34 @@ const ContentRenderer: React.FC<{ content: string }> = ({ content }) => {
                         const level = trimmed.match(/^#+/)?.[0].length || 0;
                         const text = trimmed.replace(/^#+\s*/, '');
                         const sizes = {
-                            1: 'text-4xl mt-10 mb-6',
-                            2: 'text-3xl mt-8 mb-4',
-                            3: 'text-2xl mt-8 mb-4',
-                            4: 'text-xl mt-6 mb-3',
+                            1: 'text-4xl mt-12 mb-6 text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400',
+                            2: 'text-3xl mt-10 mb-5 text-white',
+                            3: 'text-2xl mt-8 mb-4 text-indigo-200',
+                            4: 'text-xl mt-6 mb-3 text-white',
                         };
-                        const className = `${sizes[level as 1|2|3|4] || 'text-lg font-bold mt-4 mb-2'} font-bold text-white`;
+                        const className = `${sizes[level as 1|2|3|4] || 'text-lg font-bold mt-4 mb-2'} font-bold font-khmer leading-tight`;
                         return <h3 key={key} className={className}>{text}</h3>;
                     }
 
                     if (/^(\d+\.|-)\s/.test(trimmed)) {
                         const content = trimmed.replace(/^(\d+\.|-)\s/, '');
-                        const boldedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>');
+                        const boldedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>');
+                        
+                        // Check if link inside list item
+                        const linkedContent = boldedContent.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 underline underline-offset-4 decoration-indigo-500/30 hover:decoration-indigo-500 transition-all">$1</a>');
+
                         return (
-                            <div key={key} className="flex items-start gap-3 mb-3 ml-2">
-                                <span className="mt-2.5 w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0" />
-                                <span dangerouslySetInnerHTML={{ __html: boldedContent }} className="text-gray-300" />
+                            <div key={key} className="flex items-start gap-4 mb-3 ml-2 group">
+                                <span className="mt-2.5 w-1.5 h-1.5 rounded-full bg-indigo-500 group-hover:scale-150 transition-transform shrink-0 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+                                <span dangerouslySetInnerHTML={{ __html: linkedContent }} className="text-gray-300 group-hover:text-gray-200 transition-colors" />
                             </div>
                         );
                     }
 
-                    const htmlContent = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white">$1</strong>');
-                    return <p key={key} dangerouslySetInnerHTML={{ __html: htmlContent }} className="mb-4" />;
+                    let htmlContent = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>');
+                    htmlContent = htmlContent.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener" class="text-indigo-400 hover:text-indigo-300 underline underline-offset-4 decoration-indigo-500/30 hover:decoration-indigo-500 transition-all font-bold">$1</a>');
+                    
+                    return <p key={key} dangerouslySetInnerHTML={{ __html: htmlContent }} className="mb-4 text-lg text-gray-300 leading-8" />;
                 });
             })}
         </div>
