@@ -28,6 +28,18 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+// Map service IDs to Unsplash Images
+const SERVICE_IMAGES: Record<string, string> = {
+  graphic: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600', // Abstract Fluid Art
+  architecture: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&q=80&w=600', // Modern Architecture
+  calligraphy: 'https://images.unsplash.com/photo-1544252899-281b19796798?auto=format&fit=crop&q=80&w=600', // Traditional Art Texture
+  translation: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80&w=600', // Books
+  media: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=600', // Camera Lens
+  courses: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=600', // Students Learning
+  webdev: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=600', // Coding Screen
+  mvac: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=600', // Industrial Fan/Ventilation
+};
+
 // --- Sortable Item Component ---
 interface SortableServiceItemProps {
   service: Service;
@@ -68,9 +80,18 @@ const SortableServiceItem: React.FC<SortableServiceItemProps> = ({ service, inde
       <div className={`absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-opacity duration-500 animate-spin-slow blur-lg ${isDragging ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
       
       {/* Inner Card Content */}
-      <div className={`relative h-full bg-gray-900/90 backdrop-blur-xl rounded-[23px] p-8 border border-white/10 transition-all duration-300 ${isDragging ? 'bg-gray-800 scale-[1.02] shadow-2xl' : 'hover:bg-gray-900/80'}`}>
-          {/* Hover Internal Glow */}
-          <div className={`absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-500 bg-gradient-to-br ${service.color.replace('bg-', 'from-')} to-transparent rounded-[23px]`} />
+      <div className={`relative h-full bg-gray-900/90 backdrop-blur-xl rounded-[23px] p-8 border border-white/10 transition-all duration-300 overflow-hidden ${isDragging ? 'bg-gray-800 scale-[1.02] shadow-2xl' : 'hover:bg-gray-900/80'}`}>
+          
+          {/* Background Image on Hover (Subtle) */}
+          {SERVICE_IMAGES[service.id] && (
+            <div 
+                className="absolute inset-0 bg-cover bg-center opacity-0 group-hover:opacity-20 transition-opacity duration-700 ease-out grayscale group-hover:grayscale-0 pointer-events-none"
+                style={{ backgroundImage: `url(${SERVICE_IMAGES[service.id]})` }}
+            />
+          )}
+
+          {/* Hover Internal Glow (Existing) - Placed AFTER image to overlay color tint */}
+          <div className={`absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-500 bg-gradient-to-br ${service.color.replace('bg-', 'from-')} to-transparent rounded-[23px] pointer-events-none`} />
           
           <div className="relative z-10 h-full flex flex-col justify-between">
             <div className="flex justify-between items-start">
@@ -95,8 +116,8 @@ const SortableServiceItem: React.FC<SortableServiceItemProps> = ({ service, inde
             </div>
             
             <div className="mt-6 select-none">
-                <h3 className="text-2xl font-bold text-white mb-2 font-khmer">{t(service.title, service.titleKm)}</h3>
-                <p className="text-gray-400 text-sm font-khmer line-clamp-2">{t(service.subtitle, service.subtitleKm || service.subtitle)}</p>
+                <h3 className="text-2xl font-bold text-white mb-2 font-khmer drop-shadow-md">{t(service.title, service.titleKm)}</h3>
+                <p className="text-gray-400 text-sm font-khmer line-clamp-2 drop-shadow-sm">{t(service.subtitle, service.subtitleKm || service.subtitle)}</p>
             </div>
           </div>
       </div>
@@ -106,24 +127,26 @@ const SortableServiceItem: React.FC<SortableServiceItemProps> = ({ service, inde
 
 
 const Services: React.FC = () => {
-  const { services } = useData();
+  const { services = [] } = useData();
   const { t } = useLanguage();
   
   // Use Router Hook: Section 'services', No prefix (Ids are strings)
   const { activeId, openItem, closeItem } = useRouter('services');
   const [selectedService, setSelectedService] = useState<Service | null>(null);
 
-  const [items, setItems] = useState<Service[]>(services);
+  const [items, setItems] = useState<Service[]>(services || []);
   const [hasReordered, setHasReordered] = useState(false);
 
   // Sync with context if services change externally
   useEffect(() => {
-    setItems(services);
+    if (services) {
+        setItems(services);
+    }
   }, [services]);
 
   // Sync Router Active ID with Data
   useEffect(() => {
-      if (activeId) {
+      if (activeId && services) {
           const found = services.find(s => s.id === activeId);
           setSelectedService(found || null);
       } else {
@@ -165,10 +188,10 @@ const Services: React.FC = () => {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (active.id !== over?.id) {
+    if (over && active.id !== over.id) {
       setItems((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over?.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
       setHasReordered(true);
@@ -176,7 +199,7 @@ const Services: React.FC = () => {
   };
 
   const handleReset = () => {
-    setItems(services);
+    setItems(services || []);
     setHasReordered(false);
   };
 
@@ -215,12 +238,12 @@ const Services: React.FC = () => {
             onDragEnd={handleDragEnd}
         >
             <SortableContext 
-                items={items.map(item => item.id)}
+                items={(items || []).map(item => item.id)}
                 strategy={rectSortingStrategy}
             >
                 <RevealOnScroll variant="fade-up" delay={200} duration={800}>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 auto-rows-[250px] gap-6">
-                    {items.map((service, index) => (
+                    {(items || []).map((service, index) => (
                         <SortableServiceItem 
                             key={service.id} 
                             service={service} 
