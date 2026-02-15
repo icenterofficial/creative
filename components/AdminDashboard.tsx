@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Database, ExternalLink, LogOut } from 'lucide-react';
+import { Plus, Settings, Database, ExternalLink, LogOut, Users, FileText, Briefcase, LayoutGrid, Menu } from 'lucide-react';
 import { getSupabaseClient, DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY } from '../lib/supabase';
 import { useData } from '../contexts/DataContext';
 import AdminHeader from './admin/AdminHeader';
@@ -89,7 +89,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
 
   const handleAdd = () => {
     // Security check: Members cannot add
-    if (currentUser.role !== 'admin') {
+    if ((currentUser.role as string) !== 'admin') {
         alert("You do not have permission to add new items.");
         return;
     }
@@ -99,7 +99,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
     const templates: any = {
       team: { name: '', role: '', roleKm: '', image: '', bio: '', bioKm: '', skills: [], experience: [], socials: {} },
       projects: { title: '', category: 'graphicdesign', image: '', client: '' },
-      insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: 't1' },
+      insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: currentUser.role === 'member' ? currentUser.id : 't1' },
       services: { title: '', titleKm: '', description: '', icon: '' }
     };
     setEditingItem(templates[activeTab]);
@@ -107,7 +107,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
   };
 
   const handleDelete = async (type: string, id: string) => {
-      if (currentUser.role !== 'admin') {
+      if ((currentUser.role as string) !== 'admin') {
           alert("Only Admins can delete items.");
           return;
       }
@@ -123,6 +123,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (type === 'team') table = 'team';
           if (type === 'project') table = 'projects';
           if (type === 'insight') table = 'insights';
+
+          // Check if it's a UUID
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (!uuidRegex.test(id)) {
+              alert("Cannot delete static content from database. It is hardcoded in the app.");
+              return;
+          }
 
           const { error } = await supabase.from(table).delete().eq('id', id);
 
@@ -147,8 +154,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       const supabase = getSupabaseClient();
       if (!supabase) return;
 
-      // Strict Role Check for Adding
-      if (isAdding && currentUser.role !== 'admin') {
+      // Logic: If ID is not a UUID (e.g. 't1'), we MUST Insert new, not Update.
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const isStaticID = !uuidRegex.test(editingItem.id || '');
+      
+      // Determine if we are technically "adding" to the DB (even if editing a static item)
+      const performInsert = isAdding || isStaticID;
+
+      // Strict Role Check for NEW items, but allow migration of static items
+      if (isAdding && (currentUser.role as string) !== 'admin') {
           alert("Security Alert: Only Admins can create new records.");
           return;
       }
@@ -193,10 +207,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           }
 
           let res;
-          if (isAdding) {
+          if (performInsert) {
+              // If migrating static data, we do NOT send the ID. DB generates a new UUID.
+              if (isStaticID) {
+                  delete payload.id;
+              }
               res = await supabase.from(table).insert([payload]).select();
           } else {
-              // Update Logic
+              // Update Logic - Only works for valid UUIDs
               res = await supabase.from(table).update(payload).eq('id', item.id).select();
           }
 
@@ -204,15 +222,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
 
           const newItem = { ...item, ...res.data[0] }; // Merge response
           
-          // Update local state to reflect changes immediately in UI
-          const updater = (list: any[]) => isAdding ? [newItem, ...list] : list.map(i => i.id === newItem.id ? newItem : i);
+          // Update local state
+          const updater = (list: any[]) => {
+              if (performInsert) {
+                  // If we migrated a static item, we might want to replace the static one locally 
+                  // or just add the new one. For simplicity and to avoid duplicates, we add new one.
+                  // Ideally, you'd filter out the static one, but that's complex without reloading.
+                  return [newItem, ...list];
+              } else {
+                  return list.map(i => i.id === newItem.id ? newItem : i);
+              }
+          };
           
           if (activeTab === 'team') setAdminTeam(updater(adminTeam));
           if (activeTab === 'projects') setAdminProjects(updater(adminProjects));
           if (activeTab === 'insights') setAdminInsights(updater(adminInsights));
 
           setIsModalOpen(false);
-          alert("Saved successfully! Click 'View Live Site' to see changes.");
+          
+          if (isStaticID && !isAdding) {
+              alert("Data Saved! Note: Since this was a static item, a NEW record has been created in the database. You might see duplicates until the static file is updated.");
+          } else {
+              alert("Saved successfully!");
+          }
       } catch (err: any) {
           console.error(err);
           alert("Failed to save: " + err.message);
@@ -260,9 +292,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
   }
 
   const handleViewSite = () => {
-      // Force reload to ensure fresh data fetch from Supabase
       window.location.reload(); 
   };
+
+  const MobileNavButton = ({ tab, icon: Icon, label }: { tab: TabType, icon: any, label: string }) => (
+      <button 
+        onClick={() => setActiveTab(tab)}
+        className={`flex flex-col items-center gap-1 p-2 rounded-lg transition-all min-w-[70px] ${activeTab === tab ? 'text-indigo-400 bg-white/5' : 'text-gray-500'}`}
+      >
+          <Icon size={20} />
+          <span className="text-[10px] font-bold">{label}</span>
+      </button>
+  );
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
@@ -278,27 +319,40 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           onViewSite={handleViewSite}
        />
 
-       <div className="flex flex-1 pt-16">
+       {/* Mobile Navigation Bar */}
+       <div className="md:hidden fixed top-16 left-0 right-0 h-16 bg-gray-900 border-b border-white/10 flex items-center px-4 overflow-x-auto gap-2 z-40 no-scrollbar">
+           <MobileNavButton tab="team" icon={Users} label={currentUser.role === 'admin' ? "Team" : "Profile"} />
+           <MobileNavButton tab="insights" icon={FileText} label="Articles" />
+           {currentUser.role === 'admin' && (
+             <>
+                <MobileNavButton tab="projects" icon={Briefcase} label="Projects" />
+                <MobileNavButton tab="services" icon={LayoutGrid} label="Services" />
+                <MobileNavButton tab="settings" icon={Settings} label="Config" />
+             </>
+           )}
+       </div>
+
+       <div className="flex flex-1 pt-32 md:pt-16">
           <AdminSidebar 
              activeTab={activeTab}
              setActiveTab={setActiveTab}
              isSuperAdmin={currentUser.role === 'admin'}
           />
 
-          <main className="flex-1 p-6 md:p-8 overflow-y-auto h-[calc(100vh-64px)]">
-             <div className="flex justify-between items-center mb-8">
+          <main className="flex-1 p-4 md:p-8 overflow-y-auto h-[calc(100vh-128px)] md:h-[calc(100vh-64px)]">
+             <div className="flex justify-between items-center mb-6 md:mb-8">
                 <div>
-                   <h1 className="text-3xl font-bold font-khmer capitalize">{activeTab}</h1>
-                   <p className="text-gray-400 text-sm">Manage your {activeTab} content directly.</p>
+                   <h1 className="text-2xl md:text-3xl font-bold font-khmer capitalize">{activeTab}</h1>
+                   <p className="text-gray-400 text-xs md:text-sm">Manage your {activeTab} content directly.</p>
                 </div>
                 
-                {/* Only Show "Add New" for Super Admins and not on settings tab */}
+                {/* Only Show "Add New" for Super Admins */}
                 {activeTab !== 'settings' && currentUser.role === 'admin' && (
                     <button 
                         onClick={handleAdd}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-500/20 transition-all font-khmer"
+                        className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-500/20 transition-all font-khmer text-sm"
                     >
-                        <Plus size={18} /> Add New
+                        <Plus size={16} /> <span className="hidden md:inline">Add New</span><span className="md:hidden">Add</span>
                     </button>
                 )}
              </div>
