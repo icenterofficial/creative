@@ -134,13 +134,11 @@ function AppContent() {
   // Render Admin Dashboard if logged in and NOT viewing site
   if (currentUser && !isViewingSite) {
       return (
-          <LanguageProvider>
-              <AdminDashboard 
-                currentUser={currentUser} 
-                onLogout={logout} 
-                onViewSite={() => setIsViewingSite(true)}
-              />
-          </LanguageProvider>
+          <AdminDashboard 
+            currentUser={currentUser} 
+            onLogout={logout} 
+            onViewSite={() => setIsViewingSite(true)}
+          />
       );
   }
 
