@@ -24,25 +24,17 @@ const simpleMdToHtml = (md: string) => {
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
-        // Headings
         .replace(/^### (.*$)/gim, '<h3>$1</h3>')
         .replace(/^## (.*$)/gim, '<h2>$1</h2>')
         .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-        // Bold/Italic
         .replace(/\*\*(.*?)\*\*/gim, '<b>$1</b>')
         .replace(/\*(.*?)\*/gim, '<i>$1</i>')
-        // Lists
         .replace(/^\- (.*$)/gim, '<li>$1</li>')
         .replace(/^\d\. (.*$)/gim, '<li>$1</li>')
-        // Quote
         .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
-        // Images
         .replace(/!\[(.*?)\]\((.*?)\)/gim, '<img src="$2" alt="$1" style="max-width:100%; border-radius: 8px; margin: 10px 0;" />')
-        // Links
         .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2" target="_blank" style="color: #818cf8; text-decoration: underline;">$1</a>')
-        // Download Button (Custom Syntax)
         .replace(/\[\[DOWNLOAD:(.*?):(.*?)\]\]/gim, '<div data-download-url="$1" data-download-label="$2" style="background:#1e1b4b; border:1px solid #4338ca; padding:10px; border-radius:8px; display:inline-block; margin: 10px 0; font-weight:bold; color:#a5b4fc;">⬇️ Download: $2</div>')
-        // Newlines
         .replace(/\n/g, '<br>');
     return html;
 };
@@ -72,9 +64,7 @@ const simpleHtmlToMd = (html: string) => {
     text = text.replace(/<\/blockquote>/gi, '\n');
     text = text.replace(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/gi, '![$2]($1)');
     text = text.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)');
-    // Parse Custom Download Div back to syntax
     text = text.replace(/<div[^>]*data-download-url="([^"]*)"[^>]*data-download-label="([^"]*)"[^>]*>.*?<\/div>/gi, '[[DOWNLOAD:$1:$2]]');
-    
     text = text.replace(/&nbsp;/g, ' ');
     text = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
     return text.trim();
@@ -86,10 +76,9 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
   const { team } = useData();
   const [isUploading, setIsUploading] = useState(false);
   const [editorMode, setEditorMode] = useState<'markdown' | 'visual'>('markdown'); 
-  const [activeView, setActiveView] = useState<'write' | 'preview'>('write'); // For Dev Mode
-  const [visualPreview, setVisualPreview] = useState(false); // For Visual Mode
+  const [activeView, setActiveView] = useState<'write' | 'preview'>('write'); 
+  const [visualPreview, setVisualPreview] = useState(false); 
   
-  // Helpers for Popups in Visual Mode
   const [showLinkInput, setShowLinkInput] = useState(false);
   const [showDownloadInput, setShowDownloadInput] = useState(false);
   const [tempLink, setTempLink] = useState({ url: '', text: '' });
@@ -99,31 +88,31 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const visualEditorRef = useRef<HTMLDivElement>(null);
 
+  // Safe dependency for useEffect
+  const itemContent = editingItem?.content;
+
   // Sync Content on Open/Mode Switch
   useEffect(() => {
     if (isOpen && editingItem) {
-        // Reset states
         setActiveView('write');
         setVisualPreview(false);
-        
-        // Default to Markdown for developers/admins if not specified
         if (!editorMode) setEditorMode('markdown');
     }
-  }, [isOpen]);
+  }, [isOpen]); // Reduced dependencies to avoid loops
 
   // Sync Visual Editor Content
   useEffect(() => {
-      if (editorMode === 'visual' && visualEditorRef.current && !visualPreview) {
+      if (editorMode === 'visual' && visualEditorRef.current && !visualPreview && editingItem) {
           const currentMd = editingItem.content || editingItem.description || editingItem.bio || '';
+          // Avoid infinite loops by checking content
           if (visualEditorRef.current.innerHTML !== simpleMdToHtml(currentMd)) {
              visualEditorRef.current.innerHTML = simpleMdToHtml(currentMd);
           }
       }
-  }, [editorMode, visualPreview, editingItem.content]);
+  }, [editorMode, visualPreview, itemContent]);
 
   if (!isOpen || !editingItem) return null;
 
-  // Generic Image Upload
   const uploadImage = async (file: File): Promise<string | null> => {
       const supabase = getSupabaseClient();
       if (!supabase) {
@@ -136,10 +125,8 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
           const fileExt = file.name.split('.').pop();
           const fileName = `${Math.random()}.${fileExt}`;
           const filePath = `${fileName}`;
-
           const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
           if (uploadError) throw uploadError;
-
           const { data: { publicUrl } } = supabase.storage.from('uploads').getPublicUrl(filePath);
           return publicUrl;
       } catch (error: any) {
@@ -170,7 +157,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
       }
   };
 
-  // Markdown Insertion Logic
   const insertMarkdown = (prefix: string, suffix: string = '') => {
       if (!textareaRef.current) return;
       const textarea = textareaRef.current;
@@ -188,7 +174,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
       }, 0);
   };
 
-  // Visual Editor Logic
   const execVisualCmd = (cmd: string, val: string = '') => {
       document.execCommand(cmd, false, val);
       handleVisualInput();
@@ -225,7 +210,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-sm animate-fade-in">
       <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto p-6 shadow-2xl animate-scale-up flex flex-col">
-        {/* Header */}
         <div className="flex justify-between items-center mb-6 shrink-0">
           <h3 className="text-xl font-bold text-white font-khmer">
             {isAdding ? 'បន្ថែមថ្មី' : 'កែសម្រួល'} ({activeTab})
@@ -274,13 +258,11 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
 
-            // --- MAIN EDITOR ---
             if (key === 'content' || key === 'description' || key === 'bio') {
                 return (
                     <div key={key} className="flex flex-col h-full mb-6">
                        <div className="flex justify-between items-end mb-2">
                            <label className="block text-xs font-bold text-gray-400">{label}</label>
-                           {/* MODE TOGGLE */}
                            <div className="flex bg-gray-800 rounded-lg p-1 border border-white/10">
                                <button type="button" onClick={() => setEditorMode('markdown')} className={`px-3 py-1 rounded-md text-xs font-bold flex items-center gap-1 transition-all ${editorMode === 'markdown' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}><Code size={12} /> Developer</button>
                                <button type="button" onClick={() => setEditorMode('visual')} className={`px-3 py-1 rounded-md text-xs font-bold flex items-center gap-1 transition-all ${editorMode === 'visual' ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'}`}><Type size={12} /> General</button>
@@ -288,17 +270,12 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                        </div>
                        
                        <div className="border border-white/10 rounded-xl overflow-hidden bg-[#0d1117] flex flex-col h-[600px] relative">
-                          
-                          {/* ================= DEVELOPER MODE TOOLBAR (AS REQUESTED) ================= */}
                           {editorMode === 'markdown' && (
                              <div className="flex items-center justify-between px-2 py-2 border-b border-white/10 bg-[#0d1117] shrink-0">
-                                 {/* LEFT: Write / Preview Tabs */}
                                  <div className="flex items-center gap-1">
                                      <button type="button" onClick={() => setActiveView('write')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeView === 'write' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}>Write</button>
                                      <button type="button" onClick={() => setActiveView('preview')} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-colors ${activeView === 'preview' ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}>Preview</button>
                                  </div>
-
-                                 {/* RIGHT: Formatting Icons */}
                                  {activeView === 'write' && (
                                     <div className="flex items-center gap-1">
                                         <button type="button" onClick={() => insertMarkdown('# ')} className="p-1.5 text-gray-400 hover:text-white rounded hover:bg-white/10" title="Heading"><Heading size={16} /></button>
@@ -318,7 +295,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                              </div>
                           )}
 
-                          {/* ================= GENERAL USER MODE TOOLBAR ================= */}
                           {editorMode === 'visual' && (
                              <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 bg-[#161b22] shrink-0">
                                  <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
@@ -327,28 +303,22 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                                      <button type="button" onClick={() => execVisualCmd('formatBlock', 'blockquote')} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded"><Quote size={18} /></button>
                                      <div className="w-px h-5 bg-white/10 mx-1"></div>
                                      <button type="button" onClick={() => setShowLinkInput(!showLinkInput)} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded"><LinkIcon size={18} /></button>
-                                     
-                                     {/* Image Upload for Visual Mode */}
                                      <div className="relative">
                                          <button type="button" onClick={() => visualImageInputRef.current?.click()} className="p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded flex items-center gap-1">
                                             <ImageIcon size={18} /> <span className="text-xs">Photo</span>
                                          </button>
                                          <input type="file" ref={visualImageInputRef} className="hidden" accept="image/*" onChange={handleVisualImageUpload} />
                                      </div>
-
                                      <button type="button" onClick={() => setShowDownloadInput(!showDownloadInput)} className="p-2 text-indigo-400 hover:text-white hover:bg-indigo-500/20 rounded flex items-center gap-1 font-bold">
                                          <Download size={18} /> <span className="text-xs">Download Button</span>
                                      </button>
                                  </div>
-                                 
-                                 {/* Visual Preview Toggle */}
                                  <button type="button" onClick={() => setVisualPreview(!visualPreview)} className={`flex items-center gap-1 px-3 py-1 rounded text-xs font-bold ${visualPreview ? 'bg-indigo-600 text-white' : 'bg-white/5 text-gray-400'}`}>
                                      <Monitor size={14} /> Preview
                                  </button>
                              </div>
                           )}
 
-                          {/* ================= EDITOR AREA ================= */}
                           <div className="flex-1 relative bg-[#0d1117] overflow-hidden">
                              {editorMode === 'markdown' ? (
                                  activeView === 'preview' ? (
@@ -365,7 +335,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                                    />
                                  )
                              ) : (
-                                 /* VISUAL EDITOR */
                                  visualPreview ? (
                                      <div className="absolute inset-0 p-8 overflow-y-auto bg-[#0d1117]">
                                         <ContentRenderer content={String(value || '')} />
@@ -381,7 +350,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                                  )
                              )}
 
-                             {/* --- POPUPS FOR GENERAL MODE --- */}
                              {showLinkInput && (
                                  <div className="absolute top-2 left-2 z-50 bg-gray-800 border border-white/10 p-4 rounded-xl shadow-2xl flex flex-col gap-2 w-72 animate-fade-in">
                                      <h4 className="text-xs font-bold text-gray-400 uppercase">Insert Link</h4>
@@ -410,7 +378,6 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                   );
             }
             
-            // Default Inputs
             if (typeof value === 'object' && value !== null && !Array.isArray(value)) return null; 
             if (Array.isArray(value)) {
                  return <div key={key}><label className="text-gray-400 text-xs font-bold">{label}</label><textarea className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white" value={value.join(', ')} onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value.split(',').map((s:string) => s.trim()) })} /></div>;
