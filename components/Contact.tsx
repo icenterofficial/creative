@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, Mail, MapPin, Send, ArrowRight, Check, Copy, Loader2 } from 'lucide-react';
+import { Phone, Mail, MapPin, Send, ArrowRight, Check, Loader2, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
@@ -16,6 +16,11 @@ export default function Contact() {
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  // --- CONFIGURATION ---
+  const TELEGRAM_BOT_TOKEN = '8263160608:AAFngJ6_jVXnFYlqs0lKZQplu8wh-UxS2Bo'; 
+  const TELEGRAM_CHAT_ID = '1276188382'; 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
       setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -24,34 +29,43 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       setIsSubmitting(true);
+      setErrorMessage('');
+      setSuccessMessage('');
       
       const { name, email, service, message } = formData;
       
-      // Format the message for Telegram
+      // Format the message
       const text = `🚀 *New Inquiry from Website* 🚀\n\n👤 *Name:* ${name}\n📧 *Email:* ${email}\n🛠 *Service:* ${service}\n\n📝 *Message:*\n${message}`;
       
       try {
-          // Copy to clipboard
-          await navigator.clipboard.writeText(text);
-          
-          // Show feedback
-          setSuccessMessage(t('Message copied! Opening Telegram...', 'បានចម្លងសារ! កំពុងបើក Telegram...'));
-          
-          // Open Telegram after a brief delay to allow user to read feedback
-          setTimeout(() => {
-              window.open('https://t.me/khmermuslim', '_blank');
-              setIsSubmitting(false);
-              setSuccessMessage(t('Please paste the message in the chat.', 'សូម Paste សារនៅក្នុងប្រអប់សារ។'));
+          const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                  chat_id: TELEGRAM_CHAT_ID,
+                  text: text,
+                  parse_mode: 'Markdown'
+              }),
+          });
+
+          const data = await response.json();
+
+          if (data.ok) {
+              setSuccessMessage(t('Message sent successfully! We will contact you soon.', 'សារត្រូវបានផ្ញើដោយជោគជ័យ! យើងនឹងទាក់ទងទៅអ្នកវិញក្នុងពេលឆាប់ៗ។'));
               setFormData({ name: '', email: '', service: 'Graphic Design', message: '' });
               
               // Clear success message after 5s
               setTimeout(() => setSuccessMessage(''), 5000);
-          }, 1500);
+          } else {
+              throw new Error(data.description || 'Failed to send message');
+          }
 
-      } catch (err) {
-          console.error("Failed to copy", err);
-          // Fallback if clipboard fails (rare)
-          window.open('https://t.me/khmermuslim', '_blank');
+      } catch (err: any) {
+          console.error("Telegram Error:", err);
+          setErrorMessage(t('Failed to send message. Please try again or contact us via phone.', 'បរាជ័យក្នុងការផ្ញើសារ។ សូមព្យាយាមម្តងទៀត ឬទាក់ទងមកយើងតាមទូរស័ព្ទ។'));
+      } finally {
           setIsSubmitting(false);
       }
   };
@@ -180,8 +194,15 @@ export default function Contact() {
                             
                             {successMessage && (
                                 <div className="p-4 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center gap-3 text-green-400 animate-fade-in">
-                                    <div className="p-1 bg-green-500 rounded-full text-white"><Check size={12} /></div>
+                                    <div className="p-1 bg-green-500 rounded-full text-white shrink-0"><Check size={12} /></div>
                                     <span className="font-khmer text-sm">{successMessage}</span>
+                                </div>
+                            )}
+
+                             {errorMessage && (
+                                <div className="p-4 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center gap-3 text-red-400 animate-fade-in">
+                                    <div className="p-1 bg-red-500 rounded-full text-white shrink-0"><AlertCircle size={12} /></div>
+                                    <span className="font-khmer text-sm">{errorMessage}</span>
                                 </div>
                             )}
 
@@ -193,7 +214,7 @@ export default function Contact() {
                                 {isSubmitting ? (
                                     <>
                                         <Loader2 size={20} className="animate-spin" />
-                                        {t('Processing...', 'កំពុងដំណើរការ...')}
+                                        {t('Sending...', 'កំពុងផ្ញើ...')}
                                     </>
                                 ) : (
                                     <>
@@ -203,7 +224,7 @@ export default function Contact() {
                             </button>
                             
                             <p className="text-center text-xs text-gray-500 font-khmer">
-                                {t('We will copy your message and open Telegram for you.', 'យើងនឹងចម្លងសាររបស់អ្នក ហើយបើក Telegram ជូនអ្នក។')}
+                                {t('We will respond to your inquiry via email or phone.', 'យើងនឹងឆ្លើយតបទៅអ្នកវិញតាមរយៈអ៊ីមែល ឬទូរស័ព្ទ។')}
                             </p>
                         </form>
                     </div>
