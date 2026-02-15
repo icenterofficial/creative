@@ -64,10 +64,12 @@ const TeamStack: React.FC<TeamStackProps> = ({ onMemberSelect }) => {
 
     const visibleCount = 4;
     const visibleMembers = team.slice(0, visibleCount);
+    // Get only the members that are NOT visible for the dropdown
+    const hiddenMembers = team.slice(visibleCount);
     const remainingCount = team.length - visibleCount;
 
     return (
-        <div className="relative inline-flex items-center" ref={dropdownRef}>
+        <div className="relative inline-flex items-center z-[50]" ref={dropdownRef}>
             <div className="flex -space-x-4 hover:space-x-1 transition-all duration-300">
                 {visibleMembers.map((member) => (
                     <div 
@@ -90,15 +92,16 @@ const TeamStack: React.FC<TeamStackProps> = ({ onMemberSelect }) => {
                 )}
             </div>
 
-            {/* Dropdown Menu */}
+            {/* Dropdown Menu - High Z-Index to float above everything */}
             {isOpen && (
-                <div className="absolute top-full left-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl overflow-hidden z-[100] animate-fade-in border border-gray-200">
+                <div className="absolute top-full left-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl overflow-hidden z-[9999] animate-fade-in border border-gray-200">
                     <div className="p-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
-                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">All Members</span>
-                        <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-bold">{team.length}</span>
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">More Members</span>
+                        <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-bold">{hiddenMembers.length}</span>
                     </div>
                     <div className="max-h-64 overflow-y-auto p-2 space-y-1 custom-scrollbar">
-                        {team.map((member) => (
+                        {/* Only map hidden members */}
+                        {hiddenMembers.map((member) => (
                             <button
                                 key={member.id}
                                 onClick={() => handleMemberClick(member.id)}
@@ -227,10 +230,10 @@ const About: React.FC<AboutProps> = ({ onClose }) => {
                                 </div>
                             </div>
                             
-                            {/* Interactive Avatar Stack */}
-                            <div className="pt-6 relative z-50">
+                            {/* Interactive Avatar Stack with High Z-Index Parent */}
+                            <div className="pt-6 relative z-[50]">
                                 <TeamStack onMemberSelect={(member) => setSelectedMember(member)} />
-                                <p className="text-gray-500 text-[10px] mt-3 font-khmer">
+                                <p className="text-gray-500 text-[10px] mt-3 font-khmer relative z-[40]">
                                     {t("Meet the visionaries behind the magic.", "ជួបជាមួយអ្នកបង្កើតភាពអស្ចារ្យ។")}
                                 </p>
                             </div>
