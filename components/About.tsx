@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PageOverlay from './PageOverlay';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Users, Lightbulb, Heart, Target, Sparkles, Award, Zap, Code2, Paintbrush, Fingerprint, ArrowRight } from 'lucide-react';
+import { useData } from '../contexts/DataContext';
+import { Users, Lightbulb, Heart, Target, Sparkles, Award, Zap, Fingerprint, ArrowRight, ChevronRight } from 'lucide-react';
 import RevealOnScroll from './RevealOnScroll';
 
 interface AboutProps {
@@ -28,8 +29,101 @@ const CountUp: React.FC<{ end: number, duration: number, suffix?: string }> = ({
   return <span>{count}{suffix}</span>;
 };
 
+// --- New Team Stack Component ---
+const TeamStack = ({ onClose }: { onClose: () => void }) => {
+    const { team = [] } = useData();
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handleMemberClick = (slug: string) => {
+        onClose(); // Close About Overlay
+        // Short delay to allow overlay to close smoothly before navigating
+        setTimeout(() => {
+            window.location.hash = `#team/${slug}`;
+        }, 100);
+    };
+
+    if (team.length === 0) return null;
+
+    const visibleCount = 4;
+    const visibleMembers = team.slice(0, visibleCount);
+    const hiddenMembers = team.slice(visibleCount);
+    const remainingCount = team.length - visibleCount;
+
+    return (
+        <div className="relative inline-flex items-center" ref={dropdownRef}>
+            <div className="flex -space-x-4 hover:space-x-1 transition-all duration-300">
+                {visibleMembers.map((member) => (
+                    <div 
+                        key={member.id}
+                        onClick={() => handleMemberClick(member.slug || member.id)}
+                        className="relative w-12 h-12 rounded-full border-2 border-gray-900 overflow-hidden cursor-pointer hover:scale-110 hover:z-20 hover:border-indigo-500 transition-all duration-300 bg-gray-800"
+                        title={member.name}
+                    >
+                        <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+                    </div>
+                ))}
+                
+                {remainingCount > 0 && (
+                    <button 
+                        onClick={() => setIsOpen(!isOpen)}
+                        className={`relative w-12 h-12 rounded-full border-2 border-gray-900 bg-gray-800 text-white text-xs font-bold flex items-center justify-center hover:bg-indigo-600 hover:border-indigo-400 hover:scale-110 hover:z-20 transition-all duration-300 cursor-pointer ${isOpen ? 'bg-indigo-600 border-indigo-400 z-30' : ''}`}
+                    >
+                        +{remainingCount}
+                    </button>
+                )}
+            </div>
+
+            {/* Dropdown Menu */}
+            {isOpen && (
+                <div className="absolute top-full left-0 mt-3 w-64 bg-white rounded-2xl shadow-2xl overflow-hidden z-[100] animate-fade-in border border-gray-200">
+                    <div className="p-3 bg-gray-50 border-b border-gray-100 flex justify-between items-center">
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">All Members</span>
+                        <span className="text-xs bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full font-bold">{team.length}</span>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto p-2 space-y-1 custom-scrollbar">
+                        {team.map((member) => (
+                            <button
+                                key={member.id}
+                                onClick={() => handleMemberClick(member.slug || member.id)}
+                                className="w-full flex items-center gap-3 p-2 rounded-xl hover:bg-indigo-50 transition-colors group text-left"
+                            >
+                                <img src={member.image} alt={member.name} className="w-8 h-8 rounded-full object-cover border border-gray-200" />
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-bold text-gray-800 truncate group-hover:text-indigo-700">{member.name}</p>
+                                    <p className="text-[10px] text-gray-500 truncate">{member.role}</p>
+                                </div>
+                                <ChevronRight size={14} className="text-gray-300 group-hover:text-indigo-400" />
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            )}
+            
+            <style>{`
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+            `}</style>
+        </div>
+    );
+};
+
+
 const About: React.FC<AboutProps> = ({ onClose }) => {
   const { t } = useLanguage();
+  const { team = [] } = useData();
 
   return (
     <PageOverlay title={t("The Vision", "ចក្ខុវិស័យ")} bgText="ABOUT" onClose={onClose}>
@@ -102,12 +196,26 @@ const About: React.FC<AboutProps> = ({ onClose }) => {
                     </div>
                 </RevealOnScroll>
 
-                {/* Card 3: Stat 2 */}
+                {/* Card 3: Creative Experts (Updated with TeamStack) */}
                 <RevealOnScroll variant="slide-left" delay={300} className="md:col-span-1">
-                     <div className="h-full bg-gray-900/50 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 flex flex-col justify-center group hover:bg-white/5 transition-all">
-                        <Users size={32} className="mb-4 text-pink-400" />
-                        <h3 className="text-5xl font-black text-white mb-2"><CountUp end={15} duration={2000} /></h3>
-                        <p className="text-gray-400 font-bold uppercase tracking-wider text-sm font-khmer">{t("Creative Experts", "អ្នកជំនាញច្នៃប្រឌិត")}</p>
+                     <div className="h-full bg-gray-900/50 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 flex flex-col justify-between group hover:bg-white/5 transition-all">
+                        <div className="flex justify-between items-start">
+                             <div>
+                                <h3 className="text-4xl font-black text-white mb-1"><CountUp end={team.length} duration={2000} suffix="+" /></h3>
+                                <p className="text-gray-400 font-bold uppercase tracking-wider text-xs font-khmer">{t("Experts", "អ្នកជំនាញ")}</p>
+                             </div>
+                             <div className="p-3 bg-white/5 rounded-full text-pink-400">
+                                <Users size={20} />
+                             </div>
+                        </div>
+                        
+                        {/* Interactive Avatar Stack */}
+                        <div className="pt-6">
+                            <TeamStack onClose={onClose} />
+                            <p className="text-gray-500 text-[10px] mt-3 font-khmer">
+                                {t("Meet the visionaries behind the magic.", "ជួបជាមួយអ្នកបង្កើតភាពអស្ចារ្យ។")}
+                            </p>
+                        </div>
                     </div>
                 </RevealOnScroll>
             </div>
