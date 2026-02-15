@@ -17,8 +17,8 @@ interface AdminDashboardProps {
 type TabType = 'team' | 'projects' | 'insights' | 'services' | 'settings';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, onViewSite }) => {
-  const { isUsingSupabase, team, projects, insights, services: localServices } = useData();
-  const [activeTab, setActiveTab] = useState<TabType>('insights');
+  const { isUsingSupabase, team = [], projects = [], insights = [], services: localServices = [] } = useData();
+  const [activeTab, setActiveTab] = useState<TabType>('team'); // Default to Team for members
   const [dbConfig, setDbConfig] = useState<{url: string, key: string} | null>(null);
   
   // Data States (Local to Admin for immediate updates)
@@ -34,6 +34,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  // Set initial tab based on role
+  useEffect(() => {
+      if (currentUser.role === 'member') {
+          setActiveTab('team');
+      } else {
+          setActiveTab('insights');
+      }
+  }, [currentUser]);
+
   // Initialize: Load Config and Data
   useEffect(() => {
       // Use LocalStorage if available, otherwise fallback to defaults from lib/supabase.ts
@@ -44,10 +53,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           setDbConfig({ url, key });
       }
 
-      setAdminTeam(team);
-      setAdminProjects(projects);
-      setAdminInsights(insights);
-      setAdminServices(localServices);
+      setAdminTeam(team || []);
+      setAdminProjects(projects || []);
+      setAdminInsights(insights || []);
+      setAdminServices(localServices || []);
   }, [team, projects, insights, localServices]);
 
   const handleConfigSave = (e: React.FormEvent) => {
@@ -67,9 +76,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       if(window.confirm("Disconnect Database?")) {
           localStorage.removeItem('supabase_url');
           localStorage.removeItem('supabase_key');
-          // If we disconnect, we might fall back to defaults, 
-          // so explicit null might be needed or a reload to show local data only if defaults weren't there.
-          // Since defaults exist, reloading will just reconnect to defaults.
           window.location.reload();
       }
   };
@@ -82,12 +88,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
   };
 
   const handleAdd = () => {
+    // Security check: Members cannot add
+    if (currentUser.role !== 'admin') {
+        alert("You do not have permission to add new items.");
+        return;
+    }
+
     setIsAdding(true);
     // Default Templates
     const templates: any = {
       team: { name: '', role: '', roleKm: '', image: '', bio: '', bioKm: '', skills: [], experience: [], socials: {} },
       projects: { title: '', category: 'graphicdesign', image: '', client: '' },
-      insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: currentUser.role === 'member' ? currentUser.id : 't1' },
+      insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: 't1' },
       services: { title: '', titleKm: '', description: '', icon: '' }
     };
     setEditingItem(templates[activeTab]);
@@ -95,6 +107,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
   };
 
   const handleDelete = async (type: string, id: string) => {
+      if (currentUser.role !== 'admin') {
+          alert("Only Admins can delete items.");
+          return;
+      }
+
       if (!window.confirm("Are you sure you want to delete this item?")) return;
       
       const supabase = getSupabaseClient();
@@ -130,6 +147,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       const supabase = getSupabaseClient();
       if (!supabase) return;
 
+      // Strict Role Check for Adding
+      if (isAdding && currentUser.role !== 'admin') {
+          alert("Security Alert: Only Admins can create new records.");
+          return;
+      }
+
       setIsSaving(true);
       try {
           const item = { ...editingItem };
@@ -143,15 +166,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
               payload = { title: item.title, category: item.category, image: item.image, client: item.client };
           } else if (activeTab === 'team') {
               table = 'team';
+              // Ensure we map camelCase (frontend) to snake_case (database)
               payload = { 
-                  name: item.name, role: item.role, role_km: item.roleKm, image: item.image, 
-                  bio: item.bio, bio_km: item.bioKm, skills: item.skills, experience: item.experience, socials: item.socials 
+                  name: item.name, 
+                  role: item.role, 
+                  role_km: item.roleKm, 
+                  image: item.image, 
+                  bio: item.bio, 
+                  bio_km: item.bioKm, 
+                  skills: item.skills, 
+                  experience: item.experience, 
+                  socials: item.socials 
               };
           } else if (activeTab === 'insights') {
               table = 'insights';
               payload = { 
-                  title: item.title, title_km: item.titleKm, excerpt: item.excerpt, content: item.content, 
-                  date: item.date, category: item.category, image: item.image, author_id: item.authorId 
+                  title: item.title, 
+                  title_km: item.titleKm, 
+                  excerpt: item.excerpt, 
+                  content: item.content, 
+                  date: item.date, 
+                  category: item.category, 
+                  image: item.image, 
+                  author_id: item.authorId 
               };
           }
 
@@ -159,6 +196,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (isAdding) {
               res = await supabase.from(table).insert([payload]).select();
           } else {
+              // Update Logic
               res = await supabase.from(table).update(payload).eq('id', item.id).select();
           }
 
@@ -166,7 +204,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
 
           const newItem = { ...item, ...res.data[0] }; // Merge response
           
-          // Update local state
+          // Update local state to reflect changes immediately in UI
           const updater = (list: any[]) => isAdding ? [newItem, ...list] : list.map(i => i.id === newItem.id ? newItem : i);
           
           if (activeTab === 'team') setAdminTeam(updater(adminTeam));
@@ -174,7 +212,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (activeTab === 'insights') setAdminInsights(updater(adminInsights));
 
           setIsModalOpen(false);
-          alert("Saved successfully!");
+          alert("Saved successfully! Click 'View Live Site' to see changes.");
       } catch (err: any) {
           console.error(err);
           alert("Failed to save: " + err.message);
@@ -221,6 +259,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       );
   }
 
+  const handleViewSite = () => {
+      // Force reload to ensure fresh data fetch from Supabase
+      window.location.reload(); 
+  };
+
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
        <AdminHeader 
@@ -232,7 +275,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           onFetch={() => window.location.reload()}
           onSync={() => {}}
           onLogout={onLogout}
-          onViewSite={onViewSite}
+          onViewSite={handleViewSite}
        />
 
        <div className="flex flex-1 pt-16">
@@ -249,7 +292,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                    <p className="text-gray-400 text-sm">Manage your {activeTab} content directly.</p>
                 </div>
                 
-                {activeTab !== 'settings' && (
+                {/* Only Show "Add New" for Super Admins and not on settings tab */}
+                {activeTab !== 'settings' && currentUser.role === 'admin' && (
                     <button 
                         onClick={handleAdd}
                         className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-500/20 transition-all font-khmer"
@@ -263,11 +307,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                  <div className="bg-gray-900 border border-white/10 rounded-2xl p-6 max-w-xl">
                      <h3 className="text-xl font-bold mb-4 flex items-center gap-2"><Database size={20} className="text-green-400"/> Database Config</h3>
                      <p className="text-gray-400 text-sm mb-4">Connected to: <span className="text-green-400">{dbConfig.url}</span></p>
-                     {/* 
-                        Use the constants to check if we are using defaults. 
-                        If local storage has items, allow disconnect (clearing local storage).
-                        If using defaults (no local storage), showing disconnect might be confusing, but effectively it just reloads.
-                     */}
                      <button onClick={clearConfig} className="px-4 py-2 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg hover:bg-red-500/20 text-sm font-bold">
                         {localStorage.getItem('supabase_url') ? "Reset to Defaults" : "Reload Connection"}
                      </button>
@@ -295,7 +334,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           onSave={handleSave}
           onCancel={() => setIsModalOpen(false)}
           isSaving={isSaving}
-          apiToken={dbConfig.key} // Not used directly in modal, client is grabbed from lib
+          apiToken={dbConfig.key} 
        />
     </div>
   );
