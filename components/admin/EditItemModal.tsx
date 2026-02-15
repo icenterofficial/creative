@@ -71,9 +71,19 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
 
         <form onSubmit={onSave} className="space-y-4 flex-1">
           {Object.keys(editingItem).map((key) => {
-            if (['id', 'comments', 'replies', 'icon', 'created_at'].includes(key)) return null;
+            if (['id', 'comments', 'replies', 'created_at', '_iconString', 'slug'].includes(key)) return null;
             const value = editingItem[key];
             const label = key.charAt(0).toUpperCase() + key.slice(1);
+
+            // Hide Icon if it's an object (ReactNode) from static data, unless we have converted it to string for editing
+            if (key === 'icon' && typeof value !== 'string') {
+                return (
+                    <div key={key} className="mb-4 p-3 bg-gray-800 rounded-lg">
+                        <label className="block text-xs font-bold text-gray-400 mb-1">Icon</label>
+                        <p className="text-xs text-yellow-500">Static Icon (Cannot edit, will be reset to 'Box' if saved to DB)</p>
+                    </div>
+                );
+            }
 
             if (key === 'authorId') {
                 return (
