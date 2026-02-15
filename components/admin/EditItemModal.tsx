@@ -32,6 +32,7 @@ const simpleMdToHtml = (md: string) => {
         .replace(/^\- (.*$)/gim, '<li>$1</li>')
         .replace(/^\d\. (.*$)/gim, '<li>$1</li>')
         .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
+        // Image regex tailored for standard MD images
         .replace(/!\[(.*?)\]\((.*?)\)/gim, '<img src="$2" alt="$1" style="max-width:100%; border-radius: 8px; margin: 10px 0;" />')
         .replace(/\[(.*?)\]\((.*?)\)/gim, '<a href="$2" target="_blank" style="color: #818cf8; text-decoration: underline;">$1</a>')
         .replace(/\[\[DOWNLOAD:(.*?):(.*?)\]\]/gim, '<div data-download-url="$1" data-download-label="$2" style="background:#1e1b4b; border:1px solid #4338ca; padding:10px; border-radius:8px; display:inline-block; margin: 10px 0; font-weight:bold; color:#a5b4fc;">⬇️ Download: $2</div>')
@@ -62,9 +63,19 @@ const simpleHtmlToMd = (html: string) => {
     text = text.replace(/<\/li>/gi, '\n');
     text = text.replace(/<blockquote>/gi, '> ');
     text = text.replace(/<\/blockquote>/gi, '\n');
-    text = text.replace(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*>/gi, '![$2]($1)');
+    
+    // Robust Image Regex: Handles src before alt OR alt before src
+    text = text.replace(/<img\s+[^>]*src="([^"]+)"\s+[^>]*alt="([^"]*)"[^>]*>/gi, '![$2]($1)');
+    text = text.replace(/<img\s+[^>]*alt="([^"]*)"\s+[^>]*src="([^"]+)"[^>]*>/gi, '![$1]($2)');
+    // Fallback for images without alt (though our inserter adds it)
+    text = text.replace(/<img\s+[^>]*src="([^"]+)"[^>]*>/gi, '![]($1)');
+
     text = text.replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)');
-    text = text.replace(/<div[^>]*data-download-url="([^"]*)"[^>]*data-download-label="([^"]*)"[^>]*>.*?<\/div>/gi, '[[DOWNLOAD:$1:$2]]');
+    
+    // Robust Download Regex
+    text = text.replace(/<div\s+[^>]*data-download-url="([^"]+)"\s+[^>]*data-download-label="([^"]+)"[^>]*>.*?<\/div>/gi, '[[DOWNLOAD:$1:$2]]');
+    text = text.replace(/<div\s+[^>]*data-download-label="([^"]+)"\s+[^>]*data-download-url="([^"]+)"[^>]*>.*?<\/div>/gi, '[[DOWNLOAD:$2:$1]]');
+
     text = text.replace(/&nbsp;/g, ' ');
     text = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
     return text.trim();
@@ -88,28 +99,32 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const visualEditorRef = useRef<HTMLDivElement>(null);
 
-  // Safe dependency for useEffect
   const itemContent = editingItem?.content;
 
-  // Sync Content on Open/Mode Switch
+  // Sync Content on Open
   useEffect(() => {
     if (isOpen && editingItem) {
         setActiveView('write');
         setVisualPreview(false);
+        // Default to markdown unless preferred otherwise, keeping logic simple
         if (!editorMode) setEditorMode('markdown');
     }
-  }, [isOpen]); // Reduced dependencies to avoid loops
+  }, [isOpen]);
 
   // Sync Visual Editor Content
   useEffect(() => {
-      if (editorMode === 'visual' && visualEditorRef.current && !visualPreview && editingItem) {
+      if (editorMode === 'visual' && visualEditorRef.current && editingItem) {
           const currentMd = editingItem.content || editingItem.description || editingItem.bio || '';
-          // Avoid infinite loops by checking content
-          if (visualEditorRef.current.innerHTML !== simpleMdToHtml(currentMd)) {
-             visualEditorRef.current.innerHTML = simpleMdToHtml(currentMd);
+          const currentHtml = visualEditorRef.current.innerHTML;
+          const targetHtml = simpleMdToHtml(currentMd);
+          
+          // Only update if significantly different to avoid cursor jumps
+          // or if the editor is empty (initial load)
+          if (!currentHtml || currentHtml === '<br>') {
+             visualEditorRef.current.innerHTML = targetHtml;
           }
       }
-  }, [editorMode, visualPreview, itemContent]);
+  }, [editorMode, itemContent]);
 
   if (!isOpen || !editingItem) return null;
 
@@ -151,7 +166,9 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
       if (file) {
           const url = await uploadImage(file);
           if (url) {
-              document.execCommand('insertImage', false, url);
+              // Explicitly insert IMG with ALT to match regex
+              const html = `<img src="${url}" alt="image" style="max-width: 100%; border-radius: 8px; margin: 10px 0;" />`;
+              document.execCommand('insertHTML', false, html);
               handleVisualInput();
           }
       }
@@ -181,6 +198,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
 
   const insertVisualDownload = () => {
       if(tempLink.url && tempLink.text) {
+          // Explicitly ordered attributes for regex consistency, although regex is now more robust
           const html = `<div data-download-url="${tempLink.url}" data-download-label="${tempLink.text}" style="background:#1e1b4b; border:1px solid #4338ca; padding:10px; border-radius:8px; display:inline-block; margin: 10px 0; font-weight:bold; color:#a5b4fc;">⬇️ Download: ${tempLink.text}</div><br>`;
           document.execCommand('insertHTML', false, html);
           handleVisualInput();
@@ -335,11 +353,8 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                                    />
                                  )
                              ) : (
-                                 visualPreview ? (
-                                     <div className="absolute inset-0 p-8 overflow-y-auto bg-[#0d1117]">
-                                        <ContentRenderer content={String(value || '')} />
-                                     </div>
-                                 ) : (
+                                 /* VISUAL EDITOR MODE */
+                                 <>
                                      <div 
                                         ref={visualEditorRef}
                                         contentEditable
@@ -347,7 +362,13 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                                         className="w-full h-full bg-[#0d1117] p-8 text-white focus:outline-none text-lg overflow-y-auto"
                                         style={{ minHeight: '100%' }}
                                      />
-                                 )
+                                     {/* Preview Overlay: Rendered strictly on top when active */}
+                                     {visualPreview && (
+                                         <div className="absolute inset-0 p-8 overflow-y-auto bg-[#0d1117] z-20">
+                                            <ContentRenderer content={String(value || '')} />
+                                         </div>
+                                     )}
+                                 </>
                              )}
 
                              {showLinkInput && (
