@@ -21,48 +21,50 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({
   const { isUsingSupabase } = useData();
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-16 bg-gray-900 border-b border-white/10 flex items-center justify-between px-6 z-50">
+    <header className="fixed top-0 left-0 right-0 h-16 bg-gray-900 border-b border-white/10 flex items-center justify-between px-4 md:px-6 z-50">
       <div className="flex items-center gap-3">
         <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${isSuperAdmin ? 'bg-indigo-600' : 'bg-green-600'}`}>
           {isSuperAdmin ? <Shield size={16} /> : <Users size={16} />}
         </div>
         <div className="flex flex-col">
-          <span className="font-bold text-sm hidden md:inline">{currentUser.name}</span>
+          <span className="font-bold text-sm max-w-[100px] truncate md:max-w-none">{currentUser.name}</span>
           <span className="text-[10px] text-gray-500 uppercase tracking-wider">{isSuperAdmin ? 'Super Admin' : 'Team Member'}</span>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         {/* View Site Button */}
         {onViewSite && (
              <button
               onClick={onViewSite}
-              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-sm border border-indigo-500/20"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 text-xs md:text-sm border border-indigo-500/20 whitespace-nowrap"
             >
-              <Globe size={14} /> View Live Site
+              <Globe size={14} /> <span className="hidden md:inline">View Live Site</span><span className="md:hidden">Site</span>
             </button>
         )}
 
-        {/* Data Source Indicator */}
-        <div className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${isUsingSupabase ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'}`}>
-            <Database size={10} />
-            {isUsingSupabase ? 'Source: Supabase' : 'Source: Local Default'}
-        </div>
+        {/* Data Source Indicator - HIDDEN FOR MEMBERS */}
+        {isSuperAdmin && (
+            <div className={`hidden md:flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${isUsingSupabase ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400'}`}>
+                <Database size={10} />
+                {isUsingSupabase ? 'Source: Supabase' : 'Local'}
+            </div>
+        )}
 
         {isSuperAdmin && (
           <>
             <button
               onClick={onFetch}
               disabled={isSyncing}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 text-sm border border-white/10 disabled:opacity-50"
+              className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 text-sm border border-white/10 disabled:opacity-50"
             >
-              <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} /> Refresh Data
+              <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} /> Refresh
             </button>
           </>
         )}
-        <div className="h-6 w-px bg-white/10 mx-2" />
+        <div className="h-6 w-px bg-white/10 mx-1 md:mx-2" />
         <button onClick={onLogout} className="flex items-center gap-2 text-gray-400 hover:text-white text-sm">
-          <LogOut size={16} /> Logout
+          <LogOut size={16} /> <span className="hidden md:inline">Logout</span>
         </button>
       </div>
     </header>
