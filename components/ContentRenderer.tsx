@@ -98,6 +98,15 @@ const ContentRenderer: React.FC<{ content: string }> = ({ content }) => {
                     const key = `${index}-${lineIdx}`;
                     if (!trimmed) return <div key={key} className="h-4"></div>;
 
+                    // Blockquotes
+                    if (trimmed.startsWith('> ')) {
+                        return (
+                            <blockquote key={key} className="border-l-4 border-indigo-500 pl-4 italic text-gray-400 my-4 bg-white/5 p-4 rounded-r-lg">
+                                {trimmed.substring(2)}
+                            </blockquote>
+                        );
+                    }
+
                     const imgMatch = trimmed.match(/!\[(.*?)\]\((.*?)\)/);
                     if (imgMatch) {
                         const [_, alt, src] = imgMatch;
