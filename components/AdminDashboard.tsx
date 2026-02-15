@@ -83,7 +83,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
   // CRUD Operations
   const handleEdit = (item: any) => {
     setIsAdding(false);
-    setEditingItem(item);
+    // For services, ensure icon is treated as string for editing if it's a component
+    let itemToEdit = { ...item };
+    if (activeTab === 'services' && item._iconString) {
+        itemToEdit.icon = item._iconString;
+    } else if (activeTab === 'services' && typeof item.icon !== 'string') {
+        // Fallback for static items without _iconString
+        itemToEdit.icon = ''; 
+    }
+    setEditingItem(itemToEdit);
     setIsModalOpen(true);
   };
 
@@ -100,7 +108,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       team: { name: '', role: '', roleKm: '', image: '', bio: '', bioKm: '', skills: [], experience: [], socials: {} },
       projects: { title: '', category: 'graphicdesign', image: '', client: '' },
       insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: currentUser.role === 'member' ? currentUser.id : 't1' },
-      services: { title: '', titleKm: '', description: '', icon: '' }
+      services: { title: '', titleKm: '', subtitle: '', subtitleKm: '', description: '', descriptionKm: '', icon: 'Box', color: 'bg-indigo-500', features: [], featuresKm: [] }
     };
     setEditingItem(templates[activeTab]);
     setIsModalOpen(true);
@@ -123,6 +131,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (type === 'team') table = 'team';
           if (type === 'project') table = 'projects';
           if (type === 'insight') table = 'insights';
+          if (type === 'service') table = 'services';
 
           // Check if it's a UUID
           const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -139,6 +148,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (type === 'team') setAdminTeam(prev => prev.filter(i => i.id !== id));
           if (type === 'project') setAdminProjects(prev => prev.filter(i => i.id !== id));
           if (type === 'insight') setAdminInsights(prev => prev.filter(i => i.id !== id));
+          if (type === 'service') setAdminServices(prev => prev.filter(i => i.id !== id));
           
           alert("Item deleted!");
       } catch (err) {
@@ -178,6 +188,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (activeTab === 'projects') {
               table = 'projects';
               payload = { title: item.title, category: item.category, image: item.image, client: item.client };
+          } else if (activeTab === 'services') {
+              table = 'services';
+              payload = { 
+                  title: item.title, 
+                  title_km: item.titleKm,
+                  subtitle: item.subtitle,
+                  subtitle_km: item.subtitleKm,
+                  description: item.description,
+                  description_km: item.descriptionKm,
+                  features: item.features,
+                  features_km: item.featuresKm,
+                  icon: typeof item.icon === 'string' ? item.icon : 'Box', // Ensure icon is string for DB
+                  color: item.color,
+                  link: item.link
+              };
           } else if (activeTab === 'team') {
               table = 'team';
               // Ensure we map camelCase (frontend) to snake_case (database)
@@ -220,14 +245,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
 
           if (res.error) throw res.error;
 
-          const newItem = { ...item, ...res.data[0] }; // Merge response
+          // For local update, we might need to process the item a bit (e.g. icon string back to component for display)
+          // But for admin dashboard display, we usually just need the list update.
+          // The main app uses DataContext which re-fetches or we need to mimic that structure.
+          
+          // Simplified updater for Admin UI - we'll rely on reload for perfect sync or simple merge
+          const newItem = { ...item, ...res.data[0] };
           
           // Update local state
           const updater = (list: any[]) => {
               if (performInsert) {
-                  // If we migrated a static item, we might want to replace the static one locally 
-                  // or just add the new one. For simplicity and to avoid duplicates, we add new one.
-                  // Ideally, you'd filter out the static one, but that's complex without reloading.
                   return [newItem, ...list];
               } else {
                   return list.map(i => i.id === newItem.id ? newItem : i);
@@ -237,6 +264,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (activeTab === 'team') setAdminTeam(updater(adminTeam));
           if (activeTab === 'projects') setAdminProjects(updater(adminProjects));
           if (activeTab === 'insights') setAdminInsights(updater(adminInsights));
+          if (activeTab === 'services') setAdminServices(updater(adminServices));
 
           setIsModalOpen(false);
           
