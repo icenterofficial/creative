@@ -3,6 +3,7 @@ import { SERVICES, PROJECTS, TEAM, INSIGHTS } from '../constants';
 import { Service, Project, TeamMember, Post } from '../types';
 import { getSupabaseClient } from '../lib/supabase';
 import { Database } from 'lucide-react';
+import * as LucideIcons from 'lucide-react';
 import { slugify } from '../utils/format';
 
 interface DataContextType {
@@ -38,13 +39,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isUsingSupabase, setIsUsingSupabase] = useState(false);
 
   // Helper function to merge DB data with Static data without duplicates
-  // It removes static items if a DB item exists with the same ID, Slug, or Name/Title
   const mergeData = (dbItems: any[], staticItems: any[], type: 'team' | 'project' | 'insight' | 'service') => {
       const dbIds = new Set(dbItems.map(i => i.id));
       const dbSlugs = new Set(dbItems.map(i => i.slug));
       
-      // For Team and Projects, we also check Names/Titles to prevent duplication 
-      // when a static item (id: 't1') is saved to DB as a new UUID but keeps the same name.
+      // For Team, Projects, and Services check Names/Titles to prevent duplication 
       const dbNames = new Set(dbItems.map(i => (i.name || i.title || '').toLowerCase().trim()));
 
       const filteredStatic = staticItems.filter(staticItem => {
@@ -52,12 +51,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const slugExists = staticItem.slug && dbSlugs.has(staticItem.slug);
           const nameExists = dbNames.has((staticItem.name || staticItem.title || '').toLowerCase().trim());
           
-          // If it exists in DB (by any matching criteria), exclude the static version
           return !idExists && !slugExists && !nameExists;
       });
 
-      // Return DB items first (prioritized), then remaining static items
       return [...dbItems, ...filteredStatic];
+  };
+
+  // Helper to get Lucide Icon from string
+  const getIcon = (iconName: string, defaultIcon: React.ReactNode) => {
+      if (!iconName) return defaultIcon;
+      // Capitalize first letter just in case
+      const formattedName = iconName.charAt(0).toUpperCase() + iconName.slice(1);
+      const IconComponent = (LucideIcons as any)[formattedName];
+      return IconComponent ? <IconComponent size={32} /> : defaultIcon;
   };
 
   // Load Data from Supabase
@@ -67,7 +73,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (!supabase) {
           setIsLoading(false);
-          return; // Use local data if no credentials
+          return;
       }
 
       setIsLoading(true);
@@ -83,7 +89,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  client: p.client,
                  slug: p.slug || slugify(p.title)
              }));
-             // Merge with static projects
              setProjects(mergeData(formattedProjects, PROJECTS, 'project'));
         }
 
@@ -104,7 +109,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  socials: t.socials || {},
                  slug: t.slug || slugify(t.name)
              }));
-             // Merge with static team
              setTeam(mergeData(formattedTeam, TEAM, 'team'));
         }
 
@@ -125,8 +129,31 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  comments: [],
                  slug: i.slug || slugify(i.title)
              }));
-             // Merge with static insights
              setInsights(mergeData(formattedInsights, INSIGHTS, 'insight'));
+        }
+
+        // 4. Fetch Services
+        const { data: dbServices } = await supabase.from('services').select('*').order('created_at', { ascending: true });
+        if (dbServices) {
+            const formattedServices = dbServices.map((s: any) => ({
+                id: s.id,
+                title: s.title,
+                titleKm: s.title_km,
+                subtitle: s.subtitle,
+                subtitleKm: s.subtitle_km,
+                // If icon is stored as string in DB, convert to component. If not, fallback.
+                icon: getIcon(s.icon, <LucideIcons.Box size={32} />),
+                // Keep the string version as a property for the editor if needed, but 'icon' in type is Node
+                _iconString: s.icon, 
+                color: s.color || 'bg-indigo-500',
+                link: s.link || '#',
+                description: s.description,
+                descriptionKm: s.description_km,
+                features: s.features || [],
+                featuresKm: s.features_km || [],
+                slug: s.slug || slugify(s.title)
+            }));
+            setServices(mergeData(formattedServices, SERVICES, 'service'));
         }
 
         setIsUsingSupabase(true);
