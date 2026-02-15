@@ -1,134 +1,187 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PageOverlay from './PageOverlay';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Users, Lightbulb, Heart, Target, Sparkles, Award } from 'lucide-react';
+import { Users, Lightbulb, Heart, Target, Sparkles, Award, Zap, Code2, Paintbrush, Fingerprint, ArrowRight } from 'lucide-react';
 import RevealOnScroll from './RevealOnScroll';
 
 interface AboutProps {
   onClose: () => void;
 }
 
+// Internal CountUp Component
+const CountUp: React.FC<{ end: number, duration: number, suffix?: string }> = ({ end, duration, suffix = '' }) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startTimestamp: number | null = null;
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      setCount(Math.floor(progress * end));
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      }
+    };
+    window.requestAnimationFrame(step);
+  }, [end, duration]);
+
+  return <span>{count}{suffix}</span>;
+};
+
 const About: React.FC<AboutProps> = ({ onClose }) => {
   const { t } = useLanguage();
 
-  const values = [
-    {
-        icon: <Lightbulb className="text-yellow-400" size={32} />,
-        title: "Innovation",
-        desc: "We push boundaries and explore new technologies to deliver cutting-edge solutions."
-    },
-    {
-        icon: <Heart className="text-red-400" size={32} />,
-        title: "Passion",
-        desc: "We love what we do, and that enthusiasm shines through in every pixel and line of code."
-    },
-    {
-        icon: <Users className="text-indigo-400" size={32} />,
-        title: "Community",
-        desc: "Deeply rooted in Cambodian culture, we strive to uplift and empower our local community."
-    },
-    {
-        icon: <Target className="text-green-400" size={32} />,
-        title: "Excellence",
-        desc: "Good isn't enough. We aim for greatness in every project, big or small."
-    }
-  ];
-
   return (
-    <PageOverlay title={t("About Us", "អំពីយើង")} bgText="STORY" onClose={onClose}>
-        <div className="max-w-4xl mx-auto">
-            {/* Hero Section */}
-            <div className="text-center mb-16">
-                <h1 className="text-4xl md:text-6xl font-bold text-white mb-6 font-khmer leading-tight">
-                    {t("We are", "យើងគឺជា")} <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">Ponloe Creative</span>
-                </h1>
-                <p className="text-xl text-gray-400 leading-relaxed font-khmer">
-                    {t(
-                        "A multidisciplinary design and technology agency based in the heart of Phnom Penh, dedicated to transforming ideas into digital reality.",
-                        "ភ្នាក់ងាររចនា និងបច្ចេកវិទ្យាដែលមានមូលដ្ឋាននៅកណ្តាលរាជធានីភ្នំពេញ ដែលប្តេជ្ញាចិត្តប្រែក្លាយគំនិតទៅជាការពិតក្នុងពិភពឌីជីថល។"
-                    )}
-                </p>
-            </div>
-
-            {/* Image Banner */}
-            <div className="relative h-64 md:h-96 w-full rounded-3xl overflow-hidden mb-16 border border-white/10 shadow-2xl">
-                <img 
-                    src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=2000" 
-                    alt="Team working together" 
-                    className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-indigo-900/30 mix-blend-multiply"></div>
-                <div className="absolute bottom-6 left-6 md:bottom-10 md:left-10 bg-black/60 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/10">
-                    <p className="text-white font-bold flex items-center gap-2">
-                        <Sparkles size={18} className="text-yellow-400"/> Est. 2020 in Phnom Penh
-                    </p>
-                </div>
-            </div>
-
-            {/* Our Story */}
-            <div className="grid md:grid-cols-2 gap-12 mb-20 items-center">
-                <div>
-                    <h2 className="text-3xl font-bold text-white mb-6 font-khmer">{t("Our Story", "ប្រវត្តិរបស់យើង")}</h2>
-                    <div className="space-y-4 text-gray-300 leading-relaxed font-khmer">
-                        <p>
-                            {t(
-                                "Ponloe Creative started as a small collective of freelancers passionate about bringing modern design aesthetics to the Cambodian market. We noticed a gap between traditional local businesses and the rapidly evolving digital landscape.",
-                                "Ponloe Creative បានចាប់ផ្តើមជាក្រុមតូចមួយនៃអ្នកធ្វើការឯករាជ្យដែលមានចំណង់ចំណូលចិត្តក្នុងការនាំយកសោភ័ណភាពរចនាទំនើបមកកាន់ទីផ្សារកម្ពុជា។ យើងបានកត់សម្គាល់ឃើញគម្លាតរវាងអាជីវកម្មក្នុងស្រុកបែបប្រពៃណី និងទេសភាពឌីជីថលដែលកំពុងវិវត្តយ៉ាងឆាប់រហ័ស។"
-                            )}
-                        </p>
-                        <p>
-                            {t(
-                                "Today, we have grown into a full-service agency offering web development, graphic design, architectural planning, and more. Our diverse team combines international standards with deep local insights.",
-                                "សព្វថ្ងៃនេះ យើងបានរីកចម្រើនទៅជាភ្នាក់ងារផ្តល់សេវាកម្មពេញលេញដែលផ្តល់ជូននូវការអភិវឌ្ឍន៍គេហទំព័រ ការរចនាក្រាហ្វិក ការរៀបចំផែនការស្ថាបត្យកម្ម និងច្រើនទៀត។ ក្រុមចម្រុះរបស់យើងរួមបញ្ចូលគ្នានូវស្តង់ដារអន្តរជាតិជាមួយនឹងការយល់ដឹងស៊ីជម្រៅក្នុងស្រុក។"
-                            )}
-                        </p>
+    <PageOverlay title={t("The Vision", "ចក្ខុវិស័យ")} bgText="ABOUT" onClose={onClose}>
+        <div className="max-w-7xl mx-auto pb-20">
+            
+            {/* 1. Hero Section: Big Typography & Gradient */}
+            <div className="relative py-20 mb-20 text-center">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none animate-pulse"></div>
+                
+                <RevealOnScroll variant="zoom-in" duration={800}>
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-indigo-300 text-sm font-bold tracking-wider mb-6 backdrop-blur-md">
+                        <Sparkles size={14} /> 
+                        <span className="font-khmer">{t("Since 2020", "បង្កើតឡើងតាំងពីឆ្នាំ ២០២០")}</span>
                     </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                     <div className="bg-white/5 p-6 rounded-2xl border border-white/5 text-center">
-                        <h3 className="text-4xl font-bold text-white mb-2">50+</h3>
-                        <p className="text-indigo-400 text-sm uppercase font-bold">Projects</p>
-                     </div>
-                     <div className="bg-white/5 p-6 rounded-2xl border border-white/5 text-center">
-                        <h3 className="text-4xl font-bold text-white mb-2">15+</h3>
-                        <p className="text-indigo-400 text-sm uppercase font-bold">Experts</p>
-                     </div>
-                     <div className="bg-white/5 p-6 rounded-2xl border border-white/5 text-center col-span-2">
-                        <h3 className="text-4xl font-bold text-white mb-2">100%</h3>
-                        <p className="text-indigo-400 text-sm uppercase font-bold">Client Satisfaction</p>
-                     </div>
-                </div>
+                    
+                    <h1 className="text-5xl md:text-8xl font-black text-white leading-[0.9] tracking-tighter mb-8 font-khmer">
+                        WE DON'T JUST <br />
+                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">DESIGN.</span> WE <br />
+                        <span className="relative inline-block">
+                            DEFINE.
+                            <svg className="absolute w-full h-3 -bottom-1 left-0 text-indigo-500" viewBox="0 0 100 10" preserveAspectRatio="none">
+                                <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="3" fill="none" />
+                            </svg>
+                        </span>
+                    </h1>
+
+                    <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto leading-relaxed font-khmer">
+                        {t(
+                            "Ponloe Creative is a digital alchemy lab where code meets art, and imagination becomes infrastructure.",
+                            "Ponloe Creative គឺជាមន្ទីរពិសោធន៍គីមីសាស្ត្រឌីជីថល ដែលកូដជួបជាមួយសិល្បៈ ហើយការស្រមើលស្រមៃក្លាយជាហេដ្ឋារចនាសម្ព័ន្ធពិតប្រាកដ។"
+                        )}
+                    </p>
+                </RevealOnScroll>
             </div>
 
-            {/* Values */}
-            <div>
-                <h2 className="text-3xl font-bold text-white mb-10 text-center font-khmer">{t("Core Values", "គុណតម្លៃស្នូល")}</h2>
-                <div className="grid md:grid-cols-2 gap-6">
-                    {values.map((val, idx) => (
-                        <div key={idx} className="bg-gray-900 border border-white/10 p-6 rounded-2xl hover:border-indigo-500/50 transition-colors group">
-                            <div className="mb-4 bg-white/5 w-14 h-14 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                                {val.icon}
-                            </div>
-                            <h3 className="text-xl font-bold text-white mb-2">{val.title}</h3>
-                            <p className="text-gray-400 text-sm">{val.desc}</p>
+            {/* 2. Bento Grid Layout for "Who We Are" */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
+                {/* Card 1: Main Story (Large) */}
+                <RevealOnScroll variant="fade-up" delay={100} className="md:col-span-2 row-span-2">
+                    <div className="h-full bg-gray-900/50 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 md:p-12 relative overflow-hidden group hover:border-indigo-500/30 transition-all duration-500">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-[80px] group-hover:bg-purple-500/20 transition-all"></div>
+                        <Fingerprint size={48} className="text-white mb-6 relative z-10" />
+                        <h2 className="text-3xl font-bold text-white mb-6 font-khmer">{t("Our Identity", "អត្តសញ្ញាណរបស់យើង")}</h2>
+                        <div className="space-y-6 text-gray-400 text-lg leading-relaxed font-khmer relative z-10">
+                            <p>
+                                {t(
+                                    "Born in the vibrant heart of Phnom Penh, we saw a digital landscape waiting to be painted. We aren't just a service provider; we are partners in your legacy.",
+                                    "កើតនៅក្នុងបេះដូងដ៏រស់រវើកនៃរាជធានីភ្នំពេញ យើងបានឃើញទេសភាពឌីជីថលដែលរង់ចាំការកែច្នៃ។ យើងមិនមែនគ្រាន់តែជាអ្នកផ្តល់សេវាកម្មនោះទេ យើងគឺជាដៃគូក្នុងកេរដំណែលរបស់អ្នក។"
+                                )}
+                            </p>
+                            <p>
+                                {t(
+                                    "Our team is a fusion of architects, developers, and artists who believe that every pixel matters and every line of code should have a purpose.",
+                                    "ក្រុមរបស់យើងគឺជាការរួមបញ្ចូលគ្នានៃស្ថាបត្យករ អ្នកអភិវឌ្ឍន៍ និងសិល្បករ ដែលជឿជាក់ថារាល់ភីកសែលសុទ្ធតែសំខាន់ ហើយរាល់បន្ទាត់កូដគួរតែមានគោលបំណងច្បាស់លាស់។"
+                                )}
+                            </p>
                         </div>
+                        {/* Decorative Line */}
+                        <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+                </RevealOnScroll>
+
+                {/* Card 2: Stat 1 */}
+                <RevealOnScroll variant="slide-left" delay={200} className="md:col-span-1">
+                    <div className="h-full bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[32px] p-8 text-white flex flex-col justify-center relative overflow-hidden shadow-2xl">
+                        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                        <Award size={32} className="mb-4 text-white/80" />
+                        <h3 className="text-5xl font-black mb-2"><CountUp end={50} duration={2000} suffix="+" /></h3>
+                        <p className="font-bold opacity-80 uppercase tracking-wider text-sm font-khmer">{t("Projects Delivered", "គម្រោងបានបញ្ចប់")}</p>
+                    </div>
+                </RevealOnScroll>
+
+                {/* Card 3: Stat 2 */}
+                <RevealOnScroll variant="slide-left" delay={300} className="md:col-span-1">
+                     <div className="h-full bg-gray-900/50 backdrop-blur-xl border border-white/10 rounded-[32px] p-8 flex flex-col justify-center group hover:bg-white/5 transition-all">
+                        <Users size={32} className="mb-4 text-pink-400" />
+                        <h3 className="text-5xl font-black text-white mb-2"><CountUp end={15} duration={2000} /></h3>
+                        <p className="text-gray-400 font-bold uppercase tracking-wider text-sm font-khmer">{t("Creative Experts", "អ្នកជំនាញច្នៃប្រឌិត")}</p>
+                    </div>
+                </RevealOnScroll>
+            </div>
+
+            {/* 3. The "DNA" Section (Values) */}
+            <div className="mb-24">
+                <RevealOnScroll>
+                    <div className="flex items-end justify-between mb-12 border-b border-white/10 pb-8">
+                        <div>
+                            <span className="text-indigo-400 font-bold tracking-widest uppercase text-xs mb-2 block font-khmer">{t("Our DNA", "DNA របស់យើង")}</span>
+                            <h2 className="text-4xl font-bold text-white font-khmer">{t("Core Values", "គុណតម្លៃស្នូល")}</h2>
+                        </div>
+                        <div className="hidden md:block text-right">
+                             <p className="text-gray-400 text-sm max-w-xs">{t("Principles that guide every decision we make.", "គោលការណ៍ដែលដឹកនាំរាល់ការសម្រេចចិត្តរបស់យើង។")}</p>
+                        </div>
+                    </div>
+                </RevealOnScroll>
+
+                <div className="grid md:grid-cols-4 gap-4">
+                    {[
+                        { icon: <Zap />, title: "Speed", desc: "Fast execution without compromising quality.", color: "text-yellow-400" },
+                        { icon: <Heart />, title: "Passion", desc: "We truly love what we build.", color: "text-red-400" },
+                        { icon: <Target />, title: "Precision", desc: "Attention to the smallest detail.", color: "text-green-400" },
+                        { icon: <Lightbulb />, title: "Innovation", desc: "Always exploring what's next.", color: "text-blue-400" }
+                    ].map((val, idx) => (
+                        <RevealOnScroll key={idx} delay={idx * 100} variant="fade-up">
+                            <div className="group h-64 bg-gray-900 border border-white/5 hover:border-white/20 p-6 rounded-2xl flex flex-col justify-between transition-all duration-300 hover:-translate-y-2 relative overflow-hidden">
+                                <div className={`absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity transform group-hover:scale-150 duration-500 ${val.color}`}>
+                                    {React.cloneElement(val.icon as React.ReactElement<any>, { size: 120 })}
+                                </div>
+                                <div className={`p-3 bg-white/5 w-fit rounded-xl ${val.color}`}>
+                                    {val.icon}
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-white mb-2">{val.title}</h3>
+                                    <p className="text-gray-400 text-sm leading-relaxed">{val.desc}</p>
+                                </div>
+                            </div>
+                        </RevealOnScroll>
                     ))}
                 </div>
             </div>
 
-            {/* CTA */}
-            <div className="mt-20 p-8 rounded-3xl bg-gradient-to-r from-indigo-600 to-purple-600 text-center">
-                <h2 className="text-3xl font-bold text-white mb-4 font-khmer">{t("Ready to work with us?", "ត្រៀមខ្លួនធ្វើការជាមួយយើងហើយឬនៅ?")}</h2>
-                <p className="text-indigo-100 mb-8 max-w-xl mx-auto">
-                    Let's create something extraordinary together.
-                </p>
+            {/* 4. Visual Strip / Gallery */}
+            <RevealOnScroll variant="grow-x" duration={1000}>
+                <div className="h-64 md:h-80 w-full rounded-[32px] overflow-hidden relative mb-24 group">
+                    <img 
+                        src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=2000" 
+                        alt="Team Culture" 
+                        className="w-full h-full object-cover transition-transform duration-[2000ms] group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-indigo-900/60 mix-blend-multiply"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center">
+                            <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tighter">CULTURE</h2>
+                            <p className="text-indigo-200 font-mono tracking-widest uppercase text-sm">Phnom Penh, Cambodia</p>
+                        </div>
+                    </div>
+                </div>
+            </RevealOnScroll>
+
+            {/* 5. CTA Footer */}
+            <div className="text-center">
+                <h2 className="text-3xl font-bold text-white mb-8 font-khmer">{t("Ready to make history?", "ត្រៀមខ្លួនបង្កើតប្រវត្តិសាស្ត្រហើយឬនៅ?")}</h2>
                 <button 
                     onClick={() => { onClose(); window.location.hash = '#contact'; }}
-                    className="px-8 py-3 bg-white text-indigo-600 rounded-full font-bold hover:bg-gray-100 transition-colors shadow-lg"
+                    className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white text-black rounded-full font-bold text-lg hover:bg-gray-200 transition-all overflow-hidden"
                 >
-                    {t("Get in Touch", "ទំនាក់ទំនងយើង")}
+                    <span className="relative z-10 font-khmer">{t("Start Your Project", "ចាប់ផ្តើមគម្រោងរបស់អ្នក")}</span>
+                    <ArrowRight size={20} className="relative z-10 group-hover:translate-x-1 transition-transform" />
+                    <div className="absolute inset-0 bg-gradient-to-r from-indigo-400 to-purple-400 opacity-0 group-hover:opacity-20 transition-opacity"></div>
                 </button>
             </div>
+
         </div>
     </PageOverlay>
   );
