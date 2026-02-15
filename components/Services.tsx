@@ -30,9 +30,9 @@ import { CSS } from '@dnd-kit/utilities';
 
 // Map service IDs to Unsplash Images
 const SERVICE_IMAGES: Record<string, string> = {
-  graphic: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600', // Abstract Fluid Art
+  graphic: 'https://raw.githubusercontent.com/icenterofficial/creative/refs/heads/main/public/images/projects/graphic/iStock-1191609321%20(1).jpg', // Updated Custom Image
   architecture: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&q=80&w=600', // Modern Architecture
-  calligraphy: 'https://images.unsplash.com/photo-1544252899-281b19796798?auto=format&fit=crop&q=80&w=600', // Traditional Art Texture
+  calligraphy: 'https://raw.githubusercontent.com/icenterofficial/creative/refs/heads/main/public/images/projects/calligraphy/1.jpg', // Updated Custom Image
   translation: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80&w=600', // Books
   media: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=600', // Camera Lens
   courses: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=600', // Students Learning
@@ -86,7 +86,7 @@ const SortableServiceItem: React.FC<SortableServiceItemProps> = ({ service, inde
           {SERVICE_IMAGES[service.id] && (
             <div 
                 className="absolute inset-0 bg-cover bg-center opacity-0 group-hover:opacity-20 transition-opacity duration-700 ease-out grayscale group-hover:grayscale-0 pointer-events-none"
-                style={{ backgroundImage: `url(${SERVICE_IMAGES[service.id]})` }}
+                style={{ backgroundImage: `url('${SERVICE_IMAGES[service.id]}')` }}
             />
           )}
 
