@@ -28,17 +28,18 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, label 
     const [isUploading, setIsUploading] = useState(false);
 
     // --- SYNC CONTENT ---
-    // When switching from Markdown to Visual, update the Visual div
     useEffect(() => {
         if (editorMode === 'visual' && visualEditorRef.current) {
             const currentHtml = visualEditorRef.current.innerHTML;
             const targetHtml = simpleMdToHtml(value);
-            // Only update if significantly different (basic check to prevent cursor jumping if typing fast)
-            if (currentHtml === '' || currentHtml === '<br>') {
-                visualEditorRef.current.innerHTML = targetHtml;
-            } else if (simpleHtmlToMd(currentHtml) !== value) {
-                 // If external value changed (e.g. initial load), sync it
-                 visualEditorRef.current.innerHTML = targetHtml;
+            // Check content difference to avoid cursor jumping, but allow initial load
+            if (visualEditorRef.current.innerHTML.trim() !== targetHtml.trim()) {
+                 // Only update if the structure is different (simple check)
+                 // For a robust app, we'd use a diffing algo, but here we just check if it's vastly different
+                 // or empty.
+                 if(!visualEditorRef.current.innerHTML || activeView === 'write') {
+                     visualEditorRef.current.innerHTML = targetHtml;
+                 }
             }
         }
     }, [editorMode]);
@@ -64,8 +65,6 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, label 
     };
 
     // --- VISUAL EDITOR LOGIC ---
-    
-    // 1. Selection Management (Critical for Link/Download)
     const saveSelection = () => {
         const sel = window.getSelection();
         if (sel && sel.rangeCount > 0) {
@@ -98,12 +97,10 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, label 
     const handleVisualImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            // Save selection before upload in case focus is lost
             saveSelection();
             const url = await uploadImage(file);
             if (url) {
                 restoreSelection();
-                // Ensure we insert at cursor
                 document.execCommand('insertHTML', false, `<img src="${url}" alt="image" style="max-width: 100%; border-radius: 8px; margin: 10px 0;" /><br>`);
                 handleVisualInput();
             }
@@ -134,7 +131,23 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, label 
     const insertVisualDownload = () => {
         restoreSelection();
         if (tempData.url && tempData.text) {
-            const html = `<div data-download-url="${tempData.url}" data-download-label="${tempData.text}" style="background:#1e1b4b; border:1px solid #4338ca; padding:10px; border-radius:8px; display:inline-block; margin: 10px 0; font-weight:bold; color:#a5b4fc; cursor:pointer;" contenteditable="false">⬇️ Download: ${tempData.text}</div><br>`;
+            // New Professional HTML Structure for Visual Editor
+            const html = `
+                <div class="download-card-wrapper" contenteditable="false" style="margin: 20px 0;">
+                    <div class="download-card" data-download-url="${tempData.url}" data-download-label="${tempData.text}" style="display: flex; align-items: center; gap: 16px; padding: 16px; background: rgba(30, 27, 75, 0.5); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 12px; cursor: pointer;">
+                        <div class="download-icon" style="background: rgba(99, 102, 241, 0.2); color: #818cf8; padding: 10px; border-radius: 8px;">
+                            ⬇️
+                        </div>
+                        <div class="download-info" style="flex: 1;">
+                            <span class="download-label" style="display: block; font-weight: bold; color: white; font-size: 16px;">${tempData.text}</span>
+                            <span class="download-sub" style="display: block; color: #94a3b8; font-size: 12px;">Click to download resource</span>
+                        </div>
+                        <div class="download-action" style="color: #475569;">
+                            ↗
+                        </div>
+                    </div>
+                </div><br>
+            `;
             document.execCommand('insertHTML', false, html);
             handleVisualInput();
         }
@@ -153,38 +166,31 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, label 
         const selection = text.substring(start, end);
         const after = text.substring(end);
 
-        // Special handling for link to auto-fill selection
         let newText = "";
         let newCursorPos = 0;
 
         if (prefix === '[' && suffix === '](url)') {
-             // Link logic
              if (selection) {
                  newText = before + `[${selection}](url)` + after;
-                 newCursorPos = start + selection.length + 3; // position at 'url'
+                 newCursorPos = start + selection.length + 3; 
              } else {
                  newText = before + `[text](url)` + after;
-                 newCursorPos = start + 7; // position at 'url'
+                 newCursorPos = start + 7; 
              }
         } else {
-             // Standard logic
              newText = before + prefix + (selection || '') + suffix + after;
              newCursorPos = start + prefix.length + (selection ? selection.length : 0) + suffix.length;
         }
 
         onChange(newText);
         
-        // Restore focus and cursor
         setTimeout(() => {
             textarea.focus();
             if (prefix === '[' && suffix === '](url)') {
-                 // Highlight 'url' part
                  textarea.setSelectionRange(newCursorPos, newCursorPos + 3);
             } else if (!selection) {
-                 // Place cursor inside tags if no selection
                  textarea.setSelectionRange(start + prefix.length, start + prefix.length);
             } else {
-                 // Place cursor after
                  textarea.setSelectionRange(newCursorPos, newCursorPos);
             }
         }, 0);
@@ -245,8 +251,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, label 
                                 <input type="file" ref={visualImageInputRef} className="hidden" accept="image/*" onChange={handleVisualImageUpload} />
                             </div>
 
-                            <button type="button" onMouseDown={(e) => { e.preventDefault(); openDownloadPopup(); }} className="p-2 text-indigo-400 hover:text-white hover:bg-indigo-500/20 rounded flex items-center gap-1 font-bold">
-                                <Download size={18} /> <span className="text-xs">Download Button</span>
+                            <button type="button" onMouseDown={(e) => { e.preventDefault(); openDownloadPopup(); }} className="ml-2 px-3 py-1.5 text-indigo-200 bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 hover:text-white rounded-lg flex items-center gap-2 font-bold text-xs transition-colors">
+                                <Download size={14} /> Download Button
                             </button>
                         </div>
                         
@@ -278,8 +284,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, label 
                                 ref={visualEditorRef}
                                 contentEditable
                                 onInput={handleVisualInput}
-                                onBlur={handleVisualInput} // Ensure sync on blur
-                                className="w-full h-full bg-[#0d1117] p-8 text-white focus:outline-none text-lg overflow-y-auto"
+                                onBlur={handleVisualInput}
+                                className="w-full h-full bg-[#0d1117] p-8 text-white focus:outline-none text-lg overflow-y-auto editor-styles"
                                 style={{ minHeight: '100%' }}
                             />
                             {visualPreview && (
@@ -292,29 +298,65 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({ value, onChange, label 
 
                     {/* --- POPUPS --- */}
                     {showLinkInput && (
-                        <div className="absolute top-2 left-2 z-50 bg-gray-800 border border-white/10 p-4 rounded-xl shadow-2xl flex flex-col gap-2 w-72 animate-fade-in">
+                        <div className="absolute top-12 left-4 z-50 bg-gray-900 border border-white/10 p-4 rounded-xl shadow-2xl flex flex-col gap-2 w-80 animate-fade-in">
                             <h4 className="text-xs font-bold text-gray-400 uppercase">Insert Link</h4>
                             <input autoFocus placeholder="https://..." className="w-full bg-black/30 border border-white/10 rounded p-2 text-sm text-white" value={tempData.url} onChange={e => setTempData({...tempData, url: e.target.value})} />
-                            <div className="flex justify-end gap-2">
-                                <button type="button" onClick={() => setShowLinkInput(false)} className="px-2 py-1 text-xs text-gray-400">Cancel</button>
-                                <button type="button" onClick={insertVisualLink} className="px-3 py-1 bg-indigo-600 rounded text-xs text-white font-bold">Add Link</button>
+                            <div className="flex justify-end gap-2 mt-2">
+                                <button type="button" onClick={() => setShowLinkInput(false)} className="px-3 py-1.5 text-xs text-gray-400 hover:text-white">Cancel</button>
+                                <button type="button" onClick={insertVisualLink} className="px-4 py-1.5 bg-indigo-600 rounded-lg text-xs text-white font-bold hover:bg-indigo-500">Insert</button>
                             </div>
                         </div>
                     )}
 
                     {showDownloadInput && (
-                        <div className="absolute top-2 left-1/4 z-50 bg-gray-800 border border-white/10 p-4 rounded-xl shadow-2xl flex flex-col gap-2 w-80 animate-fade-in">
-                            <h4 className="text-xs font-bold text-gray-400 uppercase">Insert Download Button</h4>
-                            <input autoFocus placeholder="Label (e.g., Download PDF)" className="w-full bg-black/30 border border-white/10 rounded p-2 text-sm text-white" value={tempData.text} onChange={e => setTempData({...tempData, text: e.target.value})} />
-                            <input placeholder="URL (e.g., https://drive...)" className="w-full bg-black/30 border border-white/10 rounded p-2 text-sm text-white" value={tempData.url} onChange={e => setTempData({...tempData, url: e.target.value})} />
-                            <div className="flex justify-end gap-2">
-                                <button type="button" onClick={() => setShowDownloadInput(false)} className="px-2 py-1 text-xs text-gray-400">Cancel</button>
-                                <button type="button" onClick={insertVisualDownload} className="px-3 py-1 bg-indigo-600 rounded text-xs text-white font-bold">Insert Button</button>
+                        <div className="absolute top-12 left-1/3 z-50 bg-gray-900 border border-white/10 p-4 rounded-xl shadow-2xl flex flex-col gap-3 w-96 animate-fade-in">
+                            <div className="flex justify-between items-center">
+                                <h4 className="text-xs font-bold text-indigo-400 uppercase">New Download Button</h4>
+                                <button onClick={() => setShowDownloadInput(false)}><Upload size={14} className="text-gray-500 hover:text-white"/></button>
+                            </div>
+                            
+                            <div className="space-y-1">
+                                <label className="text-[10px] text-gray-500 font-bold uppercase">Button Label</label>
+                                <input autoFocus placeholder="e.g. Download Annual Report" className="w-full bg-black/30 border border-white/10 rounded p-2 text-sm text-white focus:border-indigo-500 outline-none transition-colors" value={tempData.text} onChange={e => setTempData({...tempData, text: e.target.value})} />
+                            </div>
+                            
+                            <div className="space-y-1">
+                                <label className="text-[10px] text-gray-500 font-bold uppercase">File URL</label>
+                                <input placeholder="https://drive.google.com/..." className="w-full bg-black/30 border border-white/10 rounded p-2 text-sm text-white focus:border-indigo-500 outline-none transition-colors" value={tempData.url} onChange={e => setTempData({...tempData, url: e.target.value})} />
+                            </div>
+
+                            <div className="flex justify-end gap-2 mt-2 pt-2 border-t border-white/5">
+                                <button type="button" onClick={() => setShowDownloadInput(false)} className="px-3 py-1.5 text-xs text-gray-400 hover:text-white">Cancel</button>
+                                <button type="button" onClick={insertVisualDownload} className="px-4 py-1.5 bg-indigo-600 rounded-lg text-xs text-white font-bold hover:bg-indigo-500 flex items-center gap-1">
+                                    <Download size={12} /> Insert Button
+                                </button>
                             </div>
                         </div>
                     )}
                 </div>
             </div>
+            {/* Custom Styles for Editor */}
+            <style>{`
+                .editor-styles blockquote {
+                    border-left: 4px solid #6366f1;
+                    padding-left: 16px;
+                    margin: 16px 0;
+                    font-style: italic;
+                    color: #94a3b8;
+                    background: rgba(255,255,255,0.05);
+                    padding: 12px 16px;
+                    border-radius: 0 8px 8px 0;
+                }
+                .editor-styles a {
+                    color: #818cf8;
+                    text-decoration: underline;
+                }
+                .editor-styles img {
+                    border-radius: 8px;
+                    max-width: 100%;
+                    margin: 10px 0;
+                }
+            `}</style>
         </div>
     );
 };
