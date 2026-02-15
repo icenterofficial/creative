@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { X, Save, Loader2, Upload, Image as ImageIcon, Edit2, Bold, Italic, Heading, List, ListOrdered, Code, Link, Quote, CheckSquare } from 'lucide-react';
+import { X, Save, Loader2, Upload, Image as ImageIcon, Edit2, Bold, Italic, Heading, List, ListOrdered, Code, Link, Quote, CheckSquare, User } from 'lucide-react';
 import { getSupabaseClient } from '../../lib/supabase';
 import ContentRenderer from '../ContentRenderer';
+import { useData } from '../../contexts/DataContext';
 
 interface EditItemModalProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ interface EditItemModalProps {
 const EditItemModal: React.FC<EditItemModalProps> = ({
   isOpen, isAdding, activeTab, isSuperAdmin, editingItem, setEditingItem, onSave, onCancel, isSaving
 }) => {
+  const { team } = useData(); // Get team data to link Author ID to Name/Image
   const [isUploading, setIsUploading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -97,12 +99,69 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
           {Object.keys(editingItem).map((key) => {
             // Filter out system fields
             if (['id', 'comments', 'replies', 'icon', 'created_at'].includes(key)) return null;
-            if (key === 'authorId' && !isSuperAdmin) return null;
-
+            
             const value = editingItem[key];
             const label = key.charAt(0).toUpperCase() + key.slice(1);
 
             // SPECIAL FIELD HANDLERS
+
+            // AUTHOR HANDLING
+            if (key === 'authorId') {
+                const currentAuthor = team.find(m => m.id === value);
+                
+                if (isSuperAdmin) {
+                    // Admin: Show Dropdown to change author
+                    return (
+                        <div key={key}>
+                            <label className="block text-xs font-bold text-gray-400 mb-2">Author (Admin Override)</label>
+                            <div className="relative">
+                                <select
+                                    className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 pl-12 text-white focus:ring-2 focus:ring-indigo-500 outline-none appearance-none font-khmer"
+                                    value={value || ''}
+                                    onChange={(e) => setEditingItem({ ...editingItem, authorId: e.target.value })}
+                                >
+                                    {team.map((member) => (
+                                        <option key={member.id} value={member.id}>
+                                            {member.name} ({member.role})
+                                        </option>
+                                    ))}
+                                </select>
+                                {/* Display current selection avatar overlay */}
+                                <div className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                                    {currentAuthor ? (
+                                        <img src={currentAuthor.image} className="w-6 h-6 rounded-full object-cover" alt="" />
+                                    ) : (
+                                        <User size={20} className="text-gray-500" />
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                } else {
+                    // Member: Read-only display
+                    return (
+                        <div key={key} className="opacity-90">
+                            <label className="block text-xs font-bold text-gray-400 mb-2">Author</label>
+                            <div className="w-full bg-gray-800/50 border border-white/10 rounded-lg p-3 flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700 border border-white/10">
+                                     {currentAuthor ? (
+                                        <img src={currentAuthor.image} alt={currentAuthor.name} className="w-full h-full object-cover" />
+                                     ) : (
+                                        <div className="w-full h-full flex items-center justify-center"><User size={16} /></div>
+                                     )}
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-white font-bold text-sm">{currentAuthor?.name || 'Unknown User'}</span>
+                                    <span className="text-[10px] text-gray-400">Posting as yourself</span>
+                                </div>
+                                <div className="ml-auto px-2 py-1 bg-green-500/10 text-green-400 text-[10px] rounded border border-green-500/20 font-bold uppercase">
+                                    Verified
+                                </div>
+                            </div>
+                        </div>
+                    );
+                }
+            }
             
             if (key === 'image') {
                 return (
