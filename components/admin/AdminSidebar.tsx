@@ -17,14 +17,18 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeTab, setActiveTab, is
       <button onClick={() => setActiveTab('team')} className={btnClass('team')}>
         <Users size={20} /> {isSuperAdmin ? 'Team Management' : 'My Profile'}
       </button>
+      
       <button onClick={() => setActiveTab('insights')} className={btnClass('insights')}>
         <FileText size={20} /> {isSuperAdmin ? 'All Articles' : 'My Articles'}
       </button>
+
+      {/* Projects now available for everyone */}
+      <button onClick={() => setActiveTab('projects')} className={btnClass('projects')}>
+        <Briefcase size={20} /> Projects
+      </button>
+
       {isSuperAdmin && (
         <>
-          <button onClick={() => setActiveTab('projects')} className={btnClass('projects')}>
-            <Briefcase size={20} /> Projects
-          </button>
           <button onClick={() => setActiveTab('services')} className={btnClass('services')}>
             <LayoutGrid size={20} /> Services
           </button>
