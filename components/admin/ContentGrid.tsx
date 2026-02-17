@@ -1,17 +1,17 @@
 import React from 'react';
-import { Edit, Trash2, FileText, Lock, GripVertical } from 'lucide-react';
-import { TeamMember, Project, Post, Service } from '../../types';
+import { Edit, Trash2, FileText, Lock, GripVertical, MapPin, Briefcase } from 'lucide-react';
+import { TeamMember, Project, Post, Service, Job } from '../../types';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 interface ContentGridProps {
-  activeTab: 'team' | 'projects' | 'insights' | 'services' | 'settings';
+  activeTab: 'team' | 'projects' | 'insights' | 'services' | 'careers' | 'settings';
   isSuperAdmin: boolean;
   memberId: string | undefined;
-  data: { team: TeamMember[]; projects: Project[]; insights: Post[]; services: Service[]; };
+  data: { team: TeamMember[]; projects: Project[]; insights: Post[]; services: Service[]; jobs: Job[] };
   onEdit: (item: any) => void;
-  onDelete: (type: 'service' | 'project' | 'team' | 'insight', id: string) => void;
+  onDelete: (type: 'service' | 'project' | 'team' | 'insight' | 'job', id: string) => void;
   onReorderTeam?: (newOrder: TeamMember[]) => void;
 }
 
@@ -143,6 +143,7 @@ const ContentGrid: React.FC<ContentGridProps> = ({ activeTab, isSuperAdmin, memb
               </div>
             </div>
       ))}
+      
       {/* SERVICES */}
       {activeTab === 'services' && isSuperAdmin && (data.services || []).map(item => (
         <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4 relative overflow-hidden group">
@@ -158,6 +159,31 @@ const ContentGrid: React.FC<ContentGridProps> = ({ activeTab, isSuperAdmin, memb
           </div>
           <div className="mt-auto flex gap-2 relative z-10">
             <button onClick={() => onEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2 backdrop-blur-sm"><Edit size={14} /> Edit</button>
+          </div>
+        </div>
+      ))}
+
+      {/* CAREERS / JOBS */}
+      {activeTab === 'careers' && isSuperAdmin && (data.jobs || []).map(item => (
+        <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-6 flex flex-col gap-4 relative overflow-hidden group hover:bg-white/5 transition-colors">
+          <div>
+            <div className="flex justify-between items-start mb-2">
+                <h4 className="font-bold text-white text-lg">{item.title}</h4>
+                <div className="p-2 bg-white/5 rounded-lg text-indigo-400">
+                    {item.icon}
+                </div>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs text-gray-400">
+                <span className="flex items-center gap-1"><Briefcase size={12}/> {item.department}</span>
+                <span className="flex items-center gap-1"><MapPin size={12}/> {item.location}</span>
+            </div>
+            <span className="inline-block mt-3 px-2 py-1 bg-indigo-500/20 text-indigo-300 text-[10px] font-bold rounded uppercase tracking-wide">
+                {item.type}
+            </span>
+          </div>
+          <div className="mt-auto flex gap-2 relative z-10 pt-4 border-t border-white/5">
+            <button onClick={() => onEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2 backdrop-blur-sm"><Edit size={14} /> Edit</button>
+            <button onClick={() => onDelete('job', item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg"><Trash2 size={16} /></button>
           </div>
         </div>
       ))}
