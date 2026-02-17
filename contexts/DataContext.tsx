@@ -55,10 +55,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const dbIds = new Set(dbItems.map(i => i.id));
 
       // 2. Filter out static items that are already in DB
+      // IMPORTANT: We must ensure static items have slugs calculated for this check to work
       const uniqueStatic = staticItems.filter(s => {
+          // Calculate slug if missing (same logic as used in AdminDashboard)
+          const sSlug = s.slug || slugify(s.title || s.name || '');
+          
           // If a static item has the same slug as a DB item, we assume it's the same person/item
-          // and we prefer the DB version (which has the correct order_index).
-          const slugMatch = s.slug && dbSlugs.has(s.slug);
+          // and we prefer the DB version.
+          const slugMatch = sSlug && dbSlugs.has(sSlug);
           const idMatch = dbIds.has(s.id);
           return !slugMatch && !idMatch;
       });
@@ -185,6 +189,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 link: j.link,
                 icon: getIcon(j.icon, <LucideIcons.Briefcase size={24} />),
                 _iconString: j.icon,
+                slug: j.slug || slugify(j.title)
             }));
             setJobs(mergeAndSortData(formatted, JOBS, 'job'));
         }
