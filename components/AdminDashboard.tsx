@@ -93,6 +93,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
             // Fallback for static items without _iconString, default to empty to allow editing
             itemToEdit.icon = ''; 
         }
+        // Ensure image field exists even if empty, so the modal renders the uploader
+        if (!itemToEdit.image) {
+            itemToEdit.image = '';
+        }
     }
     setEditingItem(itemToEdit);
     setIsModalOpen(true);
@@ -116,7 +120,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       team: { name: '', role: '', roleKm: '', image: '', bio: '', bioKm: '', skills: [], experience: [], socials: {}, pinCode: '1111' },
       projects: { title: '', category: 'graphicdesign', image: '', client: '' },
       insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: currentUser.role === 'member' ? currentUser.id : 't1' },
-      services: { title: '', titleKm: '', subtitle: '', subtitleKm: '', description: '', descriptionKm: '', features: [], featuresKm: [], icon: 'Box', color: 'bg-indigo-500' }
+      services: { title: '', titleKm: '', subtitle: '', subtitleKm: '', description: '', descriptionKm: '', features: [], featuresKm: [], icon: 'Box', color: 'bg-indigo-500', image: '' }
     };
     setEditingItem(templates[activeTab]);
     setIsModalOpen(true);
@@ -206,7 +210,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
               table = 'services';
               payload = { 
                   title: item.title, 
-                  title_km: item.titleKm,
+                  title_km: item.titleKm, 
                   subtitle: item.subtitle,
                   subtitle_km: item.subtitleKm,
                   description: item.description,
@@ -217,7 +221,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   icon: (typeof item.icon === 'string' && item.icon.trim()) ? item.icon : 'Box', 
                   color: item.color,
                   link: item.link,
-                  slug: item.slug || slugify(item.title)
+                  slug: item.slug || slugify(item.title),
+                  image: item.image // Add image for background
               };
           } else if (activeTab === 'team') {
               table = 'team';
