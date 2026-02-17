@@ -88,7 +88,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setIsLoading(true);
       try {
-        // Fetch Projects - Now includes description and link
+        // Fetch Projects - Now includes description, link, and created_by
         const { data: dbProjects } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
         if (dbProjects) {
              const formatted = dbProjects.map((p: any) => ({
@@ -98,8 +98,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  image: p.image,
                  client: p.client,
                  slug: p.slug || slugify(p.title),
-                 description: p.description, // Fetch description
-                 link: p.link,             // Fetch link
+                 description: p.description, 
+                 link: p.link,
+                 createdBy: p.created_by // Map created_by column
              }));
              setProjects(mergeAndSortData(formatted, PROJECTS, 'project'));
         }
