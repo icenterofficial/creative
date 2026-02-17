@@ -57,6 +57,18 @@ export interface TeamMember {
   pinCode?: string;    // For login
 }
 
+export interface Job {
+  id: string;
+  title: string;
+  type: string;
+  location: string;
+  department: string;
+  icon: React.ReactNode;
+  _iconString?: string; // For Admin input
+  link?: string;
+  description?: string;
+}
+
 export interface Comment {
   id: string;
   user: string;
