@@ -104,20 +104,31 @@ const ContentGrid: React.FC<ContentGridProps> = ({ activeTab, isSuperAdmin, memb
           </DndContext>
       )}
 
-      {/* PROJECTS */}
-      {activeTab === 'projects' && isSuperAdmin && (data.projects || []).map(item => (
-        <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
-          <img src={item.image} alt={item.title} className="w-full h-40 object-cover rounded-lg bg-gray-800" />
-          <div>
-            <h4 className="font-bold text-white">{item.title}</h4>
-            <span className="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded">{item.category}</span>
-          </div>
-          <div className="mt-auto flex gap-2">
-            <button onClick={() => onEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><Edit size={14} /> Edit</button>
-            <button onClick={() => onDelete('project', item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg"><Trash2 size={16} /></button>
-          </div>
-        </div>
-      ))}
+      {/* PROJECTS - Visible to everyone, Delete restricted to Owner or Admin */}
+      {activeTab === 'projects' && (data.projects || []).map(item => {
+        // Determine delete rights: Super Admin OR if currentUser created it
+        const canDelete = isSuperAdmin || (memberId && item.createdBy === memberId);
+        
+        return (
+            <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
+            <img src={item.image} alt={item.title} className="w-full h-40 object-cover rounded-lg bg-gray-800" />
+            <div>
+                <h4 className="font-bold text-white">{item.title}</h4>
+                <span className="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded">{item.category}</span>
+                {item.createdBy && isSuperAdmin && (
+                    <span className="block text-[10px] text-gray-500 mt-1">Added by: {item.createdBy.substring(0,8)}...</span>
+                )}
+            </div>
+            <div className="mt-auto flex gap-2">
+                <button onClick={() => onEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><Edit size={14} /> Edit</button>
+                {canDelete && (
+                    <button onClick={() => onDelete('project', item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg"><Trash2 size={16} /></button>
+                )}
+            </div>
+            </div>
+        );
+      })}
+      
       {/* INSIGHTS */}
       {activeTab === 'insights' && (data.insights || []).filter(item => isSuperAdmin || item.authorId === memberId).map(item => (
             <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
