@@ -23,6 +23,7 @@ interface DataContextType {
   addTeamMember: (data: TeamMember) => void;
   addInsight: (data: Post) => void;
   deleteItem: (type: 'service' | 'project' | 'team' | 'insight', id: string) => void;
+  updateTeamOrder: (newOrder: TeamMember[]) => Promise<void>;
   resetData: () => void;
 }
 
@@ -92,8 +93,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
              setProjects(mergeData(formattedProjects, PROJECTS, 'project'));
         }
 
-        // 2. Fetch Team
-        const { data: dbTeam } = await supabase.from('team').select('*').order('created_at', { ascending: true });
+        // 2. Fetch Team - Ordered by order_index
+        const { data: dbTeam } = await supabase.from('team').select('*').order('order_index', { ascending: true });
         if (dbTeam) {
              const formattedTeam = dbTeam.map((t: any) => ({
                  id: t.id,
@@ -107,7 +108,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  experience: t.experience || [],
                  experienceKm: t.experience || [],
                  socials: t.socials || {},
-                 slug: t.slug || slugify(t.name)
+                 slug: t.slug || slugify(t.name),
+                 orderIndex: t.order_index,
+                 pinCode: t.pin_code
              }));
              setTeam(mergeData(formattedTeam, TEAM, 'team'));
         }
@@ -168,6 +171,32 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     fetchData();
   }, []);
 
+  const updateTeamOrder = async (newOrder: TeamMember[]) => {
+      const supabase = getSupabaseClient();
+      if (!supabase) return;
+
+      // Optimistic update
+      setTeam(newOrder);
+
+      try {
+          // Prepare updates
+          const updates = newOrder.map((member, index) => ({
+              id: member.id,
+              order_index: index,
+          }));
+
+          // We upsert. Note: This requires the 'id' to match existing records.
+          // Since we can't batch update different IDs with different values easily in one REST call without an RPC,
+          // we loop. For small teams (<50), this is fine.
+          for (const update of updates) {
+              await supabase.from('team').update({ order_index: update.order_index }).eq('id', update.id);
+          }
+      } catch (err) {
+          console.error("Failed to reorder team", err);
+          alert("Failed to save team order");
+      }
+  };
+
   const showAlert = () => {
       alert("Content is managed via Supabase. Please use the Admin Dashboard.");
   };
@@ -192,6 +221,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       services, projects, team, insights, isLoading, isUsingSupabase,
       updateService, updateProject, updateTeamMember, updateInsight,
       addProject, addTeamMember, addInsight, deleteItem,
+      updateTeamOrder,
       resetData
     }}>
       {children}
