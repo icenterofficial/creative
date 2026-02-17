@@ -255,19 +255,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           }
 
           let res;
-          if (performInsert) {
-              // If migrating static data, we do NOT send the ID. DB generates a new UUID.
-              if (isStaticID) {
-                  delete payload.id;
+          
+          // Helper to execute query to allow retry
+          const executeQuery = async (currentPayload: any) => {
+              if (performInsert) {
+                  const p = { ...currentPayload };
+                  if (isStaticID) delete p.id;
+                  if (activeTab === 'team') p.order_index = adminTeam.length; 
+                  return await supabase.from(table).insert([p]).select();
+              } else {
+                  return await supabase.from(table).update(currentPayload).eq('id', item.id).select();
               }
-              // Set default order for new team members
-              if (activeTab === 'team') {
-                  payload.order_index = adminTeam.length; 
+          };
+
+          res = await executeQuery(payload);
+
+          // RETRY STRATEGY: If 'image' column missing, remove it and retry
+          if (res.error && activeTab === 'services' && res.error.message.includes("Could not find the 'image' column")) {
+              console.warn("Database missing 'image' column. Retrying without image data.");
+              const { image, ...fallbackPayload } = payload;
+              res = await executeQuery(fallbackPayload);
+              
+              if (!res.error) {
+                  alert("Warning: Text saved successfully, but the Background Image could not be saved because the 'image' column is missing in your Supabase 'services' table. Please add it manually.");
               }
-              res = await supabase.from(table).insert([payload]).select();
-          } else {
-              // Update Logic - Only works for valid UUIDs
-              res = await supabase.from(table).update(payload).eq('id', item.id).select();
           }
 
           if (res.error) throw res.error;
