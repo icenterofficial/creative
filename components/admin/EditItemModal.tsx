@@ -84,7 +84,9 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
           {Object.keys(editingItem).map((key) => {
             if (['id', 'comments', 'replies', 'created_at', '_iconString', 'slug', 'orderIndex', 'order_index'].includes(key)) return null;
             const value = editingItem[key];
-            const label = key.charAt(0).toUpperCase() + key.slice(1);
+            const label = (activeTab === 'services' && key === 'image') 
+                ? 'Background Image (Hover Effect)' 
+                : key.charAt(0).toUpperCase() + key.slice(1);
 
             // 1. PIN Code Field (Team only)
             if (key === 'pinCode' && activeTab === 'team') {
@@ -190,11 +192,11 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
             
-            // 5. Image Upload
+            // 5. Image Upload (Shared for Project, Insight, Team, Service)
             if (key === 'image') {
                 return (
                     <div key={key} className="space-y-2 mb-4">
-                         <label className="block text-xs font-bold text-gray-400">Cover Image</label>
+                         <label className="block text-xs font-bold text-gray-400">{label}</label>
                          <div className="flex gap-4">
                              <div className="w-24 h-24 bg-gray-800 rounded-lg overflow-hidden border border-white/10 flex items-center justify-center shrink-0">
                                  {value ? <img src={value} className="w-full h-full object-cover" /> : <ImageIcon className="text-gray-600" />}
@@ -203,7 +205,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                                  <input type="text" placeholder="Image URL" className="w-full bg-gray-800 border border-white/10 rounded-lg p-2 text-white text-sm" value={value || ''} onChange={(e) => setEditingItem({ ...editingItem, image: e.target.value })} />
                                  <div className="flex gap-2">
                                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleMainImageUpload} />
-                                     <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white flex items-center gap-2">{isUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />} Upload</button>
+                                     <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploading} className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-white flex items-center gap-2">{isUploading ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />} Upload New</button>
                                  </div>
                              </div>
                          </div>
