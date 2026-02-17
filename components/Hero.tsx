@@ -327,16 +327,49 @@ const Hero: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Connecting Lines (Decorative) */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-30" style={{ transform: 'translateZ(10px)' }}>
+                {/* ANIMATED CONNECTION LINES (SVG LAYER) */}
+                <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" style={{ transform: 'translateZ(15px)' }}>
                    <defs>
-                      <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="transparent" />
-                        <stop offset="50%" stopColor="#818cf8" />
-                        <stop offset="100%" stopColor="transparent" />
+                      <linearGradient id="beamGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="rgba(99, 102, 241, 0)" />
+                        <stop offset="50%" stopColor="rgba(99, 102, 241, 0.8)" />
+                        <stop offset="100%" stopColor="rgba(168, 85, 247, 0)" />
                       </linearGradient>
                    </defs>
-                   <circle cx="50%" cy="50%" r="40%" stroke="url(#lineGrad)" strokeWidth="0.5" fill="none" opacity="0.5" className={isOrbiting ? "animate-spin-slow" : ""} />
+                   
+                   {/* Background Orbit Ring */}
+                   <circle cx="50%" cy="50%" r="40%" stroke="rgba(255,255,255,0.05)" strokeWidth="1" fill="none" className={isOrbiting ? "animate-spin-slow" : ""} />
+
+                   {/* Dynamic Lines connecting to Team Members */}
+                   {team.map((member, index) => {
+                       const pos = getDynamicPosition(index, team.length, rotationAngle);
+                       return (
+                           <g key={`line-${member.id}`}>
+                               {/* Base Faint Line (Structure) */}
+                               <line 
+                                   x1="50%" y1="50%" 
+                                   x2={pos.left} y2={pos.top} 
+                                   stroke="rgba(255, 255, 255, 0.05)" 
+                                   strokeWidth="1" 
+                               />
+                               
+                               {/* Energy Beam Line (Pulse Effect) */}
+                               <line 
+                                   x1="50%" y1="50%" 
+                                   x2={pos.left} y2={pos.top} 
+                                   stroke="url(#beamGradient)" 
+                                   strokeWidth="2"
+                                   strokeDasharray="10 150" 
+                                   strokeLinecap="round"
+                                   className="opacity-60"
+                                   style={{
+                                       animation: `flowLine ${isOrbiting ? 1.5 : 4}s linear infinite`,
+                                       animationDelay: `${index * 0.5}s`
+                                   }}
+                               />
+                           </g>
+                       );
+                   })}
                 </svg>
 
                 {/* Orbiting Team Members - DYNAMIC MAPPING WITH ROTATION */}
@@ -384,6 +417,15 @@ const Hero: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Inline Styles for Animation */}
+      <style>{`
+        @keyframes flowLine {
+            0% { stroke-dashoffset: 160; opacity: 0; }
+            50% { opacity: 1; }
+            100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+      `}</style>
 
       {/* Reused Modals from Team Section */}
       {selectedMember && (
