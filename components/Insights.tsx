@@ -11,7 +11,7 @@ import { useRouter } from '../hooks/useRouter';
 
 const Insights: React.FC = () => {
   const { t } = useLanguage();
-  const { insights, team } = useData();
+  const { insights = [], team = [] } = useData();
 
   // Use Router Hook for Posts: Section 'insights', No prefix
   const { activeId, openItem, closeItem } = useRouter('insights');
@@ -24,7 +24,7 @@ const Insights: React.FC = () => {
 
   // Sync Router Active ID with Data (Support finding by ID or Slug)
   useEffect(() => {
-      if (activeId) {
+      if (activeId && insights) {
           const found = insights.find(p => p.slug === activeId || p.id === activeId);
           setSelectedPost(found || null);
       } else {
@@ -45,20 +45,33 @@ const Insights: React.FC = () => {
   }, [selectedPost, isViewAllOpen, selectedAuthor, authorPosts]);
 
   const handleAuthorClick = (authorId: string) => {
-    const author = team.find(t => t.id === authorId);
+    const author = (team || []).find(t => t.id === authorId);
     if (author) {
       setSelectedAuthor(author);
     }
   };
-
-  const getAuthorName = (authorId: string) => {
-    const author = team.find(t => t.id === authorId);
-    return author ? author.name : 'Ponloe Team';
-  };
   
   const handleShowArticles = (member: TeamMember) => {
-      const posts = insights.filter(p => p.authorId === member.id);
+      const posts = (insights || []).filter(p => p.authorId === member.id);
       setAuthorPosts(posts);
+  };
+
+  // Helper component to render Author Info on Card
+  const AuthorBadge = ({ authorId }: { authorId: string }) => {
+      const author = (team || []).find(t => t.id === authorId);
+      if (!author) return null;
+      return (
+          <div className="flex items-center gap-2 group/author z-10 relative">
+             <img 
+                src={author.image} 
+                alt={author.name} 
+                className="w-6 h-6 rounded-full object-cover border border-white/20 group-hover/author:border-indigo-400 transition-colors" 
+             />
+             <span className="text-xs text-gray-400 font-bold group-hover/author:text-indigo-300 transition-colors truncate max-w-[100px]">
+                 {author.name}
+             </span>
+          </div>
+      );
   };
 
   return (
@@ -92,7 +105,7 @@ const Insights: React.FC = () => {
 
           {/* Display only first 3 items on the main page */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {insights.slice(0, 3).map((post) => (
+            {(insights || []).slice(0, 3).map((post) => (
               <article 
                 key={post.id} 
                 className="group flex flex-col h-full bg-white/5 border border-white/5 rounded-2xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:-translate-y-2 cursor-pointer"
@@ -117,9 +130,13 @@ const Insights: React.FC = () => {
 
                 {/* Content */}
                 <div className="p-6 flex-1 flex flex-col">
-                  <div className="flex items-center gap-2 text-gray-400 text-xs mb-3 font-mono">
-                    <Calendar size={12} />
-                    <span>{post.date}</span>
+                  {/* Meta Row: Date & Author */}
+                  <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-3">
+                      <div className="flex items-center gap-2 text-gray-400 text-xs font-mono">
+                        <Calendar size={12} />
+                        <span>{post.date}</span>
+                      </div>
+                      <AuthorBadge authorId={post.authorId} />
                   </div>
                   
                   <h3 className="text-xl font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors line-clamp-2 font-khmer">
@@ -130,7 +147,7 @@ const Insights: React.FC = () => {
                     {post.excerpt}
                   </p>
 
-                  <div className="pt-6 border-t border-white/5">
+                  <div className="pt-4 border-t border-white/5 mt-auto">
                      <button 
                        onClick={(e) => { e.stopPropagation(); openItem(post.slug || post.id); }}
                        className="inline-flex items-center gap-2 text-sm font-bold text-white hover:text-indigo-400 transition-colors font-khmer"
@@ -179,7 +196,7 @@ const Insights: React.FC = () => {
                 {/* Grid Content */}
                 <div className="flex-1 overflow-y-auto p-6 md:p-8 scrollbar-hide">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {insights.map((post) => (
+                        {(insights || []).map((post) => (
                              <article 
                                 key={post.id} 
                                 className="group flex flex-col bg-white/5 border border-white/5 rounded-xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
@@ -198,10 +215,14 @@ const Insights: React.FC = () => {
                                     </div>
                                 </div>
                                 <div className="p-5 flex-1 flex flex-col">
-                                     <div className="flex items-center gap-2 text-gray-400 text-xs mb-2 font-mono">
-                                        <Calendar size={12} />
-                                        <span>{post.date}</span>
-                                    </div>
+                                     <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2 text-gray-400 text-xs font-mono">
+                                            <Calendar size={12} />
+                                            <span>{post.date}</span>
+                                        </div>
+                                        <AuthorBadge authorId={post.authorId} />
+                                     </div>
+                                    
                                     <h3 className="text-lg font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors line-clamp-2 font-khmer">
                                         {t(post.title, post.titleKm)}
                                     </h3>
