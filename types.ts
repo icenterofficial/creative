@@ -28,10 +28,12 @@ export interface Service {
 export interface Project {
   id: string;
   title: string;
-  category: 'graphicdesign' | 'webapp' | 'architecture' | 'mvac' | 'arabiccalligraphy' | 'translator' | 'website';
+  category: string; // Changed from literal union to string to allow dynamic categories
   image: string;
   client?: string;
   slug?: string;
+  description?: string; // New field
+  link?: string;        // New field
 }
 
 export interface TeamMember {
