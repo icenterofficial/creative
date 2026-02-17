@@ -22,6 +22,7 @@ export interface Service {
   featuresKm?: string[];
   slug?: string;
   _iconString?: string; // Internal use for admin
+  image?: string; // Background Image for Hover Effect
 }
 
 export interface Project {
