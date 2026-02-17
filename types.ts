@@ -21,6 +21,7 @@ export interface Service {
   features: string[];
   featuresKm?: string[];
   slug?: string;
+  _iconString?: string; // Internal use for admin
 }
 
 export interface Project {
@@ -48,6 +49,8 @@ export interface TeamMember {
   experience: string[];
   experienceKm?: string[];
   slug?: string;
+  orderIndex?: number; // For sorting
+  pinCode?: string;    // For login
 }
 
 export interface Comment {
