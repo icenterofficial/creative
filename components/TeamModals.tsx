@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Facebook, Send, FileText, User, Code, Briefcase, Calendar, Tag, MessageCircle, Share2, Check, Copy, Loader2 } from 'lucide-react';
+import { X, Facebook, Send, FileText, User, Code, Briefcase, Calendar, Tag, MessageCircle, Share2, Check, Copy, Loader2, ArrowRight } from 'lucide-react';
 import { TeamMember, Post, Comment } from '../types';
 import { useData } from '../contexts/DataContext';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -10,6 +10,7 @@ import ContentRenderer from './ContentRenderer';
 
 // Helper to count comments recursively
 const getTotalCommentCount = (comments: Comment[]): number => {
+  if (!comments) return 0;
   return comments.reduce((acc, comment) => {
     return acc + 1 + (comment.replies ? getTotalCommentCount(comment.replies) : 0);
   }, 0);
@@ -24,8 +25,15 @@ interface MemberDetailModalProps {
 
 export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, onClose, onShowArticles }) => {
     const { t } = useLanguage();
-    const { insights } = useData();
-    const postCount = insights.filter(post => post.authorId === member.id).length;
+    const { insights = [] } = useData(); 
+    
+    if (!member) return null;
+
+    const postCount = (insights || []).filter(post => post?.authorId === member.id).length;
+    const skills = member.skills || [];
+    const experience = member.experience || [];
+    const experienceKm = member.experienceKm || [];
+    const socials = member.socials || {};
 
     return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
@@ -50,13 +58,13 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
                         <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
                     </div>
                     <div className="mb-4 flex gap-3">
-                        {member.socials.facebook && (
-                            <a href={member.socials.facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 border border-white/10 text-gray-400 rounded-lg hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2] transition-all">
+                        {socials.facebook && (
+                            <a href={socials.facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 border border-white/10 text-gray-400 rounded-lg hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2] transition-all">
                                 <Facebook size={18} />
                             </a>
                         )}
-                        {member.socials.telegram && (
-                            <a href={member.socials.telegram} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 border border-white/10 text-gray-400 rounded-lg hover:bg-[#229ED9] hover:text-white hover:border-[#229ED9] transition-all">
+                        {socials.telegram && (
+                            <a href={socials.telegram} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 border border-white/10 text-gray-400 rounded-lg hover:bg-[#229ED9] hover:text-white hover:border-[#229ED9] transition-all">
                                 <Send size={18} />
                             </a>
                         )}
@@ -96,7 +104,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
                                 <Code size={14} /> {t('Skills', 'ជំនាញ')}
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                {member.skills.map(skill => (
+                                {skills.map(skill => (
                                     <span key={skill} className="px-3 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-xs font-bold">
                                         {skill}
                                     </span>
@@ -110,7 +118,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
                                 <Briefcase size={14} /> {t('Experience', 'បទពិសោធន៍')}
                             </div>
                             <ul className="space-y-3">
-                                {(t(member.experience.join('|'), (member.experienceKm || member.experience).join('|'))).split('|').map((exp, idx) => (
+                                {(t(experience.join('|'), experienceKm.join('|'))).split('|').map((exp, idx) => (
                                     <li key={idx} className="flex items-start gap-3 text-gray-300 text-sm font-khmer">
                                         <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
                                         {exp}
@@ -208,18 +216,23 @@ interface ArticleDetailModalProps {
 
 export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, onClose, onAuthorClick }) => {
     const { t } = useLanguage();
-    const { team } = useData();
-    const { currentUser } = useAuth(); // GET AUTH CONTEXT
+    const { team = [] } = useData(); // Default array
+    const { currentUser } = useAuth();
     
     const [showShare, setShowShare] = useState(false);
     const [copied, setCopied] = useState(false);
     
     // Comments State
-    const [comments, setComments] = useState<Comment[]>(post.comments || []);
+    const [comments, setComments] = useState<Comment[]>(post?.comments || []);
     const [newCommentText, setNewCommentText] = useState('');
     const [commentUser, setCommentUser] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingComments, setIsLoadingComments] = useState(false);
+
+    // Identify Author
+    const author = (team || []).find(t => t.id === post.authorId);
+
+    if (!post) return null;
 
     // Auto-fill user if logged in
     useEffect(() => {
@@ -396,6 +409,29 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
                                         </button>
                                     </div>
                                 </div>
+                                
+                                {/* AUTHOR PROFILE CARD */}
+                                {author && (
+                                    <div 
+                                        onClick={() => onAuthorClick && onAuthorClick(author.id)}
+                                        className="flex items-center gap-4 mb-6 p-3 pr-6 rounded-2xl bg-gradient-to-r from-gray-800 to-gray-900 border border-white/5 hover:border-indigo-500/30 transition-all cursor-pointer group w-fit"
+                                    >
+                                        <div className="relative">
+                                            <img 
+                                                src={author.image} 
+                                                alt={author.name} 
+                                                className="w-12 h-12 rounded-full object-cover border-2 border-gray-700 group-hover:border-indigo-500 transition-colors" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-white leading-none group-hover:text-indigo-300 transition-colors flex items-center gap-1">
+                                                {author.name}
+                                                <ArrowRight size={12} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                                            </p>
+                                            <p className="text-xs text-gray-400 mt-1">{t('Author', 'អ្នកនិពន្ធ')} &middot; {author.role}</p>
+                                        </div>
+                                    </div>
+                                )}
 
                                 <h2 className="text-2xl md:text-5xl font-bold text-white mb-6 leading-tight font-khmer">{t(post.title, post.titleKm)}</h2>
                                 
