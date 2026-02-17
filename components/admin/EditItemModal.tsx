@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Save, Loader2, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Save, Loader2, Upload, Image as ImageIcon, ExternalLink, Lock } from 'lucide-react';
 import { getSupabaseClient } from '../../lib/supabase';
 import { useData } from '../../contexts/DataContext';
 import RichTextEditor from './editor/RichTextEditor';
@@ -71,11 +71,55 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
 
         <form onSubmit={onSave} className="space-y-4 flex-1">
           {Object.keys(editingItem).map((key) => {
-            if (['id', 'comments', 'replies', 'created_at', '_iconString', 'slug'].includes(key)) return null;
+            if (['id', 'comments', 'replies', 'created_at', '_iconString', 'slug', 'orderIndex', 'order_index'].includes(key)) return null;
             const value = editingItem[key];
             const label = key.charAt(0).toUpperCase() + key.slice(1);
 
-            // Hide Icon if it's an object (ReactNode) from static data, unless we have converted it to string for editing
+            // Special field for PIN Code (Team only)
+            if (key === 'pinCode' && activeTab === 'team') {
+                return (
+                    <div key={key} className="mb-4">
+                        <label className="block text-xs font-bold text-indigo-400 mb-1 flex items-center gap-1"><Lock size={12}/> Login PIN Code</label>
+                        <input 
+                            type="text"
+                            maxLength={6}
+                            className="w-full bg-gray-800 border border-indigo-500/30 rounded-lg p-3 text-white font-mono tracking-widest"
+                            value={value || ''} 
+                            onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })}
+                            placeholder="e.g. 1234"
+                        />
+                        <p className="text-[10px] text-gray-500 mt-1">Used for member login. Keep it simple (4-6 digits).</p>
+                    </div>
+                );
+            }
+
+            // Special handling for Icon string editing (Services)
+            if (key === 'icon' && typeof value === 'string') {
+                return (
+                    <div key={key} className="mb-4">
+                        <label className="block text-xs font-bold text-gray-400 mb-1">{label} (Lucide Icon Name)</label>
+                        <div className="flex gap-2">
+                            <input 
+                                className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white" 
+                                value={value} 
+                                onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })}
+                                placeholder="e.g. Activity, Box, Zap..."
+                            />
+                            <a 
+                                href="https://lucide.dev/icons" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-indigo-400 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap"
+                            >
+                                <ExternalLink size={14} /> Browse Icons
+                            </a>
+                        </div>
+                        <p className="text-[10px] text-gray-500 mt-1">Check Lucide.dev for valid icon names. Case sensitive.</p>
+                    </div>
+                );
+            }
+
+            // Hide Icon if it's an object (ReactNode) from static data that hasn't been converted
             if (key === 'icon' && typeof value !== 'string') {
                 return (
                     <div key={key} className="mb-4 p-3 bg-gray-800 rounded-lg">
@@ -134,7 +178,18 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
             
             if (typeof value === 'object' && value !== null && !Array.isArray(value)) return null; 
             if (Array.isArray(value)) {
-                 return <div key={key}><label className="text-gray-400 text-xs font-bold">{label}</label><textarea className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white" value={value.join(', ')} onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value.split(',').map((s:string) => s.trim()) })} /></div>;
+                 return (
+                    <div key={key} className="mb-4">
+                        <label className="block text-xs font-bold text-gray-400 mb-1">{label}</label>
+                        <textarea 
+                            className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white h-24 font-mono text-sm" 
+                            placeholder="Item 1, Item 2, Item 3"
+                            value={value.join(', ')} 
+                            onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value.split(',').map((s:string) => s.trim()) })} 
+                        />
+                        <p className="text-[10px] text-gray-500 mt-1">Separate items with commas.</p>
+                    </div>
+                 );
             }
 
             return (
