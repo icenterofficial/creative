@@ -157,7 +157,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 descriptionKm: s.description_km,
                 features: s.features || [],
                 featuresKm: s.features_km || [],
-                slug: s.slug || slugify(s.title)
+                slug: s.slug || slugify(s.title),
+                image: s.image, // New Image Field for Background
             }));
             setServices(mergeAndSortData(formatted, SERVICES, 'service'));
         }
