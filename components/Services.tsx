@@ -28,16 +28,16 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-// Map service IDs to Unsplash Images
-const SERVICE_IMAGES: Record<string, string> = {
-  graphic: 'https://raw.githubusercontent.com/icenterofficial/creative/refs/heads/main/public/images/projects/graphic/iStock-1191609321%20(1).jpg', // Updated Custom Image
-  architecture: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&q=80&w=600', // Modern Architecture
-  calligraphy: 'https://raw.githubusercontent.com/icenterofficial/creative/refs/heads/main/public/images/projects/calligraphy/1.jpg', // Updated Custom Image
-  translation: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80&w=600', // Books
-  media: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=600', // Camera Lens
-  courses: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=600', // Students Learning
-  webdev: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=600', // Coding Screen
-  mvac: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=600', // Industrial Fan/Ventilation
+// Map service IDs to Unsplash Images (Fallback if no dynamic image is provided)
+const SERVICE_IMAGES_FALLBACK: Record<string, string> = {
+  graphic: 'https://raw.githubusercontent.com/icenterofficial/creative/refs/heads/main/public/images/projects/graphic/iStock-1191609321%20(1).jpg',
+  architecture: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&q=80&w=600',
+  calligraphy: 'https://raw.githubusercontent.com/icenterofficial/creative/refs/heads/main/public/images/projects/calligraphy/1.jpg',
+  translation: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80&w=600',
+  media: 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=600',
+  courses: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=600',
+  webdev: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=600',
+  mvac: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?auto=format&fit=crop&q=80&w=600',
 };
 
 // --- Sortable Item Component ---
@@ -68,6 +68,9 @@ const SortableServiceItem: React.FC<SortableServiceItemProps> = ({ service, inde
   const isLarge = index === 0 || index === 6 || service.id === 'courses';
   const gridClass = isLarge ? 'lg:col-span-2' : 'lg:col-span-1';
 
+  // Determine Background Image: Use Dynamic first, then Fallback
+  const bgImage = service.image || SERVICE_IMAGES_FALLBACK[service.id];
+
   return (
     <div
       ref={setNodeRef}
@@ -83,10 +86,10 @@ const SortableServiceItem: React.FC<SortableServiceItemProps> = ({ service, inde
       <div className={`relative h-full bg-gray-900/90 backdrop-blur-xl rounded-[23px] p-8 border border-white/10 transition-all duration-300 overflow-hidden ${isDragging ? 'bg-gray-800 scale-[1.02] shadow-2xl' : 'hover:bg-gray-900/80'}`}>
           
           {/* Background Image on Hover (Subtle) */}
-          {SERVICE_IMAGES[service.id] && (
+          {bgImage && (
             <div 
                 className="absolute inset-0 bg-cover bg-center opacity-0 group-hover:opacity-20 transition-opacity duration-700 ease-out grayscale group-hover:grayscale-0 pointer-events-none"
-                style={{ backgroundImage: `url('${SERVICE_IMAGES[service.id]}')` }}
+                style={{ backgroundImage: `url('${bgImage}')` }}
             />
           )}
 
