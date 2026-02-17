@@ -466,8 +466,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                    <p className="text-gray-400 text-xs md:text-sm">Manage your {activeTab} content directly.</p>
                 </div>
                 
-                {/* Add New Button: Visible for Admins OR if on Projects Tab */}
-                {activeTab !== 'settings' && (currentUser.role === 'admin' || activeTab === 'projects') && (
+                {/* Add New Button: Visible for Admins OR if on Projects Tab OR Insights Tab */}
+                {activeTab !== 'settings' && (currentUser.role === 'admin' || activeTab === 'projects' || activeTab === 'insights') && (
                     <button 
                         onClick={handleAdd}
                         className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-500/20 transition-all font-khmer text-sm"
