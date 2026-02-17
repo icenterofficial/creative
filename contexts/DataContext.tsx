@@ -88,12 +88,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setIsLoading(true);
       try {
-        // Fetch Projects
+        // Fetch Projects - Now includes description and link
         const { data: dbProjects } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
         if (dbProjects) {
              const formatted = dbProjects.map((p: any) => ({
-                 ...p,
-                 slug: p.slug || slugify(p.title)
+                 id: p.id,
+                 title: p.title,
+                 category: p.category,
+                 image: p.image,
+                 client: p.client,
+                 slug: p.slug || slugify(p.title),
+                 description: p.description, // Fetch description
+                 link: p.link,             // Fetch link
              }));
              setProjects(mergeAndSortData(formatted, PROJECTS, 'project'));
         }
@@ -158,7 +164,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 features: s.features || [],
                 featuresKm: s.features_km || [],
                 slug: s.slug || slugify(s.title),
-                image: s.image, // New Image Field for Background
+                image: s.image, 
             }));
             setServices(mergeAndSortData(formatted, SERVICES, 'service'));
         }
@@ -191,9 +197,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           // UUID Regex to check if item exists in DB
           const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
           
-          // We will process items one by one or in batches.
-          // Since we might need to INSERT static items, we handle them carefully.
-          
           for (let i = 0; i < newOrder.length; i++) {
               const member = newOrder[i];
               const newIndex = i;
@@ -224,15 +227,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           }
 
           // 2. CRITICAL STEP: RELOAD DATA
-          // Since static items now have new UUIDs in the database, our local state 't1', 't2' is invalid.
-          // We must refetch to get the real UUIDs. If we don't, the next drag will fail or duplicate.
-          // Reloading the page is the safest way to ensure total consistency.
-          
-          // Option A: Smooth Refetch (Preferred if fast)
           await fetchData();
-          
-          // Option B: Hard Reload (Uncomment if Option A is buggy)
-          // window.location.reload(); 
 
       } catch (err) {
           console.error("Failed to save order:", err);
