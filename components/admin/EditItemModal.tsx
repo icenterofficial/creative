@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Save, Loader2, Upload, Image as ImageIcon, ExternalLink, Lock, Facebook, Send } from 'lucide-react';
+import { X, Save, Loader2, Upload, Image as ImageIcon, ExternalLink, Lock, Facebook, Send, Link as LinkIcon, Tag } from 'lucide-react';
 import { getSupabaseClient } from '../../lib/supabase';
 import { useData } from '../../contexts/DataContext';
 import RichTextEditor from './editor/RichTextEditor';
@@ -20,7 +20,7 @@ interface EditItemModalProps {
 const EditItemModal: React.FC<EditItemModalProps> = ({
   isOpen, isAdding, activeTab, isSuperAdmin, editingItem, setEditingItem, onSave, onCancel, isSaving
 }) => {
-  const { team } = useData();
+  const { team, projects } = useData();
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -69,6 +69,9 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
           }
       });
   };
+
+  // Get unique categories for suggestions
+  const uniqueCategories = Array.from(new Set(projects.map(p => p.category))).sort();
 
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-sm animate-fade-in">
@@ -140,7 +143,43 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
 
-            // 3. Icon Selection (Services)
+            // 3. Project Link Field
+            if (key === 'link' && activeTab === 'projects') {
+                return (
+                    <div key={key} className="mb-4">
+                        <label className="block text-xs font-bold text-gray-400 mb-1 flex items-center gap-1"><LinkIcon size={12}/> Live Project Link</label>
+                        <input 
+                            className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white text-sm" 
+                            value={value || ''} 
+                            onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })}
+                            placeholder="https://example.com"
+                        />
+                    </div>
+                );
+            }
+
+            // 4. Project Category (Dynamic Selection)
+            if (key === 'category' && activeTab === 'projects') {
+                return (
+                    <div key={key} className="mb-4">
+                        <label className="block text-xs font-bold text-gray-400 mb-1 flex items-center gap-1"><Tag size={12}/> Category</label>
+                        <input 
+                            list="category-suggestions"
+                            className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white text-sm" 
+                            value={value || ''} 
+                            onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })}
+                            placeholder="Select or Type new category..."
+                        />
+                        <datalist id="category-suggestions">
+                            {uniqueCategories.map(cat => (
+                                <option key={cat} value={cat} />
+                            ))}
+                        </datalist>
+                    </div>
+                );
+            }
+
+            // 5. Icon Selection (Services)
             if (key === 'icon' && typeof value === 'string') {
                 return (
                     <div key={key} className="mb-4">
@@ -161,13 +200,12 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                                 <ExternalLink size={14} /> Browse Icons
                             </a>
                         </div>
-                        <p className="text-[10px] text-gray-500 mt-1">Check Lucide.dev for valid icon names. Case sensitive.</p>
                     </div>
                 );
             }
 
-            // Skip object rendering for icon if it's a React Node (static data)
-            if (key === 'icon' && typeof value !== 'string') {
+             // Skip object rendering for icon if it's a React Node (static data)
+             if (key === 'icon' && typeof value !== 'string') {
                 return (
                     <div key={key} className="mb-4 p-3 bg-gray-800 rounded-lg">
                         <label className="block text-xs font-bold text-gray-400 mb-1">Icon</label>
@@ -176,7 +214,8 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
 
-            // 4. Author Selection (Insights)
+
+            // 6. Author Selection (Insights)
             if (key === 'authorId') {
                 return (
                     <div key={key} className="mb-4">
@@ -192,7 +231,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
             
-            // 5. Image Upload (Shared for Project, Insight, Team, Service)
+            // 7. Image Upload
             if (key === 'image') {
                 return (
                     <div key={key} className="space-y-2 mb-4">
@@ -213,7 +252,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
 
-            // 6. Rich Text Editor
+            // 8. Rich Text Editor (Supports Project Description too)
             if (key === 'content' || key === 'description' || key === 'bio') {
                 return (
                     <RichTextEditor 
@@ -225,7 +264,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
             
-            // 7. Arrays (Skills, Experience, Features)
+            // 9. Arrays
             if (typeof value === 'object' && value !== null && !Array.isArray(value)) return null; 
             if (Array.isArray(value)) {
                  return (
@@ -242,7 +281,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                  );
             }
 
-            // 8. Default Text Input
+            // 10. Default Text Input
             return (
               <div key={key}>
                 <label className="block text-xs font-bold text-gray-400 mb-1">{label}</label>
