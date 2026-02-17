@@ -1,7 +1,7 @@
 import React from 'react';
-import { Users, FileText, Briefcase, LayoutGrid, Settings } from 'lucide-react';
+import { Users, FileText, Briefcase, LayoutGrid, Settings, Star } from 'lucide-react';
 
-type TabType = 'team' | 'projects' | 'insights' | 'services' | 'settings';
+type TabType = 'team' | 'projects' | 'insights' | 'services' | 'careers' | 'settings';
 
 interface AdminSidebarProps {
   activeTab: TabType;
@@ -31,6 +31,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ activeTab, setActiveTab, is
         <>
           <button onClick={() => setActiveTab('services')} className={btnClass('services')}>
             <LayoutGrid size={20} /> Services
+          </button>
+          <button onClick={() => setActiveTab('careers')} className={btnClass('careers')}>
+            <Star size={20} /> Careers
           </button>
         </>
       )}
