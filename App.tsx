@@ -41,8 +41,8 @@ function AppContent() {
   // Data for login verification
   const { team } = useData();
 
-  // MAPPING: Specific PINs for specific users
-  const MEMBER_PINS: Record<string, string> = {
+  // Legacy/Fallback PINs for hardcoded members (Optional)
+  const LEGACY_PINS: Record<string, string> = {
       '1111': 't1', // Youshow
       '2222': 't2', // Samry
       '3333': 't3', // Sreyneang
@@ -71,9 +71,6 @@ function AppContent() {
         else if (hash === '#careers') setActivePage('careers');
         else if (hash === '#privacy') setActivePage('privacy');
         else {
-            // Only clear active page if it's NOT a section link like #team or #portfolio
-            // AND not a deep link like #team/1
-            // Actually, we want to clear the overlay if we navigate away to a normal section
             if (!['#about', '#careers', '#privacy'].includes(hash)) {
                 setActivePage(null);
             }
@@ -88,8 +85,6 @@ function AppContent() {
   }, []);
 
   const closePage = () => {
-      // Clear hash to close page
-      // Using history.pushState to remove hash without jump if possible, or just empty hash
       window.location.hash = ''; 
   };
 
@@ -102,28 +97,39 @@ function AppContent() {
           closeAdmin();
           setPin('');
           setIsViewingSite(false); // Go to Dashboard
+          return;
       } 
-      // 2. SPECIFIC MEMBER CHECK
-      else if (MEMBER_PINS[pin]) {
-          const memberId = MEMBER_PINS[pin];
-          const member = team.find(m => m.id === memberId);
-          
+      
+      // 2. CHECK DYNAMIC TEAM PINS (FROM SUPABASE)
+      // Note: In production, do not expose PINs in the public 'team' array. 
+      // Ideally, use a backend function to verify PIN. Here we use client-side check for simplicity.
+      const foundMember = team.find(m => m.pinCode === pin);
+      
+      if (foundMember) {
+          login({ role: 'member', id: foundMember.id, name: foundMember.name });
+          closeAdmin();
+          setPin('');
+          setIsViewingSite(false); // Go to Dashboard
+          return;
+      }
+
+      // 3. FALLBACK TO LEGACY HARDCODED PINS (IF NOT FOUND DYNAMICALLY)
+      const legacyId = LEGACY_PINS[pin];
+      if (legacyId) {
+          const member = team.find(m => m.id === legacyId);
           if (member) {
               login({ role: 'member', id: member.id, name: member.name });
               closeAdmin();
               setPin('');
-              setIsViewingSite(false); // Go to Dashboard
-          } else {
-              setLoginError(true);
-              setPin('');
-              setTimeout(() => setLoginError(false), 500);
+              setIsViewingSite(false);
+              return;
           }
-      } 
-      else {
-          setLoginError(true);
-          setPin('');
-          setTimeout(() => setLoginError(false), 500);
       }
+      
+      // FAILED
+      setLoginError(true);
+      setPin('');
+      setTimeout(() => setLoginError(false), 500);
   };
 
   const closeLogin = () => {
@@ -221,7 +227,7 @@ function AppContent() {
                               autoFocus
                               className={`w-full bg-gray-800 border ${loginError ? 'border-red-500 animate-shake' : 'border-white/10'} rounded-xl px-4 py-3 text-center text-xl tracking-[0.5em] text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all`}
                               placeholder="••••"
-                              maxLength={4}
+                              maxLength={6}
                           />
                       </div>
                       <button 
@@ -235,7 +241,6 @@ function AppContent() {
                   {/* Hint for Demo */}
                   <div className="mt-6 pt-6 border-t border-white/5 text-xs text-gray-600 text-center">
                       <p>Super Admin: 1234</p>
-                      <p>Members: 1111, 2222, 3333, 4444...</p>
                   </div>
               </div>
           </div>
