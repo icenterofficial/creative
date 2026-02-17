@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { ArrowRight, Play, Star, Zap } from 'lucide-react';
+import { ArrowRight, Play, Star, Zap, Power } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
 import { MemberDetailModal, AuthorArticlesModal, ArticleDetailModal } from './TeamModals';
@@ -96,12 +96,17 @@ const MagneticButton: React.FC<{ children: React.ReactNode, className?: string, 
 
 const Hero: React.FC = () => {
   const { t } = useLanguage();
-  const { team, insights } = useData();
+  const { team = [], insights = [] } = useData(); // Safe defaults
   
   // Modal States
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [authorPosts, setAuthorPosts] = useState<Post[] | null>(null);
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+
+  // Rotation Animation States
+  const [isOrbiting, setIsOrbiting] = useState(false);
+  const [rotationAngle, setRotationAngle] = useState(0);
+  const animationRef = useRef<number>(0);
 
   // Parallax Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -109,6 +114,24 @@ const Hero: React.FC = () => {
   const requestRef = useRef<number>(0);
   const mouse = useRef({ x: 0, y: 0 });
   const smoothMouse = useRef({ x: 0, y: 0 });
+
+  // Handle Rotation Logic
+  useEffect(() => {
+    const animateRotation = () => {
+        if (isOrbiting) {
+            setRotationAngle(prev => prev + 0.003); // Adjust speed here (Lower is slower/smoother)
+            animationRef.current = requestAnimationFrame(animateRotation);
+        }
+    };
+
+    if (isOrbiting) {
+        animationRef.current = requestAnimationFrame(animateRotation);
+    } else {
+        cancelAnimationFrame(animationRef.current);
+    }
+
+    return () => cancelAnimationFrame(animationRef.current);
+  }, [isOrbiting]);
 
   // Handle Real-time Mouse Tracking with Physics (Lerp)
   useEffect(() => {
@@ -124,7 +147,6 @@ const Hero: React.FC = () => {
 
     const animate = () => {
         // Linear Interpolation (Lerp) for smoothness
-        // 0.05 is the easing factor (lower = smoother/slower, higher = snappier)
         smoothMouse.current.x += (mouse.current.x - smoothMouse.current.x) * 0.05;
         smoothMouse.current.y += (mouse.current.y - smoothMouse.current.y) * 0.05;
 
@@ -133,7 +155,6 @@ const Hero: React.FC = () => {
             const y = smoothMouse.current.y;
 
             // Apply 3D Tilt and Parallax
-            // Rotate the entire plane based on mouse position
             constellationRef.current.style.transform = `
                 perspective(1000px)
                 rotateY(${x * 10}deg)
@@ -142,7 +163,6 @@ const Hero: React.FC = () => {
                 translateY(${y * 20}px)
             `;
 
-            // We can also update CSS variables if we want individual elements to move differently
             constellationRef.current.style.setProperty('--mouse-x', x.toString());
             constellationRef.current.style.setProperty('--mouse-y', y.toString());
         }
@@ -171,19 +191,35 @@ const Hero: React.FC = () => {
   }, [selectedMember, authorPosts, selectedPost]);
 
   const handleShowArticles = (member: TeamMember) => {
+      if (!insights) return;
       const posts = insights.filter(p => p.authorId === member.id);
       setAuthorPosts(posts);
   };
 
-  // Fixed positions for the constellation layout
-  const teamPositions = [
-    { top: '10%', left: '20%', size: 'w-16 h-16', speed: 1.5 }, // Top Left
-    { top: '15%', right: '10%', size: 'w-20 h-20', speed: 1.2 }, // Top Right
-    { top: '45%', left: '0%', size: 'w-14 h-14', speed: 2 },   // Middle Left
-    { top: '50%', right: '0%', size: 'w-16 h-16', speed: 1.8 },   // Middle Right
-    { bottom: '15%', left: '20%', size: 'w-20 h-20', speed: 1.1 }, // Bottom Left
-    { bottom: '5%', right: '25%', size: 'w-14 h-14', speed: 2.2 },  // Bottom Right
-  ];
+  // Helper to calculate dynamic positions based on ANY number of team members + Rotation
+  const getDynamicPosition = (index: number, total: number, currentRotation: number) => {
+      // Distribute evenly around a circle (360 degrees)
+      // Start from -PI/2 (Top) + currentRotation
+      const angle = (index / total) * 2 * Math.PI - (Math.PI / 2) + currentRotation;
+      
+      // Radius: 35-45% of container. Add slight variance for "organic" feel
+      const radiusBase = 40; 
+      const radiusVar = (index % 2 === 0 ? 5 : -5); // Zigzag slightly
+      const radius = radiusBase + radiusVar;
+
+      // Center is 50%, 50%
+      const left = 50 + radius * Math.cos(angle);
+      const top = 50 + radius * Math.sin(angle);
+
+      // Sizes: Rotate between 3 sizes
+      const sizes = ['w-14 h-14', 'w-16 h-16', 'w-20 h-20'];
+      const size = sizes[index % 3];
+
+      // Speed: Parallax speed multiplier
+      const speed = 1 + (index % 3) * 0.5;
+
+      return { left: `${left}%`, top: `${top}%`, size, speed };
+  };
 
   return (
     <section ref={containerRef} id="home" className="relative min-h-screen flex items-center pt-32 pb-20 overflow-hidden perspective-1000">
@@ -203,7 +239,7 @@ const Hero: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           
-          {/* Left Content - Static or Slight Parallax */}
+          {/* Left Content */}
           <div className="space-y-8 text-center lg:text-left relative z-20">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm animate-fade-in">
               <span className="flex h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
@@ -268,21 +304,30 @@ const Hero: React.FC = () => {
                 style={{ transformStyle: 'preserve-3d' }}
              >
 
-                {/* Central Core: The Brain/Hub (Moves slightly opposite to mouse) */}
+                {/* Central Core: The Brain/Hub (INTERACTIVE BUTTON) */}
                 <div 
-                    className="absolute z-10"
+                    className="absolute z-10 cursor-pointer group/core"
                     style={{ transform: 'translateZ(20px)' }}
+                    onClick={() => setIsOrbiting(!isOrbiting)}
+                    title={isOrbiting ? "Stop Rotation" : "Activate Orbit"}
                 >
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-full blur-[90px] opacity-30 animate-pulse"></div>
-                    <div className="relative w-40 h-40 bg-gray-900/40 backdrop-blur-3xl border border-white/20 rounded-full flex flex-col items-center justify-center z-20 shadow-[0_0_50px_rgba(99,102,241,0.3)] animate-float">
-                        <div className="w-20 h-20 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-2 shadow-lg">
+                    <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-full blur-[90px] transition-opacity duration-1000 ${isOrbiting ? 'opacity-50 animate-pulse' : 'opacity-20'}`}></div>
+                    
+                    {/* Ripple Effect Ring when active */}
+                    <div className={`absolute inset-0 rounded-full border border-indigo-500/30 scale-100 transition-all duration-1000 ${isOrbiting ? 'animate-ping opacity-30' : 'opacity-0'}`}></div>
+
+                    <div className={`relative w-40 h-40 bg-gray-900/60 backdrop-blur-3xl border ${isOrbiting ? 'border-indigo-400 shadow-[0_0_80px_rgba(99,102,241,0.6)]' : 'border-white/20 shadow-[0_0_50px_rgba(99,102,241,0.3)]'} rounded-full flex flex-col items-center justify-center z-20 animate-float transition-all duration-500 group-hover/core:scale-105`}>
+                        <div className={`w-20 h-20 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mb-2 shadow-lg transition-transform duration-700 ${isOrbiting ? 'rotate-180' : ''}`}>
                             <Zap size={40} className="text-white fill-white" />
                         </div>
-                        <span className="text-xs font-bold text-white tracking-widest uppercase">Ponloe</span>
+                        <span className={`text-xs font-bold tracking-widest uppercase transition-colors ${isOrbiting ? 'text-indigo-300' : 'text-white'}`}>Ponloe</span>
+                        
+                        {/* Status Dot */}
+                        <div className={`absolute top-3 right-3 w-3 h-3 rounded-full ${isOrbiting ? 'bg-green-400 shadow-[0_0_10px_#4ade80]' : 'bg-red-500/50'}`}></div>
                     </div>
                 </div>
 
-                {/* Connecting Lines (Decorative) - Move with the plane */}
+                {/* Connecting Lines (Decorative) */}
                 <svg className="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-30" style={{ transform: 'translateZ(10px)' }}>
                    <defs>
                       <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -291,18 +336,12 @@ const Hero: React.FC = () => {
                         <stop offset="100%" stopColor="transparent" />
                       </linearGradient>
                    </defs>
-                   {/* Coordinates approximated to connect center to team positions */}
-                   <path d="M200 150 Q 300 300 300 300" stroke="url(#lineGrad)" strokeWidth="1" fill="none" className="animate-pulse" />
-                   <path d="M400 150 Q 300 300 300 300" stroke="url(#lineGrad)" strokeWidth="1" fill="none" className="animate-pulse" style={{ animationDelay: '1s' }} />
-                   <path d="M100 300 Q 300 300 300 300" stroke="url(#lineGrad)" strokeWidth="1" fill="none" className="animate-pulse" style={{ animationDelay: '0.5s' }} />
-                   <path d="M500 320 Q 300 300 300 300" stroke="url(#lineGrad)" strokeWidth="1" fill="none" className="animate-pulse" style={{ animationDelay: '1.5s' }} />
-                   <path d="M200 450 Q 300 300 300 300" stroke="url(#lineGrad)" strokeWidth="1" fill="none" className="animate-pulse" style={{ animationDelay: '0.8s' }} />
-                   <path d="M400 480 Q 300 300 300 300" stroke="url(#lineGrad)" strokeWidth="1" fill="none" className="animate-pulse" style={{ animationDelay: '1.2s' }} />
+                   <circle cx="50%" cy="50%" r="40%" stroke="url(#lineGrad)" strokeWidth="0.5" fill="none" opacity="0.5" className={isOrbiting ? "animate-spin-slow" : ""} />
                 </svg>
 
-                {/* Orbiting Team Members - High Parallax Effect */}
-                {team.slice(0, 6).map((member, index) => {
-                   const pos = teamPositions[index] || { top: '50%', left: '50%', size: 'w-16 h-16', speed: 1 };
+                {/* Orbiting Team Members - DYNAMIC MAPPING WITH ROTATION */}
+                {team.map((member, index) => {
+                   const pos = getDynamicPosition(index, team.length, rotationAngle);
                    
                    return (
                      <div
@@ -311,28 +350,27 @@ const Hero: React.FC = () => {
                         style={{ 
                             top: pos.top,
                             left: pos.left,
-                            right: pos.right,
-                            bottom: pos.bottom,
-                            // Each member moves differently based on "speed" prop for depth effect
+                            // Center the element on its coordinate
+                            marginLeft: `-${parseInt(pos.size.split(' ')[0].replace('w-', '')) * 2}px`, 
+                            marginTop: `-${parseInt(pos.size.split(' ')[1].replace('h-', '')) * 2}px`,
                             transform: `translateZ(${pos.speed * 30}px) translate(calc(var(--mouse-x) * ${-20 * pos.speed}px), calc(var(--mouse-y) * ${-20 * pos.speed}px))`
                         }}
                         onClick={() => setSelectedMember(member)}
                      >
                         <div
-                          className={`relative ${pos.size} rounded-2xl overflow-hidden border border-white/20 shadow-lg shadow-indigo-500/10 transition-all duration-300 hover:scale-125 group hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] bg-gray-900`}
+                          className={`relative ${pos.size} rounded-2xl overflow-hidden border border-white/20 shadow-lg shadow-indigo-500/10 transition-all duration-300 hover:scale-125 group hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] bg-gray-900 ${isOrbiting ? 'border-indigo-500/50' : ''}`}
                         >
                            <div className="absolute inset-0 bg-gray-900 transition-colors duration-300">
                               <img 
                                 src={member.image} 
                                 alt={member.name} 
-                                className="w-full h-full object-cover filter grayscale group-hover:grayscale-0 transition-all duration-300" 
+                                className={`w-full h-full object-cover transition-all duration-500 ${isOrbiting ? 'grayscale-0' : 'filter grayscale group-hover:grayscale-0'}`} 
                               />
                            </div>
                            
                            {/* Hover Info Badge */}
                            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/10 px-3 py-1 rounded-full opacity-0 group-hover:opacity-100 group-hover:-bottom-10 transition-all duration-300 whitespace-nowrap z-30 pointer-events-none">
                               <span className="text-[10px] text-white font-bold block">{member.name}</span>
-                              <span className="text-[8px] text-indigo-300 block text-center">Click to view</span>
                            </div>
 
                            {/* Active Ring */}
@@ -347,7 +385,7 @@ const Hero: React.FC = () => {
         </div>
       </div>
 
-      {/* Reused Modals from Team Section for seamless experience */}
+      {/* Reused Modals from Team Section */}
       {selectedMember && (
           <MemberDetailModal 
             member={selectedMember} 
