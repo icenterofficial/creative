@@ -7,32 +7,34 @@ import { Project } from '../types';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
 import { useRouter } from '../hooks/useRouter';
+import ContentRenderer from './ContentRenderer';
 
 const Portfolio: React.FC = () => {
   const [filter, setFilter] = useState<string>('all');
   const { t } = useLanguage();
-  const { projects } = useData();
+  const { projects = [] } = useData();
 
   // Use Router Hook: Section 'portfolio', No Prefix needed if using slugs
   const { activeId, openItem, closeItem } = useRouter('portfolio');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
+  // Extract unique categories from projects for the filter list
+  const uniqueCategories = Array.from(new Set((projects || []).map(p => p.category))).sort();
+  
+  // Create category list with "All" + Dynamic Categories (mapped to labels if possible, else capitalize)
   const categories = [
-    { id: 'all', label: t('All Work', 'ទាំងអស់') },
-    { id: 'graphicdesign', label: t('Graphic', 'ក្រាហ្វិក') },
-    { id: 'webapp', label: t('Development', 'អភិវឌ្ឍន៍') },
-    { id: 'architecture', label: t('Architecture', 'ស្ថាបត្យកម្ម') },
-    { id: 'mvac', label: t('MVAC', 'ម៉ាស៊ីនត្រជាក់') },
-    { id: 'arabiccalligraphy', label: t('Calligraphy', 'អក្សរផ្ចង់') },
+      { id: 'all', label: t('All Work', 'ទាំងអស់') },
+      ...uniqueCategories.map(cat => ({ 
+          id: cat, 
+          label: cat.charAt(0).toUpperCase() + cat.slice(1) // Simple capitalization 
+      }))
   ];
 
-  const filteredProjects = filter === 'all' 
-    ? projects 
-    : projects.filter(p => p.category === filter);
+  const filteredProjects = (projects || []).filter(p => filter === 'all' || p.category === filter);
 
   // Sync Router Active ID with Data (Support finding by ID or Slug)
   useEffect(() => {
-      if (activeId) {
+      if (activeId && projects) {
           const found = projects.find(p => p.slug === activeId || p.id === activeId);
           setSelectedProject(found || null);
       } else {
@@ -183,20 +185,31 @@ const Portfolio: React.FC = () => {
                         
                         <div>
                             <h4 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2 font-khmer">{t('Description', 'ការពិពណ៌នា')}</h4>
-                            <p className="text-gray-400 leading-relaxed font-khmer">
-                                {t(
-                                    "A masterfully crafted project demonstrating our commitment to quality and innovation. Every detail has been meticulously designed to meet the client's vision.",
-                                    "គម្រោងដែលបានបង្កើតឡើងដោយប៉ិនប្រសប់ បង្ហាញពីការប្តេជ្ញាចិត្តរបស់យើងចំពោះគុណភាព និងការច្នៃប្រឌិត។ រាល់ព័ត៌មានលម្អិតត្រូវបានរចនាឡើងយ៉ាងយកចិត្តទុកដាក់ ដើម្បីបំពេញតាមចក្ខុវិស័យរបស់អតិថិជន។"
-                                )}
-                            </p>
+                            <div className="text-gray-400 leading-relaxed font-khmer">
+                                <ContentRenderer content={t(
+                                    selectedProject.description || "A masterfully crafted project demonstrating our commitment to quality and innovation. Every detail has been meticulously designed to meet the client's vision.",
+                                    selectedProject.description || "គម្រោងដែលបានបង្កើតឡើងដោយប៉ិនប្រសប់ បង្ហាញពីការប្តេជ្ញាចិត្តរបស់យើងចំពោះគុណភាព និងការច្នៃប្រឌិត។ រាល់ព័ត៌មានលម្អិតត្រូវបានរចនាឡើងយ៉ាងយកចិត្តទុកដាក់ ដើម្បីបំពេញតាមចក្ខុវិស័យរបស់អតិថិជន។"
+                                )} />
+                            </div>
                         </div>
                     </div>
                  </div>
 
                  <div className="mt-8 pt-8 border-t border-white/10">
-                     <button className="w-full py-4 rounded-xl bg-white text-gray-950 font-bold hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-2 font-khmer">
-                        {t('View Live Project', 'មើលគម្រោងផ្ទាល់')} <ExternalLink size={18} />
-                     </button>
+                     {selectedProject.link ? (
+                         <a 
+                            href={selectedProject.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full py-4 rounded-xl bg-white text-gray-950 font-bold hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-2 font-khmer"
+                         >
+                            {t('View Live Project', 'មើលគម្រោងផ្ទាល់')} <ExternalLink size={18} />
+                         </a>
+                     ) : (
+                         <button disabled className="w-full py-4 rounded-xl bg-white/10 text-gray-500 font-bold cursor-not-allowed flex items-center justify-center gap-2 font-khmer">
+                            {t('No Live Link', 'មិនមានតំណភ្ជាប់')}
+                         </button>
+                     )}
                  </div>
               </div>
            </div>
