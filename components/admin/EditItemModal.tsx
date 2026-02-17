@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Save, Loader2, Upload, Image as ImageIcon, ExternalLink, Lock } from 'lucide-react';
+import { X, Save, Loader2, Upload, Image as ImageIcon, ExternalLink, Lock, Facebook, Send } from 'lucide-react';
 import { getSupabaseClient } from '../../lib/supabase';
 import { useData } from '../../contexts/DataContext';
 import RichTextEditor from './editor/RichTextEditor';
@@ -59,6 +59,17 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
       }
   };
 
+  const handleSocialChange = (platform: 'facebook' | 'telegram', value: string) => {
+      const currentSocials = editingItem.socials || {};
+      setEditingItem({
+          ...editingItem,
+          socials: {
+              ...currentSocials,
+              [platform]: value
+          }
+      });
+  };
+
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-sm animate-fade-in">
       <div className="bg-gray-900 border border-white/10 rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-y-auto p-6 shadow-2xl animate-scale-up flex flex-col">
@@ -75,7 +86,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
             const value = editingItem[key];
             const label = key.charAt(0).toUpperCase() + key.slice(1);
 
-            // Special field for PIN Code (Team only)
+            // 1. PIN Code Field (Team only)
             if (key === 'pinCode' && activeTab === 'team') {
                 return (
                     <div key={key} className="mb-4">
@@ -93,7 +104,41 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
 
-            // Special handling for Icon string editing (Services)
+            // 2. Social Links Field (Team Only)
+            if (key === 'socials' && activeTab === 'team') {
+                const socials = value || { facebook: '', telegram: '' };
+                return (
+                    <div key={key} className="mb-4 p-4 bg-gray-800/50 rounded-xl border border-white/10">
+                        <label className="block text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Social Media Links</label>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div>
+                                <div className="flex items-center gap-2 mb-1 text-xs text-gray-500">
+                                    <Facebook size={12} /> Facebook URL
+                                </div>
+                                <input 
+                                    className="w-full bg-gray-900 border border-white/10 rounded-lg p-3 text-white text-sm focus:border-indigo-500 transition-colors"
+                                    value={socials.facebook || ''}
+                                    onChange={(e) => handleSocialChange('facebook', e.target.value)}
+                                    placeholder="https://facebook.com/username"
+                                />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 mb-1 text-xs text-gray-500">
+                                    <Send size={12} /> Telegram URL
+                                </div>
+                                <input 
+                                    className="w-full bg-gray-900 border border-white/10 rounded-lg p-3 text-white text-sm focus:border-indigo-500 transition-colors"
+                                    value={socials.telegram || ''}
+                                    onChange={(e) => handleSocialChange('telegram', e.target.value)}
+                                    placeholder="https://t.me/username"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            // 3. Icon Selection (Services)
             if (key === 'icon' && typeof value === 'string') {
                 return (
                     <div key={key} className="mb-4">
@@ -119,7 +164,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
 
-            // Hide Icon if it's an object (ReactNode) from static data that hasn't been converted
+            // Skip object rendering for icon if it's a React Node (static data)
             if (key === 'icon' && typeof value !== 'string') {
                 return (
                     <div key={key} className="mb-4 p-3 bg-gray-800 rounded-lg">
@@ -129,6 +174,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
 
+            // 4. Author Selection (Insights)
             if (key === 'authorId') {
                 return (
                     <div key={key} className="mb-4">
@@ -144,6 +190,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
             
+            // 5. Image Upload
             if (key === 'image') {
                 return (
                     <div key={key} className="space-y-2 mb-4">
@@ -164,7 +211,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
 
-            // Using the new RichTextEditor Component
+            // 6. Rich Text Editor
             if (key === 'content' || key === 'description' || key === 'bio') {
                 return (
                     <RichTextEditor 
@@ -176,6 +223,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                 );
             }
             
+            // 7. Arrays (Skills, Experience, Features)
             if (typeof value === 'object' && value !== null && !Array.isArray(value)) return null; 
             if (Array.isArray(value)) {
                  return (
@@ -192,6 +240,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                  );
             }
 
+            // 8. Default Text Input
             return (
               <div key={key}>
                 <label className="block text-xs font-bold text-gray-400 mb-1">{label}</label>
