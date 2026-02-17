@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Database, ExternalLink, LogOut, Users, FileText, Briefcase, LayoutGrid, Menu } from 'lucide-react';
+import { Plus, Settings, Database, ExternalLink, LogOut, Users, FileText, Briefcase, LayoutGrid, Menu, Star } from 'lucide-react';
 import { getSupabaseClient, DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY } from '../lib/supabase';
 import { useData } from '../contexts/DataContext';
 import AdminHeader from './admin/AdminHeader';
 import AdminSidebar from './admin/AdminSidebar';
 import ContentGrid from './admin/ContentGrid';
 import EditItemModal from './admin/EditItemModal';
-import { TeamMember, Project, Post, Service, CurrentUser } from '../types';
+import { TeamMember, Project, Post, Service, CurrentUser, Job } from '../types';
 import { slugify } from '../utils/format';
 
 interface AdminDashboardProps {
@@ -15,10 +15,10 @@ interface AdminDashboardProps {
   onViewSite: () => void;
 }
 
-type TabType = 'team' | 'projects' | 'insights' | 'services' | 'settings';
+type TabType = 'team' | 'projects' | 'insights' | 'services' | 'careers' | 'settings';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, onViewSite }) => {
-  const { isUsingSupabase, team = [], projects = [], insights = [], services: localServices = [], updateTeamOrder } = useData();
+  const { isUsingSupabase, team = [], projects = [], insights = [], services: localServices = [], jobs = [], updateTeamOrder } = useData();
   const [activeTab, setActiveTab] = useState<TabType>('team'); // Default to Team for members
   const [dbConfig, setDbConfig] = useState<{url: string, key: string} | null>(null);
   
@@ -27,6 +27,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
   const [adminProjects, setAdminProjects] = useState<Project[]>(projects);
   const [adminInsights, setAdminInsights] = useState<Post[]>(insights);
   const [adminServices, setAdminServices] = useState<Service[]>(localServices);
+  const [adminJobs, setAdminJobs] = useState<Job[]>(jobs);
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,7 +59,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       setAdminProjects(projects || []);
       setAdminInsights(insights || []);
       setAdminServices(localServices || []);
-  }, [team, projects, insights, localServices]);
+      setAdminJobs(jobs || []);
+  }, [team, projects, insights, localServices, jobs]);
 
   const handleConfigSave = (e: React.FormEvent) => {
       e.preventDefault();
@@ -86,15 +88,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
     setIsAdding(false);
     // For services, ensure icon is treated as string for editing if it's a component
     let itemToEdit = { ...item };
-    if (activeTab === 'services') {
+    if (activeTab === 'services' || activeTab === 'careers') {
         if (item._iconString) {
             itemToEdit.icon = item._iconString;
         } else if (typeof item.icon !== 'string') {
             // Fallback for static items without _iconString, default to empty to allow editing
             itemToEdit.icon = ''; 
         }
-        // Ensure image field exists even if empty, so the modal renders the uploader
-        if (!itemToEdit.image) {
+        // Ensure image field exists even if empty, so the modal renders the uploader (for services)
+        if (activeTab === 'services' && !itemToEdit.image) {
             itemToEdit.image = '';
         }
     }
@@ -121,7 +123,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       team: { name: '', role: '', roleKm: '', image: '', bio: '', bioKm: '', skills: [], experience: [], socials: {}, pinCode: '1111' },
       projects: { title: '', category: 'graphicdesign', image: '', client: '', description: '', link: '' },
       insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: currentUser.role === 'member' ? currentUser.id : 't1' },
-      services: { title: '', titleKm: '', subtitle: '', subtitleKm: '', description: '', descriptionKm: '', features: [], featuresKm: [], icon: 'Box', color: 'bg-indigo-500', image: '' }
+      services: { title: '', titleKm: '', subtitle: '', subtitleKm: '', description: '', descriptionKm: '', features: [], featuresKm: [], icon: 'Box', color: 'bg-indigo-500', image: '' },
+      careers: { title: '', type: 'Full-time', location: 'Phnom Penh', department: 'Engineering', icon: 'Code', link: '', description: '' }
     };
     setEditingItem(templates[activeTab]);
     setIsModalOpen(true);
@@ -167,6 +170,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (type === 'project') table = 'projects';
           if (type === 'insight') table = 'insights';
           if (type === 'service') table = 'services';
+          if (type === 'job') table = 'jobs';
 
           // Check if it's a UUID
           const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -184,6 +188,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (type === 'project') setAdminProjects(prev => prev.filter(i => i.id !== id));
           if (type === 'insight') setAdminInsights(prev => prev.filter(i => i.id !== id));
           if (type === 'service') setAdminServices(prev => prev.filter(i => i.id !== id));
+          if (type === 'job') setAdminJobs(prev => prev.filter(i => i.id !== id));
           
           alert("Item deleted!");
       } catch (err) {
@@ -281,6 +286,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   author_id: item.authorId,
                   slug: item.slug || slugify(item.title)
               };
+          } else if (activeTab === 'careers') {
+              table = 'jobs';
+              payload = {
+                  title: item.title,
+                  type: item.type,
+                  location: item.location,
+                  department: item.department,
+                  icon: (typeof item.icon === 'string' && item.icon.trim()) ? item.icon : 'Code',
+                  link: item.link,
+                  description: item.description
+              }
           }
 
           let res;
@@ -351,6 +367,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (activeTab === 'projects') setAdminProjects(updater(adminProjects));
           if (activeTab === 'insights') setAdminInsights(updater(adminInsights));
           if (activeTab === 'services') setAdminServices(updater(adminServices));
+          if (activeTab === 'careers') setAdminJobs(updater(adminJobs));
 
           setIsModalOpen(false);
           
@@ -447,6 +464,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
            {currentUser.role === 'admin' && (
              <>
                 <MobileNavButton tab="services" icon={LayoutGrid} label="Services" />
+                <MobileNavButton tab="careers" icon={Star} label="Careers" />
                 <MobileNavButton tab="settings" icon={Settings} label="Config" />
              </>
            )}
@@ -490,7 +508,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                     activeTab={activeTab}
                     isSuperAdmin={currentUser.role === 'admin'}
                     memberId={currentUser.id}
-                    data={{ team: adminTeam, projects: adminProjects, insights: adminInsights, services: adminServices }}
+                    data={{ team: adminTeam, projects: adminProjects, insights: adminInsights, services: adminServices, jobs: adminJobs }}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onReorderTeam={handleReorderTeam}
