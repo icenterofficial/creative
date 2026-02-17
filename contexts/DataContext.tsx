@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { SERVICES, PROJECTS, TEAM, INSIGHTS } from '../constants';
-import { Service, Project, TeamMember, Post } from '../types';
+import { SERVICES, PROJECTS, TEAM, INSIGHTS, JOBS } from '../constants';
+import { Service, Project, TeamMember, Post, Job } from '../types';
 import { getSupabaseClient } from '../lib/supabase';
 import * as LucideIcons from 'lucide-react';
 import { slugify } from '../utils/format';
@@ -10,6 +10,7 @@ interface DataContextType {
   projects: Project[];
   team: TeamMember[];
   insights: Post[];
+  jobs: Job[];
   isLoading: boolean;
   isUsingSupabase: boolean;
   
@@ -34,6 +35,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [projects, setProjects] = useState<Project[]>(PROJECTS);
   const [team, setTeam] = useState<TeamMember[]>(TEAM);
   const [insights, setInsights] = useState<Post[]>(INSIGHTS);
+  const [jobs, setJobs] = useState<Job[]>(JOBS);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isUsingSupabase, setIsUsingSupabase] = useState(false);
@@ -43,11 +45,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!iconName) return defaultIcon;
       const formattedName = iconName.charAt(0).toUpperCase() + iconName.slice(1);
       const IconComponent = (LucideIcons as any)[formattedName];
-      return IconComponent ? <IconComponent size={32} /> : defaultIcon;
+      return IconComponent ? <IconComponent size={24} /> : defaultIcon;
   };
 
   // --- ROBUST MERGE & SORT FUNCTION ---
-  const mergeAndSortData = (dbItems: any[], staticItems: any[], type: 'team' | 'project' | 'insight' | 'service') => {
+  const mergeAndSortData = (dbItems: any[], staticItems: any[], type: 'team' | 'project' | 'insight' | 'service' | 'job') => {
       // 1. Identify items already in DB (by slug or exact ID match)
       const dbSlugs = new Set(dbItems.map(i => i.slug));
       const dbIds = new Set(dbItems.map(i => i.id));
@@ -170,6 +172,23 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setServices(mergeAndSortData(formatted, SERVICES, 'service'));
         }
 
+        // Fetch Jobs
+        const { data: dbJobs } = await supabase.from('jobs').select('*').order('created_at', { ascending: false });
+        if (dbJobs) {
+            const formatted = dbJobs.map((j: any) => ({
+                id: j.id,
+                title: j.title,
+                type: j.type,
+                location: j.location,
+                department: j.department,
+                description: j.description,
+                link: j.link,
+                icon: getIcon(j.icon, <LucideIcons.Briefcase size={24} />),
+                _iconString: j.icon,
+            }));
+            setJobs(mergeAndSortData(formatted, JOBS, 'job'));
+        }
+
         setIsUsingSupabase(true);
       } catch (error) {
         console.warn("⚠️ Failed to fetch from Supabase.", error);
@@ -250,13 +269,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const resetData = () => {
      if(window.confirm("Reset to default local data?")) {
-         setServices(SERVICES); setProjects(PROJECTS); setTeam(TEAM); setInsights(INSIGHTS);
+         setServices(SERVICES); setProjects(PROJECTS); setTeam(TEAM); setInsights(INSIGHTS); setJobs(JOBS);
      }
   };
 
   return (
     <DataContext.Provider value={{
-      services, projects, team, insights, isLoading, isUsingSupabase,
+      services, projects, team, insights, jobs, isLoading, isUsingSupabase,
       updateService, updateProject, updateTeamMember, updateInsight,
       addProject, addTeamMember, addInsight, deleteItem,
       updateTeamOrder,
