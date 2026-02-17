@@ -39,7 +39,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [isUsingSupabase, setIsUsingSupabase] = useState(false);
 
-  // Helper function to merge DB data with Static data without duplicates
+  // Helper function to merge DB data with Static data without duplicates AND SORT THEM
   const mergeData = (dbItems: any[], staticItems: any[], type: 'team' | 'project' | 'insight' | 'service') => {
       const dbIds = new Set(dbItems.map(i => i.id));
       const dbSlugs = new Set(dbItems.map(i => i.slug));
@@ -55,7 +55,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return !idExists && !slugExists && !nameExists;
       });
 
-      return [...dbItems, ...filteredStatic];
+      // Combine DB and Static items
+      const combined = [...dbItems, ...filteredStatic];
+
+      // Perform Sort if 'orderIndex' is present (Specifically for Team)
+      if (type === 'team') {
+          return combined.sort((a, b) => {
+              // Get orderIndex, default to a high number if undefined so static items go to bottom by default
+              // unless specifically reordered in a way that gives them an index
+              const indexA = typeof a.orderIndex === 'number' ? a.orderIndex : 9999;
+              const indexB = typeof b.orderIndex === 'number' ? b.orderIndex : 9999;
+              
+              if (indexA === indexB) {
+                  // If indices are equal (e.g. both 9999 or both 0), sort by creation or fallback to name
+                  // For DB items, we can use created_at if available, but for mixed types, keep it simple.
+                  return 0; 
+              }
+              return indexA - indexB;
+          });
+      }
+
+      return combined;
   };
 
   // Helper to get Lucide Icon from string
@@ -175,19 +195,27 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const supabase = getSupabaseClient();
       if (!supabase) return;
 
-      // Optimistic update
-      setTeam(newOrder);
+      // Optimistic update - Important: Update the indices in the local state too
+      const updatedLocalOrder = newOrder.map((m, idx) => ({ ...m, orderIndex: idx }));
+      setTeam(updatedLocalOrder);
 
       try {
           // Prepare updates
-          const updates = newOrder.map((member, index) => ({
-              id: member.id,
-              order_index: index,
-          }));
+          // WARNING: Only items that exist in the DB (have UUIDs) can be updated.
+          // Static items (e.g. 't1', 't2') cannot be reordered in the DB.
+          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          
+          const updates = newOrder
+            .map((member, index) => ({
+                id: member.id,
+                order_index: index,
+            }))
+            .filter(u => uuidRegex.test(u.id)); // Only update valid UUIDs
 
-          // We upsert. Note: This requires the 'id' to match existing records.
-          // Since we can't batch update different IDs with different values easily in one REST call without an RPC,
-          // we loop. For small teams (<50), this is fine.
+          if (updates.length < newOrder.length) {
+              console.warn("Some items are static (local only) and their order cannot be saved to the database. Please 'Edit' and 'Save' them to migrate to Supabase.");
+          }
+
           for (const update of updates) {
               await supabase.from('team').update({ order_index: update.order_index }).eq('id', update.id);
           }
