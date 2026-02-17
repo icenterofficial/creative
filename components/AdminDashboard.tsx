@@ -118,7 +118,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
     // Default Templates
     const templates: any = {
       team: { name: '', role: '', roleKm: '', image: '', bio: '', bioKm: '', skills: [], experience: [], socials: {}, pinCode: '1111' },
-      projects: { title: '', category: 'graphicdesign', image: '', client: '' },
+      projects: { title: '', category: 'graphicdesign', image: '', client: '', description: '', link: '' },
       insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: currentUser.role === 'member' ? currentUser.id : 't1' },
       services: { title: '', titleKm: '', subtitle: '', subtitleKm: '', description: '', descriptionKm: '', features: [], featuresKm: [], icon: 'Box', color: 'bg-indigo-500', image: '' }
     };
@@ -204,7 +204,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   category: item.category, 
                   image: item.image, 
                   client: item.client,
-                  slug: item.slug || slugify(item.title)
+                  slug: item.slug || slugify(item.title),
+                  description: item.description, // Added description
+                  link: item.link                // Added link
               };
           } else if (activeTab === 'services') {
               table = 'services';
@@ -222,7 +224,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   color: item.color,
                   link: item.link,
                   slug: item.slug || slugify(item.title),
-                  image: item.image // Add image for background
+                  image: item.image 
               };
           } else if (activeTab === 'team') {
               table = 'team';
@@ -237,7 +239,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   experience: item.experience, 
                   socials: item.socials,
                   slug: item.slug || slugify(item.name),
-                  pin_code: item.pinCode // Save PIN Code
+                  pin_code: item.pinCode 
               };
           } else if (activeTab === 'insights') {
               table = 'insights';
@@ -279,6 +281,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
               
               if (!res.error) {
                   alert("⚠️ Warning: Text saved successfully, but the Background Image could not be saved because your Supabase database is missing the 'image' column in 'services' table.\n\nPlease run this SQL in Supabase SQL Editor:\n\nALTER TABLE public.services ADD COLUMN image text;");
+              }
+          }
+          
+           // RETRY STRATEGY for PROJECTS: If 'description' or 'link' missing
+          if (res.error && activeTab === 'projects' && (res.error.message.includes("description") || res.error.message.includes("link"))) {
+              console.warn("Database missing 'description' or 'link' column. Retrying without them.");
+              const { description, link, ...fallbackPayload } = payload;
+              res = await executeQuery(fallbackPayload);
+              
+              if (!res.error) {
+                  alert("⚠️ Warning: Project saved, but Description and Link could not be saved because your database table is outdated. Please run the SQL migration script provided.");
               }
           }
 
