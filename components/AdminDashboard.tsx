@@ -7,6 +7,7 @@ import AdminSidebar from './admin/AdminSidebar';
 import ContentGrid from './admin/ContentGrid';
 import EditItemModal from './admin/EditItemModal';
 import { TeamMember, Project, Post, Service, CurrentUser } from '../types';
+import { slugify } from '../utils/format';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -17,7 +18,7 @@ interface AdminDashboardProps {
 type TabType = 'team' | 'projects' | 'insights' | 'services' | 'settings';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, onViewSite }) => {
-  const { isUsingSupabase, team = [], projects = [], insights = [], services: localServices = [] } = useData();
+  const { isUsingSupabase, team = [], projects = [], insights = [], services: localServices = [], updateTeamOrder } = useData();
   const [activeTab, setActiveTab] = useState<TabType>('team'); // Default to Team for members
   const [dbConfig, setDbConfig] = useState<{url: string, key: string} | null>(null);
   
@@ -85,14 +86,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
     setIsAdding(false);
     // For services, ensure icon is treated as string for editing if it's a component
     let itemToEdit = { ...item };
-    if (activeTab === 'services' && item._iconString) {
-        itemToEdit.icon = item._iconString;
-    } else if (activeTab === 'services' && typeof item.icon !== 'string') {
-        // Fallback for static items without _iconString
-        itemToEdit.icon = ''; 
+    if (activeTab === 'services') {
+        if (item._iconString) {
+            itemToEdit.icon = item._iconString;
+        } else if (typeof item.icon !== 'string') {
+            // Fallback for static items without _iconString, default to empty to allow editing
+            itemToEdit.icon = ''; 
+        }
     }
     setEditingItem(itemToEdit);
     setIsModalOpen(true);
+  };
+
+  const handleReorderTeam = async (newOrder: TeamMember[]) => {
+      setAdminTeam(newOrder); // Optimistic local update
+      await updateTeamOrder(newOrder); // Sync to DB
   };
 
   const handleAdd = () => {
@@ -105,10 +113,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
     setIsAdding(true);
     // Default Templates
     const templates: any = {
-      team: { name: '', role: '', roleKm: '', image: '', bio: '', bioKm: '', skills: [], experience: [], socials: {} },
+      team: { name: '', role: '', roleKm: '', image: '', bio: '', bioKm: '', skills: [], experience: [], socials: {}, pinCode: '1111' },
       projects: { title: '', category: 'graphicdesign', image: '', client: '' },
       insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: currentUser.role === 'member' ? currentUser.id : 't1' },
-      services: { title: '', titleKm: '', subtitle: '', subtitleKm: '', description: '', descriptionKm: '', icon: 'Box', color: 'bg-indigo-500', features: [], featuresKm: [] }
+      services: { title: '', titleKm: '', subtitle: '', subtitleKm: '', description: '', descriptionKm: '', features: [], featuresKm: [], icon: 'Box', color: 'bg-indigo-500' }
     };
     setEditingItem(templates[activeTab]);
     setIsModalOpen(true);
@@ -187,7 +195,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
 
           if (activeTab === 'projects') {
               table = 'projects';
-              payload = { title: item.title, category: item.category, image: item.image, client: item.client };
+              payload = { 
+                  title: item.title, 
+                  category: item.category, 
+                  image: item.image, 
+                  client: item.client,
+                  slug: item.slug || slugify(item.title)
+              };
           } else if (activeTab === 'services') {
               table = 'services';
               payload = { 
@@ -199,13 +213,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   description_km: item.descriptionKm,
                   features: item.features,
                   features_km: item.featuresKm,
-                  icon: typeof item.icon === 'string' ? item.icon : 'Box', // Ensure icon is string for DB
+                  // Ensure icon is string for DB, default to Box if empty
+                  icon: (typeof item.icon === 'string' && item.icon.trim()) ? item.icon : 'Box', 
                   color: item.color,
-                  link: item.link
+                  link: item.link,
+                  slug: item.slug || slugify(item.title)
               };
           } else if (activeTab === 'team') {
               table = 'team';
-              // Ensure we map camelCase (frontend) to snake_case (database)
               payload = { 
                   name: item.name, 
                   role: item.role, 
@@ -215,7 +230,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   bio_km: item.bioKm, 
                   skills: item.skills, 
                   experience: item.experience, 
-                  socials: item.socials 
+                  socials: item.socials,
+                  slug: item.slug || slugify(item.name),
+                  pin_code: item.pinCode // Save PIN Code
               };
           } else if (activeTab === 'insights') {
               table = 'insights';
@@ -227,7 +244,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   date: item.date, 
                   category: item.category, 
                   image: item.image, 
-                  author_id: item.authorId 
+                  author_id: item.authorId,
+                  slug: item.slug || slugify(item.title)
               };
           }
 
@@ -237,6 +255,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
               if (isStaticID) {
                   delete payload.id;
               }
+              // Set default order for new team members
+              if (activeTab === 'team') {
+                  payload.order_index = adminTeam.length; 
+              }
               res = await supabase.from(table).insert([payload]).select();
           } else {
               // Update Logic - Only works for valid UUIDs
@@ -245,13 +267,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
 
           if (res.error) throw res.error;
 
-          // For local update, we might need to process the item a bit (e.g. icon string back to component for display)
-          // But for admin dashboard display, we usually just need the list update.
-          // The main app uses DataContext which re-fetches or we need to mimic that structure.
-          
-          // Simplified updater for Admin UI - we'll rely on reload for perfect sync or simple merge
-          const newItem = { ...item, ...res.data[0] };
-          
+          const newItem = { ...item, ...res.data[0] }; 
+          // Ensure camelCase match for local update
+          if (activeTab === 'team') {
+             newItem.pinCode = res.data[0].pin_code;
+          }
+
           // Update local state
           const updater = (list: any[]) => {
               if (performInsert) {
@@ -275,7 +296,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           }
       } catch (err: any) {
           console.error(err);
-          alert("Failed to save: " + err.message);
+          if (err.message.includes('Could not find the table')) {
+              alert(`Error: The table '${activeTab}' does not exist in your Supabase database. Please create it first.`);
+          } else {
+              alert("Failed to save: " + err.message);
+          }
       } finally {
           setIsSaving(false);
       }
@@ -401,6 +426,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                     data={{ team: adminTeam, projects: adminProjects, insights: adminInsights, services: adminServices }}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
+                    onReorderTeam={handleReorderTeam}
                  />
              )}
           </main>
