@@ -67,8 +67,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               const indexB = typeof b.orderIndex === 'number' ? b.orderIndex : 9999;
               
               if (indexA === indexB) {
-                  // If indices are equal (e.g. both 9999 or both 0), sort by creation or fallback to name
-                  // For DB items, we can use created_at if available, but for mixed types, keep it simple.
                   return 0; 
               }
               return indexA - indexB;
@@ -200,25 +198,54 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setTeam(updatedLocalOrder);
 
       try {
-          // Prepare updates
-          // WARNING: Only items that exist in the DB (have UUIDs) can be updated.
-          // Static items (e.g. 't1', 't2') cannot be reordered in the DB.
+          // UUID Regex to identify items that are already in the DB
           const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
           
-          const updates = newOrder
-            .map((member, index) => ({
-                id: member.id,
-                order_index: index,
-            }))
-            .filter(u => uuidRegex.test(u.id)); // Only update valid UUIDs
+          const updates = [];
+          const inserts = [];
 
-          if (updates.length < newOrder.length) {
-              console.warn("Some items are static (local only) and their order cannot be saved to the database. Please 'Edit' and 'Save' them to migrate to Supabase.");
-          }
+          newOrder.forEach((member, index) => {
+              if (uuidRegex.test(member.id)) {
+                  // If it has a UUID, just update the order index
+                  updates.push({ id: member.id, order_index: index });
+              } else {
+                  // If it's a STATIC item (e.g. 't1', 't2'), we must INSERT it into the DB 
+                  // to save its order permanently. This "migrates" it.
+                  inserts.push({
+                      name: member.name,
+                      role: member.role,
+                      role_km: member.roleKm,
+                      image: member.image,
+                      bio: member.bio,
+                      bio_km: member.bioKm,
+                      skills: member.skills,
+                      experience: member.experience,
+                      socials: member.socials,
+                      slug: member.slug || slugify(member.name),
+                      pin_code: member.pinCode || '1111',
+                      order_index: index // Save the new order!
+                  });
+              }
+          });
 
+          // 1. Update existing DB items
           for (const update of updates) {
               await supabase.from('team').update({ order_index: update.order_index }).eq('id', update.id);
           }
+
+          // 2. Insert (Migrate) static items
+          if (inserts.length > 0) {
+              const { error } = await supabase.from('team').insert(inserts);
+              if (error) {
+                  console.error("Error migrating static items:", error);
+                  alert("Error saving new items order.");
+              } else {
+                  // Reload the page so the static items are replaced by their new DB versions (UUIDs)
+                  // This prevents duplication on next load.
+                  window.location.reload();
+              }
+          }
+
       } catch (err) {
           console.error("Failed to reorder team", err);
           alert("Failed to save team order");
