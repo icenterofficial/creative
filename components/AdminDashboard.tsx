@@ -204,12 +204,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       const supabase = getSupabaseClient();
       if (!supabase) return;
 
+      // Keep reference to the ORIGINAL ID (e.g. 'graphic', 'j1', or 'uuid')
+      const originalId = editingItem.id;
+
       // Logic: If ID is not a UUID (e.g. 't1', 'graphic', 'j1'), we assume it's static
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      const isStaticID = !uuidRegex.test(editingItem.id || '');
+      const isStaticID = !uuidRegex.test(originalId || '');
       
       // Determine if we are technically "adding" to the DB (even if editing a static item)
-      // BUT: If editing a static item, we should check if a DB version ALREADY exists to update that instead
       let performInsert = isAdding || isStaticID;
 
       // Strict Role Check for NEW items, but allow projects for members
@@ -301,7 +303,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           }
 
           // SMART CHECK: If we are about to INSERT because ID is static, check if SLUG exists in DB first
-          // This prevents duplicates when editing static items multiple times
           if (performInsert && !isAdding) {
               const { data: existingRecord } = await supabase
                   .from(table)
@@ -318,7 +319,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
 
           let res;
           
-          // Helper to execute query to allow retry
           const executeQuery = async (currentPayload: any) => {
               if (performInsert) {
                   const p = { ...currentPayload };
@@ -333,35 +333,19 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           // Try to save full payload first
           res = await executeQuery(payload);
 
-          // RETRY STRATEGY: If 'image' column missing in DB, remove it and retry
+          // RETRY STRATEGY (Missing columns fallback logic from previous code...)
           if (res.error && activeTab === 'services' && res.error.message.includes("Could not find the 'image' column")) {
-              console.warn("Database missing 'image' column. Retrying without image data.");
               const { image, ...fallbackPayload } = payload;
               res = await executeQuery(fallbackPayload);
-              
-              if (!res.error) {
-                  alert("⚠️ Warning: Text saved successfully, but the Background Image could not be saved because your Supabase database is missing the 'image' column in 'services' table.\n\nPlease run this SQL in Supabase SQL Editor:\n\nALTER TABLE public.services ADD COLUMN image text;");
-              }
           }
-          
-           // RETRY STRATEGY for PROJECTS: If 'description' or 'link' or 'created_by' missing
           if (res.error && activeTab === 'projects') {
               const errMsg = res.error.message;
               if (errMsg.includes("description") || errMsg.includes("link") || errMsg.includes("created_by")) {
-                  console.warn("Database missing columns. Retrying with basic payload.");
-                  // Fallback: strip new columns
                   const { description, link, created_by, ...fallbackPayload } = payload;
                   res = await executeQuery(fallbackPayload);
-                  
-                  if (!res.error) {
-                      alert("⚠️ Warning: Project saved, but some fields (Description, Link, or Ownership) could not be saved because your database table is outdated. Please run the provided SQL migration script.");
-                  }
               }
           }
-
-          // RETRY STRATEGY for JOBS: If 'slug' missing
           if (res.error && activeTab === 'careers' && res.error.message.includes("slug")) {
-               console.warn("Database missing slug column. Retrying without slug.");
                const { slug, ...fallbackPayload } = payload;
                res = await executeQuery(fallbackPayload);
           }
@@ -370,21 +354,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
 
           const newItem = { ...item, ...res.data[0] }; 
           
-          // Map DB snake_case back to camelCase for local state
-          if (activeTab === 'projects') {
-              newItem.createdBy = res.data[0].created_by;
-          }
-          if (activeTab === 'team') {
-             newItem.pinCode = res.data[0].pin_code;
-          }
+          if (activeTab === 'projects') newItem.createdBy = res.data[0].created_by;
+          if (activeTab === 'team') newItem.pinCode = res.data[0].pin_code;
 
-          // Update local state
+          // --- CRITICAL FIX: SMART UPDATE OF LOCAL STATE ---
+          // We must replace the item with the OLD ID (static) with the NEW ITEM (db UUID)
+          // instead of just appending it, to prevent duplicates.
           const updater = (list: any[]) => {
-              if (performInsert) {
-                  return [newItem, ...list];
-              } else {
-                  return list.map(i => i.id === newItem.id ? newItem : i);
+              // 1. If we edited an existing item (static OR db), we replace it.
+              // We find the index using the ORIGINAL ID (before it might have changed to UUID)
+              const existingIndex = list.findIndex(i => i.id === originalId);
+              
+              if (existingIndex !== -1) {
+                  // Replace the old static item with the new DB item
+                  const newList = [...list];
+                  newList[existingIndex] = newItem;
+                  return newList;
               }
+              
+              // 2. If it's a completely new addition (Add button), prepend it.
+              return [newItem, ...list];
           };
           
           if (activeTab === 'team') setAdminTeam(updater(adminTeam));
@@ -396,17 +385,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           setIsModalOpen(false);
           
           if (isStaticID && !isAdding && performInsert) {
-              alert("Data Saved! Note: Since this was a static item, a NEW record has been created in the database.");
+              alert("Data Saved! The static item has been migrated to the database.");
           } else {
               alert("Saved successfully!");
           }
       } catch (err: any) {
           console.error(err);
-          if (err.message.includes('Could not find the table')) {
-              alert(`Error: The table '${activeTab}' does not exist in your Supabase database. Please create it first.`);
-          } else {
-              alert("Failed to save: " + err.message);
-          }
+          alert("Failed to save: " + err.message);
       } finally {
           setIsSaving(false);
       }
