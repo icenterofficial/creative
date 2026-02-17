@@ -204,12 +204,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       const supabase = getSupabaseClient();
       if (!supabase) return;
 
-      // Logic: If ID is not a UUID (e.g. 't1'), we MUST Insert new, not Update.
+      // Logic: If ID is not a UUID (e.g. 't1', 'graphic', 'j1'), we assume it's static
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const isStaticID = !uuidRegex.test(editingItem.id || '');
       
       // Determine if we are technically "adding" to the DB (even if editing a static item)
-      const performInsert = isAdding || isStaticID;
+      // BUT: If editing a static item, we should check if a DB version ALREADY exists to update that instead
+      let performInsert = isAdding || isStaticID;
 
       // Strict Role Check for NEW items, but allow projects for members
       if (isAdding && (currentUser.role as string) !== 'admin' && activeTab !== 'projects' && activeTab !== 'insights') {
@@ -225,6 +226,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           let table = '';
           let payload: any = {};
 
+          // Generate Slug consistently
+          const generatedSlug = item.slug || slugify(item.title || item.name || '');
+
           if (activeTab === 'projects') {
               table = 'projects';
               payload = { 
@@ -232,14 +236,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   category: item.category, 
                   image: item.image, 
                   client: item.client,
-                  slug: item.slug || slugify(item.title),
+                  slug: generatedSlug,
                   description: item.description, 
                   link: item.link
               };
-              // IMPORTANT: Attach creator ID when inserting new project
-              if (performInsert) {
-                  payload.created_by = currentUser.id;
-              }
+              if (performInsert) payload.created_by = currentUser.id;
           } else if (activeTab === 'services') {
               table = 'services';
               payload = { 
@@ -251,11 +252,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   description_km: item.descriptionKm,
                   features: item.features,
                   features_km: item.featuresKm,
-                  // Ensure icon is string for DB, default to Box if empty
                   icon: (typeof item.icon === 'string' && item.icon.trim()) ? item.icon : 'Box', 
                   color: item.color,
                   link: item.link,
-                  slug: item.slug || slugify(item.title),
+                  slug: generatedSlug,
                   image: item.image 
               };
           } else if (activeTab === 'team') {
@@ -270,7 +270,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   skills: item.skills, 
                   experience: item.experience, 
                   socials: item.socials,
-                  slug: item.slug || slugify(item.name),
+                  slug: generatedSlug,
                   pin_code: item.pinCode 
               };
           } else if (activeTab === 'insights') {
@@ -284,7 +284,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   category: item.category, 
                   image: item.image, 
                   author_id: item.authorId,
-                  slug: item.slug || slugify(item.title)
+                  slug: generatedSlug
               };
           } else if (activeTab === 'careers') {
               table = 'jobs';
@@ -295,7 +295,24 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   department: item.department,
                   icon: (typeof item.icon === 'string' && item.icon.trim()) ? item.icon : 'Code',
                   link: item.link,
-                  description: item.description
+                  description: item.description,
+                  slug: generatedSlug
+              }
+          }
+
+          // SMART CHECK: If we are about to INSERT because ID is static, check if SLUG exists in DB first
+          // This prevents duplicates when editing static items multiple times
+          if (performInsert && !isAdding) {
+              const { data: existingRecord } = await supabase
+                  .from(table)
+                  .select('id')
+                  .eq('slug', generatedSlug)
+                  .single();
+              
+              if (existingRecord) {
+                  console.log("Found existing record for static item, updating instead of inserting:", existingRecord.id);
+                  performInsert = false;
+                  item.id = existingRecord.id; // Switch ID to the DB ID
               }
           }
 
@@ -305,7 +322,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           const executeQuery = async (currentPayload: any) => {
               if (performInsert) {
                   const p = { ...currentPayload };
-                  if (isStaticID) delete p.id;
+                  if (isStaticID) delete p.id; // Remove static ID (e.g. 'j1') so DB generates UUID
                   if (activeTab === 'team') p.order_index = adminTeam.length; 
                   return await supabase.from(table).insert([p]).select();
               } else {
@@ -342,6 +359,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
               }
           }
 
+          // RETRY STRATEGY for JOBS: If 'slug' missing
+          if (res.error && activeTab === 'careers' && res.error.message.includes("slug")) {
+               console.warn("Database missing slug column. Retrying without slug.");
+               const { slug, ...fallbackPayload } = payload;
+               res = await executeQuery(fallbackPayload);
+          }
+
           if (res.error) throw res.error;
 
           const newItem = { ...item, ...res.data[0] }; 
@@ -371,8 +395,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
 
           setIsModalOpen(false);
           
-          if (isStaticID && !isAdding) {
-              alert("Data Saved! Note: Since this was a static item, a NEW record has been created in the database. You might see duplicates until the static file is updated.");
+          if (isStaticID && !isAdding && performInsert) {
+              alert("Data Saved! Note: Since this was a static item, a NEW record has been created in the database.");
           } else {
               alert("Saved successfully!");
           }
