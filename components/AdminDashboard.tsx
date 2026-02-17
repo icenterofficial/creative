@@ -108,9 +108,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
   };
 
   const handleAdd = () => {
-    // Security check: Members cannot add
-    if ((currentUser.role as string) !== 'admin') {
-        alert("You do not have permission to add new items.");
+    // Security check: Members cannot add UNLESS it's a Project or Insight (for themselves)
+    // Projects are now allowed for everyone
+    if ((currentUser.role as string) !== 'admin' && activeTab !== 'projects' && activeTab !== 'insights') {
+        alert("You do not have permission to add new items in this section.");
         return;
     }
 
@@ -127,8 +128,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
   };
 
   const handleDelete = async (type: string, id: string) => {
-      if ((currentUser.role as string) !== 'admin') {
-          alert("Only Admins can delete items.");
+      // Logic for Deletion Rights
+      const isSuperAdmin = currentUser.role === 'admin';
+      
+      // 1. Projects: Only Admin OR Creator can delete
+      if (type === 'project' && !isSuperAdmin) {
+          const project = adminProjects.find(p => p.id === id);
+          if (!project || project.createdBy !== currentUser.id) {
+              alert("You can only delete projects that you added.");
+              return;
+          }
+      }
+
+      // 2. Insights: Only Admin OR Author can delete
+      if (type === 'insight' && !isSuperAdmin) {
+          const post = adminInsights.find(p => p.id === id);
+          if (!post || post.authorId !== currentUser.id) {
+              alert("You can only delete your own articles.");
+              return;
+          }
+      }
+
+      // 3. Other items: Only Admin can delete
+      if ((type !== 'project' && type !== 'insight') && !isSuperAdmin) {
+          alert("Only Admins can delete this item.");
           return;
       }
 
@@ -183,9 +206,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       // Determine if we are technically "adding" to the DB (even if editing a static item)
       const performInsert = isAdding || isStaticID;
 
-      // Strict Role Check for NEW items, but allow migration of static items
-      if (isAdding && (currentUser.role as string) !== 'admin') {
-          alert("Security Alert: Only Admins can create new records.");
+      // Strict Role Check for NEW items, but allow projects for members
+      if (isAdding && (currentUser.role as string) !== 'admin' && activeTab !== 'projects' && activeTab !== 'insights') {
+          alert("Security Alert: Only Admins can create new records in this section.");
           return;
       }
 
@@ -205,9 +228,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   image: item.image, 
                   client: item.client,
                   slug: item.slug || slugify(item.title),
-                  description: item.description, // Added description
-                  link: item.link                // Added link
+                  description: item.description, 
+                  link: item.link
               };
+              // IMPORTANT: Attach creator ID when inserting new project
+              if (performInsert) {
+                  payload.created_by = currentUser.id;
+              }
           } else if (activeTab === 'services') {
               table = 'services';
               payload = { 
@@ -284,21 +311,29 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
               }
           }
           
-           // RETRY STRATEGY for PROJECTS: If 'description' or 'link' missing
-          if (res.error && activeTab === 'projects' && (res.error.message.includes("description") || res.error.message.includes("link"))) {
-              console.warn("Database missing 'description' or 'link' column. Retrying without them.");
-              const { description, link, ...fallbackPayload } = payload;
-              res = await executeQuery(fallbackPayload);
-              
-              if (!res.error) {
-                  alert("⚠️ Warning: Project saved, but Description and Link could not be saved because your database table is outdated. Please run the SQL migration script provided.");
+           // RETRY STRATEGY for PROJECTS: If 'description' or 'link' or 'created_by' missing
+          if (res.error && activeTab === 'projects') {
+              const errMsg = res.error.message;
+              if (errMsg.includes("description") || errMsg.includes("link") || errMsg.includes("created_by")) {
+                  console.warn("Database missing columns. Retrying with basic payload.");
+                  // Fallback: strip new columns
+                  const { description, link, created_by, ...fallbackPayload } = payload;
+                  res = await executeQuery(fallbackPayload);
+                  
+                  if (!res.error) {
+                      alert("⚠️ Warning: Project saved, but some fields (Description, Link, or Ownership) could not be saved because your database table is outdated. Please run the provided SQL migration script.");
+                  }
               }
           }
 
           if (res.error) throw res.error;
 
           const newItem = { ...item, ...res.data[0] }; 
-          // Ensure camelCase match for local update
+          
+          // Map DB snake_case back to camelCase for local state
+          if (activeTab === 'projects') {
+              newItem.createdBy = res.data[0].created_by;
+          }
           if (activeTab === 'team') {
              newItem.pinCode = res.data[0].pin_code;
           }
@@ -406,9 +441,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
        <div className="md:hidden fixed top-16 left-0 right-0 h-16 bg-gray-900 border-b border-white/10 flex items-center px-4 overflow-x-auto gap-2 z-40 no-scrollbar">
            <MobileNavButton tab="team" icon={Users} label={currentUser.role === 'admin' ? "Team" : "Profile"} />
            <MobileNavButton tab="insights" icon={FileText} label="Articles" />
+           {/* Projects Button now visible for everyone */}
+           <MobileNavButton tab="projects" icon={Briefcase} label="Projects" />
+           
            {currentUser.role === 'admin' && (
              <>
-                <MobileNavButton tab="projects" icon={Briefcase} label="Projects" />
                 <MobileNavButton tab="services" icon={LayoutGrid} label="Services" />
                 <MobileNavButton tab="settings" icon={Settings} label="Config" />
              </>
@@ -429,8 +466,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                    <p className="text-gray-400 text-xs md:text-sm">Manage your {activeTab} content directly.</p>
                 </div>
                 
-                {/* Only Show "Add New" for Super Admins */}
-                {activeTab !== 'settings' && currentUser.role === 'admin' && (
+                {/* Add New Button: Visible for Admins OR if on Projects Tab */}
+                {activeTab !== 'settings' && (currentUser.role === 'admin' || activeTab === 'projects') && (
                     <button 
                         onClick={handleAdd}
                         className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-bold shadow-lg shadow-indigo-500/20 transition-all font-khmer text-sm"
