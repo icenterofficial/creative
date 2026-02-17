@@ -34,6 +34,7 @@ export interface Project {
   slug?: string;
   description?: string; // New field
   link?: string;        // New field
+  createdBy?: string;   // New field: Stores ID of the creator
 }
 
 export interface TeamMember {
