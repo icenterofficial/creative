@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { SERVICES, PROJECTS, TEAM, INSIGHTS } from '../constants';
 import { Service, Project, TeamMember, Post } from '../types';
 import { getSupabaseClient } from '../lib/supabase';
-import { Database } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import { slugify } from '../utils/format';
 
@@ -39,57 +38,49 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [isUsingSupabase, setIsUsingSupabase] = useState(false);
 
-  // Helper function to merge DB data with Static data without duplicates AND SORT THEM
-  const mergeData = (dbItems: any[], staticItems: any[], type: 'team' | 'project' | 'insight' | 'service') => {
-      const dbIds = new Set(dbItems.map(i => i.id));
-      const dbSlugs = new Set(dbItems.map(i => i.slug));
-      
-      // For Team, Projects, and Services check Names/Titles to prevent duplication 
-      const dbNames = new Set(dbItems.map(i => (i.name || i.title || '').toLowerCase().trim()));
+  // Helper to get Lucide Icon from string
+  const getIcon = (iconName: string, defaultIcon: React.ReactNode) => {
+      if (!iconName) return defaultIcon;
+      const formattedName = iconName.charAt(0).toUpperCase() + iconName.slice(1);
+      const IconComponent = (LucideIcons as any)[formattedName];
+      return IconComponent ? <IconComponent size={32} /> : defaultIcon;
+  };
 
-      const filteredStatic = staticItems.filter(staticItem => {
-          const idExists = dbIds.has(staticItem.id);
-          const slugExists = staticItem.slug && dbSlugs.has(staticItem.slug);
-          const nameExists = dbNames.has((staticItem.name || staticItem.title || '').toLowerCase().trim());
-          
-          return !idExists && !slugExists && !nameExists;
+  // --- ROBUST MERGE & SORT FUNCTION ---
+  const mergeAndSortData = (dbItems: any[], staticItems: any[], type: 'team' | 'project' | 'insight' | 'service') => {
+      // 1. Identify items already in DB (by slug or exact ID match)
+      const dbSlugs = new Set(dbItems.map(i => i.slug));
+      const dbIds = new Set(dbItems.map(i => i.id));
+
+      // 2. Filter out static items that are already in DB
+      const uniqueStatic = staticItems.filter(s => {
+          // If a static item has the same slug as a DB item, we assume it's the same person/item
+          // and we prefer the DB version (which has the correct order_index).
+          const slugMatch = s.slug && dbSlugs.has(s.slug);
+          const idMatch = dbIds.has(s.id);
+          return !slugMatch && !idMatch;
       });
 
-      // Combine DB and Static items
-      const combined = [...dbItems, ...filteredStatic];
+      // 3. Combine them
+      let combined = [...dbItems, ...uniqueStatic];
 
-      // Perform Sort if 'orderIndex' is present (Specifically for Team)
+      // 4. SORTING LOGIC
       if (type === 'team') {
-          return combined.sort((a, b) => {
-              // Get orderIndex, default to a high number if undefined so static items go to bottom by default
-              // unless specifically reordered in a way that gives them an index
-              const indexA = typeof a.orderIndex === 'number' ? a.orderIndex : 9999;
-              const indexB = typeof b.orderIndex === 'number' ? b.orderIndex : 9999;
-              
-              if (indexA === indexB) {
-                  return 0; 
-              }
-              return indexA - indexB;
+          combined.sort((a, b) => {
+              // DB items have 'orderIndex'. Static items usually don't.
+              // We assign a high default to static items so they appear at the end, 
+              // until the user manually reorders (migrates) them.
+              const idxA = (a.orderIndex !== undefined && a.orderIndex !== null) ? a.orderIndex : 9999;
+              const idxB = (b.orderIndex !== undefined && b.orderIndex !== null) ? b.orderIndex : 9999;
+              return idxA - idxB;
           });
       }
 
       return combined;
   };
 
-  // Helper to get Lucide Icon from string
-  const getIcon = (iconName: string, defaultIcon: React.ReactNode) => {
-      if (!iconName) return defaultIcon;
-      // Capitalize first letter just in case
-      const formattedName = iconName.charAt(0).toUpperCase() + iconName.slice(1);
-      const IconComponent = (LucideIcons as any)[formattedName];
-      return IconComponent ? <IconComponent size={32} /> : defaultIcon;
-  };
-
-  // Load Data from Supabase
-  useEffect(() => {
-    const fetchData = async () => {
+  const fetchData = useCallback(async () => {
       const supabase = getSupabaseClient();
-
       if (!supabase) {
           setIsLoading(false);
           return;
@@ -97,24 +88,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setIsLoading(true);
       try {
-        // 1. Fetch Projects
+        // Fetch Projects
         const { data: dbProjects } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
         if (dbProjects) {
-             const formattedProjects = dbProjects.map((p: any) => ({
-                 id: p.id,
-                 title: p.title,
-                 category: p.category,
-                 image: p.image,
-                 client: p.client,
+             const formatted = dbProjects.map((p: any) => ({
+                 ...p,
                  slug: p.slug || slugify(p.title)
              }));
-             setProjects(mergeData(formattedProjects, PROJECTS, 'project'));
+             setProjects(mergeAndSortData(formatted, PROJECTS, 'project'));
         }
 
-        // 2. Fetch Team - Ordered by order_index
+        // Fetch Team - CRITICAL: Order by 'order_index' ASC
         const { data: dbTeam } = await supabase.from('team').select('*').order('order_index', { ascending: true });
         if (dbTeam) {
-             const formattedTeam = dbTeam.map((t: any) => ({
+             const formatted = dbTeam.map((t: any) => ({
                  id: t.id,
                  name: t.name,
                  role: t.role,
@@ -127,16 +114,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  experienceKm: t.experience || [],
                  socials: t.socials || {},
                  slug: t.slug || slugify(t.name),
-                 orderIndex: t.order_index,
+                 orderIndex: t.order_index, // Ensure this maps correctly
                  pinCode: t.pin_code
              }));
-             setTeam(mergeData(formattedTeam, TEAM, 'team'));
+             setTeam(mergeAndSortData(formatted, TEAM, 'team'));
         }
 
-        // 3. Fetch Insights
+        // Fetch Insights
         const { data: dbInsights } = await supabase.from('insights').select('*').order('created_at', { ascending: false });
         if (dbInsights) {
-             const formattedInsights = dbInsights.map((i: any) => ({
+             const formatted = dbInsights.map((i: any) => ({
                  id: i.id,
                  title: i.title,
                  titleKm: i.title_km,
@@ -150,21 +137,19 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  comments: [],
                  slug: i.slug || slugify(i.title)
              }));
-             setInsights(mergeData(formattedInsights, INSIGHTS, 'insight'));
+             setInsights(mergeAndSortData(formatted, INSIGHTS, 'insight'));
         }
 
-        // 4. Fetch Services
+        // Fetch Services
         const { data: dbServices } = await supabase.from('services').select('*').order('created_at', { ascending: true });
         if (dbServices) {
-            const formattedServices = dbServices.map((s: any) => ({
+            const formatted = dbServices.map((s: any) => ({
                 id: s.id,
                 title: s.title,
                 titleKm: s.title_km,
                 subtitle: s.subtitle,
                 subtitleKm: s.subtitle_km,
-                // If icon is stored as string in DB, convert to component. If not, fallback.
                 icon: getIcon(s.icon, <LucideIcons.Box size={32} />),
-                // Keep the string version as a property for the editor if needed, but 'icon' in type is Node
                 _iconString: s.icon, 
                 color: s.color || 'bg-indigo-500',
                 link: s.link || '#',
@@ -174,44 +159,51 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 featuresKm: s.features_km || [],
                 slug: s.slug || slugify(s.title)
             }));
-            setServices(mergeData(formattedServices, SERVICES, 'service'));
+            setServices(mergeAndSortData(formatted, SERVICES, 'service'));
         }
 
         setIsUsingSupabase(true);
       } catch (error) {
-        console.warn("⚠️ Failed to fetch from Supabase. Falling back to local data.", error);
+        console.warn("⚠️ Failed to fetch from Supabase.", error);
         setIsUsingSupabase(false);
       } finally {
         setIsLoading(false);
       }
-    };
-
-    fetchData();
   }, []);
 
+  // Initial Load
+  useEffect(() => {
+      fetchData();
+  }, [fetchData]);
+
+
+  // --- ROBUST REORDER FUNCTION ---
   const updateTeamOrder = async (newOrder: TeamMember[]) => {
       const supabase = getSupabaseClient();
       if (!supabase) return;
 
-      // Optimistic update - Important: Update the indices in the local state too
-      const updatedLocalOrder = newOrder.map((m, idx) => ({ ...m, orderIndex: idx }));
-      setTeam(updatedLocalOrder);
+      // 1. Optimistic Update (Immediate Feedback)
+      const optimisticOrder = newOrder.map((m, idx) => ({ ...m, orderIndex: idx }));
+      setTeam(optimisticOrder);
 
       try {
-          // UUID Regex to identify items that are already in the DB
+          // UUID Regex to check if item exists in DB
           const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
           
-          const updates = [];
-          const inserts = [];
+          // We will process items one by one or in batches.
+          // Since we might need to INSERT static items, we handle them carefully.
+          
+          for (let i = 0; i < newOrder.length; i++) {
+              const member = newOrder[i];
+              const newIndex = i;
 
-          newOrder.forEach((member, index) => {
               if (uuidRegex.test(member.id)) {
-                  // If it has a UUID, just update the order index
-                  updates.push({ id: member.id, order_index: index });
+                  // A. EXISTING ITEM: Just update the order_index
+                  await supabase.from('team').update({ order_index: newIndex }).eq('id', member.id);
               } else {
-                  // If it's a STATIC item (e.g. 't1', 't2'), we must INSERT it into the DB 
-                  // to save its order permanently. This "migrates" it.
-                  inserts.push({
+                  // B. STATIC ITEM: Must MIGRATE to DB to save position
+                  // We perform an INSERT with the specific order_index
+                  const { error } = await supabase.from('team').insert({
                       name: member.name,
                       role: member.role,
                       role_km: member.roleKm,
@@ -223,39 +215,33 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                       socials: member.socials,
                       slug: member.slug || slugify(member.name),
                       pin_code: member.pinCode || '1111',
-                      order_index: index // Save the new order!
+                      order_index: newIndex // SAVE THE EXACT POSITION
                   });
-              }
-          });
 
-          // 1. Update existing DB items
-          for (const update of updates) {
-              await supabase.from('team').update({ order_index: update.order_index }).eq('id', update.id);
-          }
-
-          // 2. Insert (Migrate) static items
-          if (inserts.length > 0) {
-              const { error } = await supabase.from('team').insert(inserts);
-              if (error) {
-                  console.error("Error migrating static items:", error);
-                  alert("Error saving new items order.");
-              } else {
-                  // Reload the page so the static items are replaced by their new DB versions (UUIDs)
-                  // This prevents duplication on next load.
-                  window.location.reload();
+                  if (error) console.error("Error migrating static item:", error);
               }
           }
+
+          // 2. CRITICAL STEP: RELOAD DATA
+          // Since static items now have new UUIDs in the database, our local state 't1', 't2' is invalid.
+          // We must refetch to get the real UUIDs. If we don't, the next drag will fail or duplicate.
+          // Reloading the page is the safest way to ensure total consistency.
+          
+          // Option A: Smooth Refetch (Preferred if fast)
+          await fetchData();
+          
+          // Option B: Hard Reload (Uncomment if Option A is buggy)
+          // window.location.reload(); 
 
       } catch (err) {
-          console.error("Failed to reorder team", err);
-          alert("Failed to save team order");
+          console.error("Failed to save order:", err);
+          alert("Failed to save order. Please check your connection.");
+          fetchData(); // Revert on error
       }
   };
 
-  const showAlert = () => {
-      alert("Content is managed via Supabase. Please use the Admin Dashboard.");
-  };
-
+  // Placeholders for other actions
+  const showAlert = () => alert("Please use the Admin Dashboard.");
   const updateService = () => showAlert();
   const updateProject = () => showAlert();
   const updateTeamMember = () => showAlert();
@@ -266,7 +252,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const deleteItem = () => showAlert();
   
   const resetData = () => {
-     if(window.confirm("Reload default local data?")) {
+     if(window.confirm("Reset to default local data?")) {
          setServices(SERVICES); setProjects(PROJECTS); setTeam(TEAM); setInsights(INSIGHTS);
      }
   };
