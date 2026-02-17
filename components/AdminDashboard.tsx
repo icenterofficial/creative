@@ -268,16 +268,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
               }
           };
 
+          // Try to save full payload first
           res = await executeQuery(payload);
 
-          // RETRY STRATEGY: If 'image' column missing, remove it and retry
+          // RETRY STRATEGY: If 'image' column missing in DB, remove it and retry
           if (res.error && activeTab === 'services' && res.error.message.includes("Could not find the 'image' column")) {
               console.warn("Database missing 'image' column. Retrying without image data.");
               const { image, ...fallbackPayload } = payload;
               res = await executeQuery(fallbackPayload);
               
               if (!res.error) {
-                  alert("Warning: Text saved successfully, but the Background Image could not be saved because the 'image' column is missing in your Supabase 'services' table. Please add it manually.");
+                  alert("⚠️ Warning: Text saved successfully, but the Background Image could not be saved because your Supabase database is missing the 'image' column in 'services' table.\n\nPlease run this SQL in Supabase SQL Editor:\n\nALTER TABLE public.services ADD COLUMN image text;");
               }
           }
 
