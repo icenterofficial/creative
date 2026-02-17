@@ -134,14 +134,19 @@ const ContentGrid: React.FC<ContentGridProps> = ({ activeTab, isSuperAdmin, memb
       ))}
       {/* SERVICES */}
       {activeTab === 'services' && isSuperAdmin && (data.services || []).map(item => (
-        <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4 relative overflow-hidden">
-          <div className={`absolute top-0 left-0 w-1 h-full ${item.color}`}></div>
-          <div className="pl-3">
+        <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4 relative overflow-hidden group">
+          {item.image && (
+              <div className="absolute inset-0 opacity-10 group-hover:opacity-30 transition-opacity">
+                  <img src={item.image} className="w-full h-full object-cover" />
+              </div>
+          )}
+          <div className={`absolute top-0 left-0 w-1 h-full ${item.color} z-10`}></div>
+          <div className="pl-3 relative z-10">
             <h4 className="font-bold text-white">{item.title}</h4>
             <p className="text-gray-400 text-sm line-clamp-2">{item.description}</p>
           </div>
-          <div className="mt-auto flex gap-2">
-            <button onClick={() => onEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><Edit size={14} /> Edit</button>
+          <div className="mt-auto flex gap-2 relative z-10">
+            <button onClick={() => onEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2 backdrop-blur-sm"><Edit size={14} /> Edit</button>
           </div>
         </div>
       ))}
