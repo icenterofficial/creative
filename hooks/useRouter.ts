@@ -1,53 +1,41 @@
 import { useState, useEffect, useCallback } from 'react';
 
 /**
- * Custom Hook for managing Hash-based Routing with ID Prefix handling.
+ * Custom Hook for managing Hash-based Routing with ID/Slug handling.
  * 
  * @param section The section name in the URL (e.g., 'team', 'portfolio')
- * @param idPrefix The prefix to strip/add (e.g., 't' for team, 'p' for project). 
- *                 If data ID is 't1', URL becomes '#team/1'.
+ * @param idPrefix The prefix to strip/add (optional)
  */
 export const useRouter = (section: string, idPrefix: string = '') => {
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  // Helper: Convert Data ID (e.g., 't1') to URL ID (e.g., '1')
+  // Helper: Convert Data ID/Slug to URL ID
   const toUrlId = useCallback((dataId: string) => {
     if (!idPrefix) return dataId;
     return dataId.startsWith(idPrefix) ? dataId.substring(idPrefix.length) : dataId;
   }, [idPrefix]);
 
-  // Helper: Convert URL ID (e.g., '1') to Data ID (e.g., 't1')
-  const toDataId = useCallback((urlId: string) => {
-    if (!idPrefix) return urlId;
-    // If the URL ID is already just a number or simple string, add the prefix back to match data
-    return `${idPrefix}${urlId}`;
-  }, [idPrefix]);
-
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash; // e.g., #team/1
+      const hash = window.location.hash; // e.g., #portfolio/my-project-slug
       const prefix = `#${section}/`;
 
       if (hash.startsWith(prefix)) {
         const urlId = hash.replace(prefix, '');
         if (urlId) {
-            setActiveId(toDataId(urlId));
+            setActiveId(urlId);
         } else {
             setActiveId(null);
         }
       } else if (hash === `#${section}` || !hash.includes('/')) {
-        // If we are just at the section root or another section entirely, close modal
-        // But only set null if we were previously active to avoid unnecessary renders
         setActiveId((prev) => (prev ? null : prev));
       }
     };
 
-    // Initial check
     handleHashChange();
-
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [section, toDataId]);
+  }, [section]);
 
   const openItem = useCallback((dataId: string) => {
     const urlId = toUrlId(dataId);
@@ -55,15 +43,11 @@ export const useRouter = (section: string, idPrefix: string = '') => {
   }, [section, toUrlId]);
 
   const closeItem = useCallback(() => {
-    // Cleaner URL handling: Use pushState to update URL to the section root
-    // without triggering a browser "jump" to the anchor ID again.
-    // This keeps the scroll position stable while cleaning the address bar.
     try {
-        history.pushState(null, '', `#${section}`);
-        // Manually trigger hashchange event because pushState doesn't trigger it automatically
+        // Use replaceState to clear the deep link without jumping the scroll
+        history.replaceState(null, '', `#${section}`);
         window.dispatchEvent(new Event('hashchange'));
     } catch (e) {
-        // Fallback for older browsers or if security restrictions apply
         window.location.hash = section;
     }
   }, [section]);
@@ -75,9 +59,6 @@ export const useRouter = (section: string, idPrefix: string = '') => {
   };
 };
 
-/**
- * Hook specifically for the Admin/Login modal
- */
 export const useAdminRouter = () => {
     const [isAdminOpen, setIsAdminOpen] = useState(false);
 
@@ -91,14 +72,11 @@ export const useAdminRouter = () => {
     }, []);
 
     const closeAdmin = () => {
-        // Remove hash cleanly using pushState, fallback to hash manipulation if it fails
         try {
             history.pushState("", document.title, window.location.pathname + window.location.search);
         } catch (e) {
-            // If pushState fails (SecurityError in sandbox), just clear the hash
             window.location.hash = '';
         }
-        // Trigger event manually since pushState doesn't trigger hashchange
         window.dispatchEvent(new Event('hashchange'));
     };
 
