@@ -19,7 +19,8 @@ const Portfolio: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 
   // Extract unique categories from projects for the filter list
-  const uniqueCategories = Array.from(new Set((projects || []).map(p => p.category))).sort();
+  // Added explicit string[] type to fix 'unknown' inference for the cat variable in uniqueCategories.map
+  const uniqueCategories: string[] = Array.from(new Set((projects || []).map(p => p.category))).sort();
   
   // Create category list with "All" + Dynamic Categories (mapped to labels if possible, else capitalize)
   const categories = [
