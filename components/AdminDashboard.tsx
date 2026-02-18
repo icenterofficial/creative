@@ -18,7 +18,7 @@ interface AdminDashboardProps {
 type TabType = 'team' | 'projects' | 'insights' | 'services' | 'careers' | 'settings';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, onViewSite }) => {
-  const { isUsingSupabase, team = [], projects = [], insights = [], services: localServices = [], jobs = [], updateTeamOrder } = useData();
+  const { isUsingSupabase, team = [], projects = [], insights = [], services: localServices = [], jobs = [], updateTeamOrder, refreshData } = useData();
   const [activeTab, setActiveTab] = useState<TabType>('team'); // Default to Team for members
   const [dbConfig, setDbConfig] = useState<{url: string, key: string} | null>(null);
   
@@ -205,6 +205,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (type === 'service') setAdminServices(updater);
           if (type === 'job') setAdminJobs(updater);
           
+          // CRITICAL: Refresh Global DataContext so public site is updated
+          await refreshData(); 
+
           alert("Item deleted permanently!");
       } catch (err) {
           console.error(err);
@@ -397,6 +400,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (activeTab === 'services') setAdminServices(updater(adminServices));
           if (activeTab === 'careers') setAdminJobs(updater(adminJobs));
 
+          // CRITICAL: Refresh Global DataContext
+          await refreshData();
+
           setIsModalOpen(false);
           
           if (isStaticID && !isAdding && performInsert) {
@@ -472,7 +478,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           lastSyncTime={null}
           isSyncing={isSyncing}
           syncStatus={null}
-          onFetch={() => window.location.reload()}
+          onFetch={refreshData} // Allow manual refresh via header
           onSync={() => {}}
           onLogout={onLogout}
           onViewSite={handleViewSite}
