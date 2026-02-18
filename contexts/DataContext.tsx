@@ -14,6 +14,9 @@ interface DataContextType {
   isLoading: boolean;
   isUsingSupabase: boolean;
   
+  // Actions
+  refreshData: () => Promise<void>; // Exposed for AdminDashboard
+  
   // Kept for compatibility
   updateService: (id: string, data: Service) => void;
   updateProject: (id: string, data: Project) => void;
@@ -281,6 +284,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   return (
     <DataContext.Provider value={{
       services, projects, team, insights, jobs, isLoading, isUsingSupabase,
+      refreshData: fetchData, // Expose fetchData
       updateService, updateProject, updateTeamMember, updateInsight,
       addProject, addTeamMember, addInsight, deleteItem,
       updateTeamOrder,
