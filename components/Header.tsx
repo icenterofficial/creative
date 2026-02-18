@@ -14,11 +14,16 @@ const Header: React.FC = () => {
   
   const { language, setLanguage, t, languageName } = useLanguage();
 
-  // Refs for the gliding animation
+  // Refs for the gliding animation and scroll locking
   const navRef = useRef<HTMLElement>(null);
   const itemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const langMenuRef = useRef<HTMLDivElement>(null);
   const mobileLangMenuRef = useRef<HTMLDivElement>(null);
+  
+  // Ref to track if we are currently scrolling via a click
+  // This prevents the IntersectionObserver from updating the active tab while scrolling over other sections
+  const isManualScrolling = useRef(false);
+  
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0, opacity: 0 });
 
   const navLinks = [
@@ -64,6 +69,9 @@ const Header: React.FC = () => {
     
     // Intersection Observer for Active State & URL Hash update
     const observer = new IntersectionObserver((entries) => {
+      // If we are manually scrolling (user clicked a link), DO NOT update active state based on scroll position
+      if (isManualScrolling.current) return;
+
       entries.forEach(entry => {
         if (entry.isIntersecting && entry.target.id) {
           const newSection = entry.target.id;
@@ -76,6 +84,7 @@ const Header: React.FC = () => {
           if (history.replaceState && !isSpecialRoute) {
               if (currentHash !== `#${newSection}`) {
                  try {
+                    // Update URL quietly without jumping
                     window.history.replaceState(null, '', `#${newSection}`);
                  } catch (e) {
                     // Ignore SecurityError in sandboxed environments
@@ -120,22 +129,35 @@ const Header: React.FC = () => {
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
-    const element = document.querySelector(href);
+    const targetId = href.substring(1);
+    const element = document.getElementById(targetId);
+    
     if (element) {
-      setActiveSection(href.substring(1));
+      // 1. Lock the observer
+      isManualScrolling.current = true;
       
-      // Update URL immediately on click
+      // 2. Set active section immediately (visual feedback)
+      setActiveSection(targetId);
+      
+      // 3. Update URL immediately
       try {
         window.history.pushState(null, '', href);
       } catch (e) {
-        // Fallback to simple hash update if pushState fails
         window.location.hash = href;
       }
 
       const headerOffset = 80;
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      
+      // 4. Smooth Scroll
       smoothScrollTo(offsetPosition, 1000);
+      
+      // 5. Unlock observer after scroll animation finishes (plus buffer)
+      setTimeout(() => {
+          isManualScrolling.current = false;
+      }, 1050); 
+
       setIsMenuOpen(false);
     }
   };
