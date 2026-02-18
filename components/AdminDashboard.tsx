@@ -160,6 +160,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
 
       if (!window.confirm("Are you sure you want to delete this item?")) return;
       
+      // Check if it's a UUID (Database Item)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const isStatic = !uuidRegex.test(id);
+
+      // CASE 1: STATIC ITEM (ALLOW HIDING)
+      if (isStatic) {
+          // Simply remove from local state to "hide" it from view
+          const updater = (prev: any[]) => prev.filter(i => i.id !== id);
+          
+          if (type === 'team') setAdminTeam(updater);
+          if (type === 'project') setAdminProjects(updater);
+          if (type === 'insight') setAdminInsights(updater);
+          if (type === 'service') setAdminServices(updater);
+          if (type === 'job') setAdminJobs(updater);
+          
+          alert("Item hidden from view.\n\nNote: Since this is a static item (hardcoded), it will reappear if you refresh the page unless you create a database version with the exact same Title/Slug to override it.");
+          return;
+      }
+
+      // CASE 2: DATABASE ITEM
       const supabase = getSupabaseClient();
       if (!supabase) return;
 
@@ -172,25 +192,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (type === 'service') table = 'services';
           if (type === 'job') table = 'jobs';
 
-          // Check if it's a UUID
-          const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-          if (!uuidRegex.test(id)) {
-              alert("Cannot delete static content from database. It is hardcoded in the app.");
-              return;
-          }
-
           const { error } = await supabase.from(table).delete().eq('id', id);
 
           if (error) throw error;
           
           // Optimistic Update
-          if (type === 'team') setAdminTeam(prev => prev.filter(i => i.id !== id));
-          if (type === 'project') setAdminProjects(prev => prev.filter(i => i.id !== id));
-          if (type === 'insight') setAdminInsights(prev => prev.filter(i => i.id !== id));
-          if (type === 'service') setAdminServices(prev => prev.filter(i => i.id !== id));
-          if (type === 'job') setAdminJobs(prev => prev.filter(i => i.id !== id));
+          const updater = (prev: any[]) => prev.filter(i => i.id !== id);
+
+          if (type === 'team') setAdminTeam(updater);
+          if (type === 'project') setAdminProjects(updater);
+          if (type === 'insight') setAdminInsights(updater);
+          if (type === 'service') setAdminServices(updater);
+          if (type === 'job') setAdminJobs(updater);
           
-          alert("Item deleted!");
+          alert("Item deleted permanently!");
       } catch (err) {
           console.error(err);
           alert("Failed to delete. Check console.");
