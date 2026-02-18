@@ -1,17 +1,17 @@
 import React from 'react';
 import { Edit, Trash2, FileText, Lock, GripVertical, MapPin, Briefcase } from 'lucide-react';
-import { TeamMember, Project, Post, Service, Job } from '../../types';
+import { TeamMember, Project, Post, Service, Job, Partner } from '../../types';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 interface ContentGridProps {
-  activeTab: 'team' | 'projects' | 'insights' | 'services' | 'careers' | 'settings';
+  activeTab: 'team' | 'projects' | 'insights' | 'services' | 'careers' | 'settings' | 'partners';
   isSuperAdmin: boolean;
   memberId: string | undefined;
-  data: { team: TeamMember[]; projects: Project[]; insights: Post[]; services: Service[]; jobs: Job[] };
+  data: { team: TeamMember[]; projects: Project[]; insights: Post[]; services: Service[]; jobs: Job[]; partners: Partner[] };
   onEdit: (item: any) => void;
-  onDelete: (type: 'service' | 'project' | 'team' | 'insight' | 'job', id: string) => void;
+  onDelete: (type: 'service' | 'project' | 'team' | 'insight' | 'job' | 'partner', id: string) => void;
   onReorderTeam?: (newOrder: TeamMember[]) => void;
 }
 
@@ -104,11 +104,9 @@ const ContentGrid: React.FC<ContentGridProps> = ({ activeTab, isSuperAdmin, memb
           </DndContext>
       )}
 
-      {/* PROJECTS - Visible to everyone, Delete restricted to Owner or Admin */}
+      {/* PROJECTS */}
       {activeTab === 'projects' && (data.projects || []).map(item => {
-        // Determine delete rights: Super Admin OR if currentUser created it
         const canDelete = isSuperAdmin || (memberId && item.createdBy === memberId);
-        
         return (
             <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
             <img src={item.image} alt={item.title} className="w-full h-40 object-cover rounded-lg bg-gray-800" />
@@ -186,6 +184,20 @@ const ContentGrid: React.FC<ContentGridProps> = ({ activeTab, isSuperAdmin, memb
             <button onClick={() => onEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2 backdrop-blur-sm"><Edit size={14} /> Edit</button>
             <button onClick={() => onDelete('job', item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg"><Trash2 size={16} /></button>
           </div>
+        </div>
+      ))}
+
+      {/* PARTNERS */}
+      {activeTab === 'partners' && isSuperAdmin && (data.partners || []).map(item => (
+        <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-6 flex flex-col items-center gap-4 text-center hover:bg-white/5 transition-colors">
+            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-gray-300">
+                {item.icon}
+            </div>
+            <h4 className="font-bold text-white">{item.name}</h4>
+            <div className="mt-auto flex gap-2 w-full">
+                <button onClick={() => onEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><Edit size={14} /> Edit</button>
+                <button onClick={() => onDelete('partner', item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg"><Trash2 size={16} /></button>
+            </div>
         </div>
       ))}
     </div>
