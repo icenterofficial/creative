@@ -55,12 +55,17 @@ export const useRouter = (section: string, idPrefix: string = '') => {
   }, [section, toUrlId]);
 
   const closeItem = useCallback(() => {
-    // We use replaceState or pushState to avoid jumpy scrolling, 
-    // keeping the user at the current section anchor
-    const scrollY = window.scrollY;
-    window.location.hash = section;
-    // Restore scroll position immediately in case hash change caused a jump
-    window.scrollTo(0, scrollY);
+    // Cleaner URL handling: Use pushState to update URL to the section root
+    // without triggering a browser "jump" to the anchor ID again.
+    // This keeps the scroll position stable while cleaning the address bar.
+    try {
+        history.pushState(null, '', `#${section}`);
+        // Manually trigger hashchange event because pushState doesn't trigger it automatically
+        window.dispatchEvent(new Event('hashchange'));
+    } catch (e) {
+        // Fallback for older browsers or if security restrictions apply
+        window.location.hash = section;
+    }
   }, [section]);
 
   return {
