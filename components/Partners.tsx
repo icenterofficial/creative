@@ -1,10 +1,16 @@
 import React from 'react';
-import { PARTNERS } from '../constants';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useData } from '../contexts/DataContext';
 import RevealOnScroll from './RevealOnScroll';
 
 const Partners: React.FC = () => {
   const { t } = useLanguage();
+  const { partners = [] } = useData();
+
+  // Ensure there is at least something to show, even if array is empty (optional)
+  const displayPartners = partners.length > 0 ? partners : [];
+
+  if (displayPartners.length === 0) return null;
 
   return (
     <section className="py-12 bg-gray-950 border-y border-white/5 relative overflow-hidden">
@@ -23,7 +29,7 @@ const Partners: React.FC = () => {
         <RevealOnScroll delay={200}>
           <div className="flex animate-scroll-slow w-max hover:pause">
               {/* Double the list for seamless loop */}
-              {[...PARTNERS, ...PARTNERS].map((partner, index) => (
+              {[...displayPartners, ...displayPartners].map((partner, index) => (
                   <div 
                       key={`${partner.id}-${index}`}
                       className="flex items-center gap-3 mx-8 md:mx-12 opacity-40 hover:opacity-100 transition-opacity duration-300 group cursor-default"
