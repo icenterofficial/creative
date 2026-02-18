@@ -122,6 +122,7 @@ export interface Partner {
   id: string;
   name: string;
   icon: React.ReactNode;
+  _iconString?: string; // Internal use for admin
 }
 
 export interface CurrentUser {
