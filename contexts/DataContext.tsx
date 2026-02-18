@@ -51,43 +51,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return IconComponent ? <IconComponent size={24} /> : defaultIcon;
   };
 
-  // --- ROBUST MERGE & SORT FUNCTION ---
-  const mergeAndSortData = (dbItems: any[], staticItems: any[], type: 'team' | 'project' | 'insight' | 'service' | 'job') => {
-      // 1. Identify items already in DB (by slug or exact ID match)
-      const dbSlugs = new Set(dbItems.map(i => i.slug));
-      const dbIds = new Set(dbItems.map(i => i.id));
-
-      // 2. Filter out static items that are already in DB
-      // IMPORTANT: We must ensure static items have slugs calculated for this check to work
-      const uniqueStatic = staticItems.filter(s => {
-          // Calculate slug if missing (same logic as used in AdminDashboard)
-          const sSlug = s.slug || slugify(s.title || s.name || '');
-          
-          // If a static item has the same slug as a DB item, we assume it's the same person/item
-          // and we prefer the DB version.
-          const slugMatch = sSlug && dbSlugs.has(sSlug);
-          const idMatch = dbIds.has(s.id);
-          return !slugMatch && !idMatch;
-      });
-
-      // 3. Combine them
-      let combined = [...dbItems, ...uniqueStatic];
-
-      // 4. SORTING LOGIC
-      if (type === 'team') {
-          combined.sort((a, b) => {
-              // DB items have 'orderIndex'. Static items usually don't.
-              // We assign a high default to static items so they appear at the end, 
-              // until the user manually reorders (migrates) them.
-              const idxA = (a.orderIndex !== undefined && a.orderIndex !== null) ? a.orderIndex : 9999;
-              const idxB = (b.orderIndex !== undefined && b.orderIndex !== null) ? b.orderIndex : 9999;
-              return idxA - idxB;
-          });
-      }
-
-      return combined;
-  };
-
   const fetchData = useCallback(async () => {
       const supabase = getSupabaseClient();
       if (!supabase) {
@@ -111,7 +74,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  link: p.link,
                  createdBy: p.created_by // Map created_by column
              }));
-             setProjects(mergeAndSortData(formatted, PROJECTS, 'project'));
+             // STRICT MODE: Use only DB data
+             setProjects(formatted);
         }
 
         // Fetch Team - CRITICAL: Order by 'order_index' ASC
@@ -133,7 +97,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  orderIndex: t.order_index, // Ensure this maps correctly
                  pinCode: t.pin_code
              }));
-             setTeam(mergeAndSortData(formatted, TEAM, 'team'));
+             // STRICT MODE: Use only DB data
+             setTeam(formatted);
         }
 
         // Fetch Insights
@@ -153,7 +118,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  comments: [],
                  slug: i.slug || slugify(i.title)
              }));
-             setInsights(mergeAndSortData(formatted, INSIGHTS, 'insight'));
+             // STRICT MODE: Use only DB data
+             setInsights(formatted);
         }
 
         // Fetch Services
@@ -176,7 +142,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 slug: s.slug || slugify(s.title),
                 image: s.image, 
             }));
-            setServices(mergeAndSortData(formatted, SERVICES, 'service'));
+            // STRICT MODE: Use only DB data
+            setServices(formatted);
         }
 
         // Fetch Jobs
@@ -194,13 +161,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 _iconString: j.icon,
                 slug: j.slug || slugify(j.title)
             }));
-            setJobs(mergeAndSortData(formatted, JOBS, 'job'));
+            // STRICT MODE: Use only DB data
+            setJobs(formatted);
         }
 
         setIsUsingSupabase(true);
       } catch (error) {
         console.warn("⚠️ Failed to fetch from Supabase.", error);
         setIsUsingSupabase(false);
+        // On error, we rely on the initial state (Static Constants)
       } finally {
         setIsLoading(false);
       }
@@ -234,7 +203,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                   await supabase.from('team').update({ order_index: newIndex }).eq('id', member.id);
               } else {
                   // B. STATIC ITEM: Must MIGRATE to DB to save position
-                  // We perform an INSERT with the specific order_index
+                  // Note: Since we disabled merging, this branch might not be hit often unless mixed
                   const { error } = await supabase.from('team').insert({
                       name: member.name,
                       role: member.role,
