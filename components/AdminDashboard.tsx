@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Database, ExternalLink, LogOut, Users, FileText, Briefcase, LayoutGrid, Menu, Star } from 'lucide-react';
+import { Plus, Settings, Database, ExternalLink, LogOut, Users, FileText, Briefcase, LayoutGrid, Menu, Star, Handshake } from 'lucide-react';
 import { getSupabaseClient, DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY } from '../lib/supabase';
 import { useData } from '../contexts/DataContext';
 import AdminHeader from './admin/AdminHeader';
 import AdminSidebar from './admin/AdminSidebar';
 import ContentGrid from './admin/ContentGrid';
 import EditItemModal from './admin/EditItemModal';
-import { TeamMember, Project, Post, Service, CurrentUser, Job } from '../types';
+import { TeamMember, Project, Post, Service, CurrentUser, Job, Partner } from '../types';
 import { slugify } from '../utils/format';
 
 interface AdminDashboardProps {
@@ -15,10 +15,10 @@ interface AdminDashboardProps {
   onViewSite: () => void;
 }
 
-type TabType = 'team' | 'projects' | 'insights' | 'services' | 'careers' | 'settings';
+type TabType = 'team' | 'projects' | 'insights' | 'services' | 'careers' | 'settings' | 'partners';
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, onViewSite }) => {
-  const { isUsingSupabase, team = [], projects = [], insights = [], services: localServices = [], jobs = [], updateTeamOrder, refreshData } = useData();
+  const { isUsingSupabase, team = [], projects = [], insights = [], services: localServices = [], jobs = [], partners = [], updateTeamOrder, refreshData } = useData();
   const [activeTab, setActiveTab] = useState<TabType>('team'); // Default to Team for members
   const [dbConfig, setDbConfig] = useState<{url: string, key: string} | null>(null);
   
@@ -28,6 +28,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
   const [adminInsights, setAdminInsights] = useState<Post[]>(insights);
   const [adminServices, setAdminServices] = useState<Service[]>(localServices);
   const [adminJobs, setAdminJobs] = useState<Job[]>(jobs);
+  const [adminPartners, setAdminPartners] = useState<Partner[]>(partners);
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,7 +61,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       setAdminInsights(insights || []);
       setAdminServices(localServices || []);
       setAdminJobs(jobs || []);
-  }, [team, projects, insights, localServices, jobs]);
+      setAdminPartners(partners || []);
+  }, [team, projects, insights, localServices, jobs, partners]);
 
   const handleConfigSave = (e: React.FormEvent) => {
       e.preventDefault();
@@ -86,9 +88,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
   // CRUD Operations
   const handleEdit = (item: any) => {
     setIsAdding(false);
-    // For services, ensure icon is treated as string for editing if it's a component
+    // For services/partners/jobs, ensure icon is treated as string for editing if it's a component
     let itemToEdit = { ...item };
-    if (activeTab === 'services' || activeTab === 'careers') {
+    if (activeTab === 'services' || activeTab === 'careers' || activeTab === 'partners') {
         if (item._iconString) {
             itemToEdit.icon = item._iconString;
         } else if (typeof item.icon !== 'string') {
@@ -124,7 +126,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       projects: { title: '', category: 'graphicdesign', image: '', client: '', description: '', link: '' },
       insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: currentUser.role === 'member' ? currentUser.id : 't1' },
       services: { title: '', titleKm: '', subtitle: '', subtitleKm: '', description: '', descriptionKm: '', features: [], featuresKm: [], icon: 'Box', color: 'bg-indigo-500', image: '' },
-      careers: { title: '', type: 'Full-time', location: 'Phnom Penh', department: 'Engineering', icon: 'Code', link: '', description: '' }
+      careers: { title: '', type: 'Full-time', location: 'Phnom Penh', department: 'Engineering', icon: 'Code', link: '', description: '' },
+      partners: { name: '', icon: 'Building2' }
     };
     setEditingItem(templates[activeTab]);
     setIsModalOpen(true);
@@ -174,6 +177,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (type === 'insight') setAdminInsights(updater);
           if (type === 'service') setAdminServices(updater);
           if (type === 'job') setAdminJobs(updater);
+          if (type === 'partner') setAdminPartners(updater);
           
           alert("Item hidden from view.\n\nNote: Since this is a static item (hardcoded), it will reappear if you refresh the page unless you create a database version with the exact same Title/Slug to override it.");
           return;
@@ -191,6 +195,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (type === 'insight') table = 'insights';
           if (type === 'service') table = 'services';
           if (type === 'job') table = 'jobs';
+          if (type === 'partner') table = 'partners';
 
           const { error } = await supabase.from(table).delete().eq('id', id);
 
@@ -204,6 +209,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (type === 'insight') setAdminInsights(updater);
           if (type === 'service') setAdminServices(updater);
           if (type === 'job') setAdminJobs(updater);
+          if (type === 'partner') setAdminPartners(updater);
           
           // CRITICAL: Refresh Global DataContext so public site is updated
           await refreshData(); 
@@ -318,10 +324,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   description: item.description,
                   slug: generatedSlug
               }
+          } else if (activeTab === 'partners') {
+              table = 'partners';
+              payload = {
+                  name: item.name,
+                  icon: (typeof item.icon === 'string' && item.icon.trim()) ? item.icon : 'Building2',
+              }
           }
 
-          // SMART CHECK: If we are about to INSERT because ID is static, check if SLUG exists in DB first
-          if (performInsert && !isAdding) {
+          // SMART CHECK: If we are about to INSERT because ID is static, check if SLUG exists in DB first (except Partners/Jobs which might rely on ID)
+          if (performInsert && !isAdding && table !== 'partners') {
               const { data: existingRecord } = await supabase
                   .from(table)
                   .select('id')
@@ -376,21 +388,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (activeTab === 'team') newItem.pinCode = res.data[0].pin_code;
 
           // --- CRITICAL FIX: SMART UPDATE OF LOCAL STATE ---
-          // We must replace the item with the OLD ID (static) with the NEW ITEM (db UUID)
-          // instead of just appending it, to prevent duplicates.
           const updater = (list: any[]) => {
-              // 1. If we edited an existing item (static OR db), we replace it.
-              // We find the index using the ORIGINAL ID (before it might have changed to UUID)
               const existingIndex = list.findIndex(i => i.id === originalId);
-              
               if (existingIndex !== -1) {
-                  // Replace the old static item with the new DB item
                   const newList = [...list];
                   newList[existingIndex] = newItem;
                   return newList;
               }
-              
-              // 2. If it's a completely new addition (Add button), prepend it.
               return [newItem, ...list];
           };
           
@@ -399,6 +403,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           if (activeTab === 'insights') setAdminInsights(updater(adminInsights));
           if (activeTab === 'services') setAdminServices(updater(adminServices));
           if (activeTab === 'careers') setAdminJobs(updater(adminJobs));
+          if (activeTab === 'partners') setAdminPartners(updater(adminPartners));
 
           // CRITICAL: Refresh Global DataContext
           await refreshData();
@@ -488,13 +493,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
        <div className="md:hidden fixed top-16 left-0 right-0 h-16 bg-gray-900 border-b border-white/10 flex items-center px-4 overflow-x-auto gap-2 z-40 no-scrollbar">
            <MobileNavButton tab="team" icon={Users} label={currentUser.role === 'admin' ? "Team" : "Profile"} />
            <MobileNavButton tab="insights" icon={FileText} label="Articles" />
-           {/* Projects Button now visible for everyone */}
            <MobileNavButton tab="projects" icon={Briefcase} label="Projects" />
            
            {currentUser.role === 'admin' && (
              <>
                 <MobileNavButton tab="services" icon={LayoutGrid} label="Services" />
                 <MobileNavButton tab="careers" icon={Star} label="Careers" />
+                <MobileNavButton tab="partners" icon={Handshake} label="Partners" />
                 <MobileNavButton tab="settings" icon={Settings} label="Config" />
              </>
            )}
@@ -538,7 +543,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                     activeTab={activeTab}
                     isSuperAdmin={currentUser.role === 'admin'}
                     memberId={currentUser.id}
-                    data={{ team: adminTeam, projects: adminProjects, insights: adminInsights, services: adminServices, jobs: adminJobs }}
+                    data={{ team: adminTeam, projects: adminProjects, insights: adminInsights, services: adminServices, jobs: adminJobs, partners: adminPartners }}
                     onEdit={handleEdit}
                     onDelete={handleDelete}
                     onReorderTeam={handleReorderTeam}
