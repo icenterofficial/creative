@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { SERVICES, PROJECTS, TEAM, INSIGHTS, JOBS } from '../constants';
-import { Service, Project, TeamMember, Post, Job } from '../types';
+import { SERVICES, PROJECTS, TEAM, INSIGHTS, JOBS, PARTNERS } from '../constants';
+import { Service, Project, TeamMember, Post, Job, Partner } from '../types';
 import { getSupabaseClient } from '../lib/supabase';
 import * as LucideIcons from 'lucide-react';
 import { slugify } from '../utils/format';
@@ -11,6 +11,7 @@ interface DataContextType {
   team: TeamMember[];
   insights: Post[];
   jobs: Job[];
+  partners: Partner[];
   isLoading: boolean;
   isUsingSupabase: boolean;
   
@@ -39,6 +40,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [team, setTeam] = useState<TeamMember[]>(TEAM);
   const [insights, setInsights] = useState<Post[]>(INSIGHTS);
   const [jobs, setJobs] = useState<Job[]>(JOBS);
+  const [partners, setPartners] = useState<Partner[]>(PARTNERS);
   
   const [isLoading, setIsLoading] = useState(true);
   const [isUsingSupabase, setIsUsingSupabase] = useState(false);
@@ -165,6 +167,18 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setJobs(formatted);
         }
 
+        // Fetch Partners
+        const { data: dbPartners } = await supabase.from('partners').select('*').order('created_at', { ascending: true });
+        if (dbPartners && dbPartners.length > 0) {
+            const formatted = dbPartners.map((p: any) => ({
+                id: p.id,
+                name: p.name,
+                icon: getIcon(p.icon, <LucideIcons.Building2 size={32} />),
+                _iconString: p.icon
+            }));
+            setPartners(formatted);
+        }
+
         setIsUsingSupabase(true);
       } catch (error) {
         console.warn("⚠️ Failed to fetch from Supabase.", error);
@@ -246,13 +260,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   const resetData = () => {
      if(window.confirm("Reset to default local data?")) {
-         setServices(SERVICES); setProjects(PROJECTS); setTeam(TEAM); setInsights(INSIGHTS); setJobs(JOBS);
+         setServices(SERVICES); setProjects(PROJECTS); setTeam(TEAM); setInsights(INSIGHTS); setJobs(JOBS); setPartners(PARTNERS);
      }
   };
 
   return (
     <DataContext.Provider value={{
-      services, projects, team, insights, jobs, isLoading, isUsingSupabase,
+      services, projects, team, insights, jobs, partners, isLoading, isUsingSupabase,
       refreshData: fetchData, // Expose fetchData
       updateService, updateProject, updateTeamMember, updateInsight,
       addProject, addTeamMember, addInsight, deleteItem,
