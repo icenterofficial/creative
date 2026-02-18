@@ -222,73 +222,76 @@ const Hero: React.FC = () => {
   };
 
   return (
-    <section ref={containerRef} id="home" className="relative min-h-screen flex items-center pt-32 pb-20 overflow-hidden perspective-1000">
+    <section ref={containerRef} id="home" className="relative min-h-screen flex items-center pt-24 pb-12 md:pt-32 md:pb-20 overflow-hidden perspective-1000">
       
       {/* Dynamic Background - Parallax Layer 1 (Deepest) */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+        {/* Mobile Specific Central Glow to replace constrained constellation */}
+        <div className="lg:hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-indigo-500/20 rounded-full blur-[80px] animate-pulse" />
+
         <div 
-            className="absolute top-[20%] left-[10%] w-72 h-72 bg-blue-600/30 rounded-full blur-[100px] transition-transform duration-75 ease-out"
+            className="absolute top-[20%] left-[10%] w-72 h-72 bg-blue-600/30 rounded-full blur-[100px] transition-transform duration-75 ease-out opacity-50 lg:opacity-100"
             style={{ transform: `translate(calc(var(--mouse-x, 0) * -30px), calc(var(--mouse-y, 0) * -30px))` }}
         />
         <div 
-            className="absolute bottom-[20%] right-[10%] w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] transition-transform duration-75 ease-out"
+            className="absolute bottom-[20%] right-[10%] w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] transition-transform duration-75 ease-out opacity-50 lg:opacity-100"
             style={{ transform: `translate(calc(var(--mouse-x, 0) * 30px), calc(var(--mouse-y, 0) * 30px))` }}
         />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-20 items-center">
           
           {/* Left Content */}
-          <div className="space-y-8 text-center lg:text-left relative z-20">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm animate-fade-in">
-              <span className="flex h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
-              <span className="text-xs font-medium text-gray-300 uppercase tracking-widest font-khmer">
+          <div className="space-y-6 md:space-y-8 text-center lg:text-left relative z-20">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm animate-fade-in">
+              <span className="flex h-1.5 w-1.5 md:h-2 md:w-2 rounded-full bg-green-400 animate-pulse"></span>
+              <span className="text-[10px] md:text-xs font-medium text-gray-300 uppercase tracking-widest font-khmer">
                   {t('Available for new projects', 'ទទួលគម្រោងថ្មីៗ')}
               </span>
             </div>
             
-            <h1 className="text-5xl lg:text-6xl font-bold leading-[1.1] font-khmer">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] font-khmer tracking-tight">
               {t('Crafting', 'បង្កើត')} <br />
               <ScrambleText text={t('Digital Perfection', 'ភាពល្អឥតខ្ចោះនៃឌីជីថល')} />
             </h1>
             
-            <p className="text-lg lg:text-xl text-gray-400 leading-relaxed font-khmer max-w-xl mx-auto lg:mx-0">
+            <p className="text-base md:text-lg lg:text-xl text-gray-400 leading-relaxed font-khmer max-w-xl mx-auto lg:mx-0">
               {t(
                   'Transform your brand with world-class design and engineering.',
                   'បំប្លែងគំនិតច្នៃប្រឌិតរបស់អ្នក អោយក្លាយជាការពិតដ៏អស្ចារ្យ។'
               )}
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2 md:pt-4">
               <MagneticButton 
                 href="#portfolio"
-                className="group px-8 py-4 rounded-full bg-white text-gray-950 font-bold text-lg shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] flex items-center justify-center gap-2 font-khmer"
+                className="group px-6 py-3 md:px-8 md:py-4 rounded-full bg-white text-gray-950 font-bold text-base md:text-lg shadow-[0_0_40px_rgba(255,255,255,0.2)] hover:shadow-[0_0_60px_rgba(255,255,255,0.4)] flex items-center justify-center gap-2 font-khmer w-full sm:w-auto"
               >
                 {t('View Our Work', 'មើលស្នាដៃរបស់យើង')} <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </MagneticButton>
               <MagneticButton 
                 href="#contact"
-                className="px-8 py-4 rounded-full bg-white/5 text-white font-bold text-lg border border-white/10 hover:bg-white/10 hover:border-white/20 flex items-center justify-center gap-2 backdrop-blur-sm font-khmer"
+                className="px-6 py-3 md:px-8 md:py-4 rounded-full bg-white/5 text-white font-bold text-base md:text-lg border border-white/10 hover:bg-white/10 hover:border-white/20 flex items-center justify-center gap-2 backdrop-blur-sm font-khmer w-full sm:w-auto"
               >
                 {t('Contact Us', 'ទាក់ទងយើង')}
               </MagneticButton>
             </div>
 
-            <div className="pt-8 flex items-center justify-center lg:justify-start gap-8 border-t border-white/5">
-                <div className="text-left">
-                    <h4 className="text-2xl font-bold text-white">
+            <div className="pt-6 md:pt-8 flex flex-wrap items-center justify-center lg:justify-start gap-6 md:gap-8 border-t border-white/5">
+                <div className="text-center lg:text-left">
+                    <h4 className="text-xl md:text-2xl font-bold text-white">
                         <CountUp end={50} duration={2000} suffix="+" />
                     </h4>
-                    <p className="text-sm text-gray-500 uppercase tracking-wider font-khmer">{t('Projects', 'គម្រោង')}</p>
+                    <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wider font-khmer">{t('Projects', 'គម្រោង')}</p>
                 </div>
-                 <div className="text-left">
-                    <h4 className="text-2xl font-bold text-white">
+                 <div className="text-center lg:text-left">
+                    <h4 className="text-xl md:text-2xl font-bold text-white">
                         <CountUp end={99} duration={2000} suffix="%" />
                     </h4>
-                    <p className="text-sm text-gray-500 uppercase tracking-wider font-khmer">{t('Satisfaction', 'ការពេញចិត្ត')}</p>
+                    <p className="text-xs md:text-sm text-gray-500 uppercase tracking-wider font-khmer">{t('Satisfaction', 'ការពេញចិត្ត')}</p>
                 </div>
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 w-full justify-center lg:w-auto">
                    {[1,2,3,4,5].map(i => <Star key={i} size={16} className="text-yellow-400 fill-yellow-400" />)}
                    <span className="text-sm text-gray-500 ml-2">5.0</span>
                 </div>
