@@ -1,40 +1,31 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
-import { X, ExternalLink, Tag, ArrowRight, Target, Zap, TrendingUp, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { X, ArrowRight } from 'lucide-react';
 import { Project } from '../types';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
 import { useRouter } from '../hooks/useRouter';
-import ContentRenderer from './ContentRenderer';
+
+// Sub-components
+import PortfolioFilters from './portfolio/PortfolioFilters';
+import PortfolioCard from './portfolio/PortfolioCard';
+import PortfolioModal from './portfolio/PortfolioModal';
 
 const Portfolio: React.FC = () => {
   const [filter, setFilter] = useState<string>('all');
   const { t } = useLanguage();
   const { projects = [] } = useData();
 
-  // Use Router Hook: Section 'portfolio', No Prefix needed if using slugs
+  // Use Router Hook: Section 'portfolio'
   const { activeId, openItem, closeItem } = useRouter('portfolio');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isViewAllOpen, setIsViewAllOpen] = useState(false);
 
-  // Timeline Scroll Animation State
-  const [scrollProgress, setScrollProgress] = useState(0);
-  // Refs for scrolling containers
-  const modalRef = useRef<HTMLDivElement>(null); // For Mobile scrolling
-  const textContainerRef = useRef<HTMLDivElement>(null); // For Desktop scrolling
-  const timelineRef = useRef<HTMLDivElement>(null);
-
-  // --- GALLERY STATE ---
-  const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [allImages, setAllImages] = useState<string[]>([]);
-
-  // Extract unique categories from projects for the filter list
+  // Create Categories List
   const uniqueCategories: string[] = Array.from(new Set((projects || []).map(p => p.category))).sort();
-  
-  // Create category list with "All" + Dynamic Categories
   const categories = [
       { id: 'all', label: t('All Work', 'ទាំងអស់') },
       ...uniqueCategories.map(cat => ({ 
@@ -49,15 +40,7 @@ const Portfolio: React.FC = () => {
   useEffect(() => {
       if (activeId && projects) {
           const found = projects.find(p => p.slug === activeId || p.id === activeId);
-          if (found) {
-              setSelectedProject(found);
-              // Combine main image + gallery into one list, filtering out empty strings
-              const imgs = [found.image, ...(found.gallery || [])].filter(Boolean);
-              setAllImages(imgs);
-              setActiveImageIndex(0);
-          } else {
-              setSelectedProject(null);
-          }
+          setSelectedProject(found || null);
       } else {
           setSelectedProject(null);
       }
@@ -75,56 +58,6 @@ const Portfolio: React.FC = () => {
     };
   }, [selectedProject, isViewAllOpen]);
 
-  // Handle Scroll Animation Logic inside Modal
-  const handleModalScroll = () => {
-      if (!timelineRef.current) return;
-
-      const timeline = timelineRef.current;
-      const timelineRect = timeline.getBoundingClientRect();
-
-      // Calculate where the timeline starts relative to the viewport
-      // We want the line to start filling when the top of the timeline enters the viewport (bottom 80%)
-      const viewportHeight = window.innerHeight;
-      const startTrigger = viewportHeight * 0.8; 
-      
-      const distanceTop = startTrigger - timelineRect.top;
-      const totalHeight = timelineRect.height + (viewportHeight * 0.3); // Add some buffer
-
-      let progress = (distanceTop / totalHeight) * 100;
-      
-      if (timelineRect.top > startTrigger) progress = 0;
-      
-      progress = Math.min(100, Math.max(0, progress));
-      setScrollProgress(progress);
-  };
-
-  // Attach scroll listener when modal opens
-  useEffect(() => {
-      const textContainer = textContainerRef.current;
-      const modalContainer = modalRef.current;
-
-      // Attach to both potential scroll containers to handle mobile/desktop switch
-      if (textContainer) textContainer.addEventListener('scroll', handleModalScroll);
-      if (modalContainer) modalContainer.addEventListener('scroll', handleModalScroll);
-      
-      // Initial check
-      handleModalScroll();
-
-      return () => {
-          if (textContainer) textContainer.removeEventListener('scroll', handleModalScroll);
-          if (modalContainer) modalContainer.removeEventListener('scroll', handleModalScroll);
-      };
-  }, [selectedProject]);
-
-  // Gallery Navigation Handlers
-  const handleNextImage = () => {
-      setActiveImageIndex((prev) => (prev + 1) % allImages.length);
-  };
-
-  const handlePrevImage = () => {
-      setActiveImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
-  };
-
   return (
     <section id="portfolio" className="py-24 bg-gray-900/50 relative overflow-hidden">
       {/* Background Text */}
@@ -141,62 +74,25 @@ const Portfolio: React.FC = () => {
               </div>
              </RevealOnScroll>
             
-            {/* Minimalist Filters */}
+            {/* Filters */}
             <RevealOnScroll variant="slide-left" delay={200}>
-              <div className="flex flex-wrap justify-start md:justify-end gap-2">
-              {categories.map((cat) => (
-                  <button
-                  key={cat.id}
-                  onClick={() => setFilter(cat.id)}
-                  className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-all duration-300 border font-khmer ${
-                      filter === cat.id 
-                      ? 'bg-white text-gray-950 border-white' 
-                      : 'bg-transparent text-gray-400 border-white/10 hover:border-white/30 hover:text-white'
-                  }`}
-                  >
-                  {cat.label}
-                  </button>
-              ))}
-              </div>
+              <PortfolioFilters 
+                categories={categories} 
+                currentFilter={filter} 
+                onFilterChange={setFilter} 
+              />
             </RevealOnScroll>
         </div>
 
-        {/* Masonry Grid */}
+        {/* Masonry Grid (Limit to 6 items) */}
         <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
           {filteredProjects.slice(0, 6).map((project, index) => (
-            <RevealOnScroll key={project.id} delay={index * 100} variant="zoom-in" duration={600}>
-              <div 
-                onClick={() => openItem(project.slug || project.id)}
-                className="group relative rounded-2xl overflow-hidden break-inside-avoid bg-gray-800 transition-transform duration-500 hover:-translate-y-2 hover:rotate-1 hover:shadow-2xl hover:shadow-indigo-500/20 cursor-pointer"
-              >
-                <img 
-                  src={project.image} 
-                  alt={project.title} 
-                  className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
-                  loading="lazy"
-                />
-                
-                {/* Gallery Indicator (If multiple images) */}
-                {(project.gallery && project.gallery.length > 0) && (
-                    <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-md text-white text-xs font-bold flex items-center gap-1 z-10 border border-white/10">
-                        <ImageIcon size={12} />
-                        <span>{project.gallery.length + 1}</span>
-                    </div>
-                )}
-
-                <div className="absolute inset-0 bg-gray-950/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-6 backdrop-blur-[2px]">
-                   <div className="flex justify-end translate-y-[-10px] group-hover:translate-y-0 transition-transform duration-300">
-                      <div className="h-10 w-10 rounded-full bg-white text-gray-950 flex items-center justify-center">
-                           <span className="text-xl">↗</span>
-                      </div>
-                   </div>
-                   <div className="translate-y-[10px] group-hover:translate-y-0 transition-transform duration-300">
-                      <span className="text-indigo-400 text-xs font-bold uppercase tracking-wider mb-2 block">{project.category}</span>
-                      <h3 className="text-white text-2xl font-bold">{project.title}</h3>
-                   </div>
-                </div>
-              </div>
-            </RevealOnScroll>
+            <PortfolioCard 
+                key={project.id} 
+                project={project} 
+                index={index} 
+                onClick={() => openItem(project.slug || project.id)} 
+            />
           ))}
         </div>
         
@@ -212,7 +108,7 @@ const Portfolio: React.FC = () => {
         </RevealOnScroll>
       </div>
 
-      {/* View All Projects Modal */}
+      {/* View All Projects Modal (Keep this simple here or separate if needed) */}
       {isViewAllOpen && createPortal(
          <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4">
             <div 
@@ -258,211 +154,12 @@ const Portfolio: React.FC = () => {
          document.body
       )}
 
-      {/* Project Detail Modal */}
-      {selectedProject && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-           {/* Backdrop */}
-           <div 
-             className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
-             onClick={closeItem}
-           />
-
-           {/* Close Button */}
-           <button 
-              onClick={closeItem}
-              className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all z-50 border border-white/10"
-           >
-              <X size={24} />
-           </button>
-
-           {/* Modal Content - UPDATED FOR MOBILE SCROLLING */}
-           <div 
-                ref={modalRef} 
-                className="relative w-full max-w-6xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-y-auto md:overflow-hidden animate-scale-up z-10 flex flex-col md:flex-row"
-           >
-              
-              {/* --- IMAGE / GALLERY SECTION --- */}
-              <div className="w-full md:w-1/2 h-[350px] md:h-auto bg-gray-900 relative overflow-hidden flex items-center justify-center shrink-0 group/gallery bg-black">
-                  
-                  {/* Active Image */}
-                  {allImages.length > 0 ? (
-                      <div className="w-full h-full relative">
-                          {/* Main Image with Transition */}
-                          <img 
-                            key={activeImageIndex} // Key forces re-render for simple transition
-                            src={allImages[activeImageIndex]} 
-                            alt={selectedProject.title} 
-                            className="w-full h-full object-contain animate-fade-in bg-black"
-                          />
-                          
-                          {/* Navigation Buttons (Only if > 1 image) - ALWAYS VISIBLE */}
-                          {allImages.length > 1 && (
-                              <>
-                                  <button 
-                                      onClick={(e) => { e.stopPropagation(); handlePrevImage(); }}
-                                      className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/20 hover:bg-white hover:text-black transition-all shadow-lg z-20 hover:scale-110"
-                                  >
-                                      <ChevronLeft size={24} />
-                                  </button>
-                                  <button 
-                                      onClick={(e) => { e.stopPropagation(); handleNextImage(); }}
-                                      className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/20 hover:bg-white hover:text-black transition-all shadow-lg z-20 hover:scale-110"
-                                  >
-                                      <ChevronRight size={24} />
-                                  </button>
-                              </>
-                          )}
-
-                          {/* Thumbnails Overlay (Bottom) - ALWAYS VISIBLE */}
-                          {allImages.length > 1 && (
-                              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 p-3 bg-black/60 backdrop-blur-lg rounded-2xl border border-white/20 max-w-[95%] overflow-x-auto scrollbar-hide z-20 shadow-2xl">
-                                  {allImages.map((img, idx) => (
-                                      <button 
-                                          key={idx}
-                                          onClick={(e) => { e.stopPropagation(); setActiveImageIndex(idx); }}
-                                          className={`relative w-14 h-14 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${activeImageIndex === idx ? 'border-indigo-500 scale-110 shadow-lg shadow-indigo-500/50' : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'}`}
-                                      >
-                                          <img src={img} className="w-full h-full object-cover" alt="" />
-                                      </button>
-                                  ))}
-                              </div>
-                          )}
-                      </div>
-                  ) : (
-                      <div className="text-gray-500 flex flex-col items-center gap-2">
-                          <ImageIcon size={32} />
-                          <span>No Image Available</span>
-                      </div>
-                  )}
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/50 via-transparent to-transparent opacity-50 pointer-events-none" />
-              </div>
-
-              {/* Details Section (Scrollable on Desktop, Natural Flow on Mobile) */}
-              <div 
-                className="w-full md:w-1/2 bg-gray-900 flex flex-col md:overflow-y-auto scrollbar-hide relative"
-                ref={textContainerRef}
-              >
-                 <div className="p-8 md:p-10 space-y-8">
-                    <div>
-                        <div className="flex items-center gap-2 mb-4">
-                           <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
-                              <Tag size={12} /> {selectedProject.category}
-                           </span>
-                        </div>
-
-                        <h3 className="text-3xl md:text-4xl font-bold text-white mb-2 leading-tight font-khmer">
-                            {selectedProject.title}
-                        </h3>
-                        {selectedProject.client && (
-                            <p className="text-gray-500 text-sm font-khmer mb-6">
-                                {t('Client', 'អតិថិជន')}: <span className="text-white">{selectedProject.client}</span>
-                            </p>
-                        )}
-                    </div>
-
-                    {/* Standard Description */}
-                    <div>
-                        <div className="text-gray-300 leading-relaxed font-khmer text-base">
-                            <ContentRenderer content={t(
-                                selectedProject.description || "",
-                                selectedProject.description || ""
-                            )} />
-                        </div>
-                    </div>
-
-                    {/* --- ANIMATED VERTICAL TIMELINE CASE STUDY --- */}
-                    {(selectedProject.challenge || selectedProject.solution || selectedProject.result) && (
-                        <div className="relative py-8" ref={timelineRef}>
-                            
-                            {/* The Center Lines */}
-                            <div className="absolute left-6 top-4 bottom-4 w-0.5 bg-white/10 z-0"></div>
-                            <div 
-                                className="absolute left-6 top-4 w-0.5 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500 z-0 transition-all duration-300 ease-out"
-                                style={{ height: `${scrollProgress}%` }}
-                            >
-                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
-                            </div>
-
-                            <div className="space-y-16">
-                                {/* 1. Challenge */}
-                                {(selectedProject.challenge || selectedProject.challengeKm) && (
-                                    <div className="relative pl-20 group">
-                                        <div className={`absolute left-0 top-0 w-12 h-12 rounded-full bg-gray-900 border-2 flex items-center justify-center z-10 transition-all duration-500 ${scrollProgress > 10 ? 'border-red-500 text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : 'border-gray-700 text-gray-500'}`}>
-                                            <Target size={20} />
-                                        </div>
-                                        
-                                        <RevealOnScroll variant="slide-right">
-                                            <h5 className={`text-lg font-bold mb-2 font-khmer transition-colors duration-500 ${scrollProgress > 10 ? 'text-red-400' : 'text-gray-400'}`}>
-                                                {t('The Challenge', 'បញ្ហាប្រឈម')}
-                                            </h5>
-                                            <p className="text-gray-400 text-sm md:text-base leading-relaxed font-khmer bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-red-500/20 transition-colors">
-                                                {t(selectedProject.challenge!, selectedProject.challengeKm || selectedProject.challenge!)}
-                                            </p>
-                                        </RevealOnScroll>
-                                    </div>
-                                )}
-
-                                {/* 2. Solution */}
-                                {(selectedProject.solution || selectedProject.solutionKm) && (
-                                    <div className="relative pl-20 group">
-                                        <div className={`absolute left-0 top-0 w-12 h-12 rounded-full bg-gray-900 border-2 flex items-center justify-center z-10 transition-all duration-500 ${scrollProgress > 45 ? 'border-blue-500 text-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.3)]' : 'border-gray-700 text-gray-500'}`}>
-                                            <Zap size={20} />
-                                        </div>
-
-                                        <RevealOnScroll variant="slide-right" delay={100}>
-                                            <h5 className={`text-lg font-bold mb-2 font-khmer transition-colors duration-500 ${scrollProgress > 45 ? 'text-blue-400' : 'text-gray-400'}`}>
-                                                {t('The Solution', 'ដំណោះស្រាយ')}
-                                            </h5>
-                                            <p className="text-gray-400 text-sm md:text-base leading-relaxed font-khmer bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-blue-500/20 transition-colors">
-                                                {t(selectedProject.solution!, selectedProject.solutionKm || selectedProject.solution!)}
-                                            </p>
-                                        </RevealOnScroll>
-                                    </div>
-                                )}
-
-                                {/* 3. Result */}
-                                {(selectedProject.result || selectedProject.resultKm) && (
-                                    <div className="relative pl-20 group">
-                                        <div className={`absolute left-0 top-0 w-12 h-12 rounded-full bg-gray-900 border-2 flex items-center justify-center z-10 transition-all duration-500 ${scrollProgress > 80 ? 'border-green-500 text-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]' : 'border-gray-700 text-gray-500'}`}>
-                                            <TrendingUp size={20} />
-                                        </div>
-
-                                        <RevealOnScroll variant="slide-right" delay={200}>
-                                            <h5 className={`text-lg font-bold mb-2 font-khmer transition-colors duration-500 ${scrollProgress > 80 ? 'text-green-400' : 'text-gray-400'}`}>
-                                                {t('The Result', 'លទ្ធផល')}
-                                            </h5>
-                                            <p className="text-gray-400 text-sm md:text-base leading-relaxed font-khmer bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-green-500/20 transition-colors">
-                                                {t(selectedProject.result!, selectedProject.resultKm || selectedProject.result!)}
-                                            </p>
-                                        </RevealOnScroll>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                 </div>
-
-                 <div className="mt-auto p-8 border-t border-white/10 bg-gray-900/50">
-                     {selectedProject.link ? (
-                         <a 
-                            href={selectedProject.link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full py-4 rounded-xl bg-white text-gray-950 font-bold hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-2 font-khmer shadow-lg hover:shadow-indigo-500/25"
-                         >
-                            {t('View Live Project', 'មើលគម្រោងផ្ទាល់')} <ExternalLink size={18} />
-                         </a>
-                     ) : (
-                         <button disabled className="w-full py-4 rounded-xl bg-white/5 text-gray-500 font-bold cursor-not-allowed flex items-center justify-center gap-2 font-khmer border border-white/5">
-                            {t('No Live Link', 'មិនមានតំណភ្ជាប់')}
-                         </button>
-                     )}
-                 </div>
-              </div>
-           </div>
-        </div>,
-        document.body
+      {/* Main Project Detail Modal */}
+      {selectedProject && (
+          <PortfolioModal 
+            project={selectedProject} 
+            onClose={closeItem} 
+          />
       )}
 
       <style>{`
