@@ -26,7 +26,7 @@ const Header: React.FC = () => {
     { name: t('Insights', 'ចំណេះដឹង'), href: '#insights' },
   ];
 
-  // 1. Scroll & Intersection Observer Logic
+  // 1. Fixed Position Logic & Scroll Tracking
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -41,9 +41,10 @@ const Header: React.FC = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     document.addEventListener('mousedown', handleClickOutside);
     
+    // Observer to track which section is currently in view and update address bar
     const observerOptions = {
       root: null,
-      rootMargin: '-20% 0px -70% 0px',
+      rootMargin: '-30% 0px -60% 0px',
       threshold: 0
     };
 
@@ -55,9 +56,9 @@ const Header: React.FC = () => {
           const id = entry.target.id;
           setActiveSection(id);
           
-          // Address Bar Update: Sync URL without jumping
+          // Address Bar Sync: Update URL hash without causing a page jump
           if (window.location.hash !== `#${id}`) {
-            history.replaceState(null, '', `#${id}`);
+            window.history.replaceState(null, '', `#${id}`);
           }
         }
       });
@@ -76,7 +77,7 @@ const Header: React.FC = () => {
     };
   }, [language]);
 
-  // 2. Indicator Animation Logic
+  // 2. Animated Indicator Sync
   useEffect(() => {
     const activeIndex = navLinks.findIndex(link => link.href.substring(1) === activeSection);
     const target = navLinksRef.current[activeIndex !== -1 ? activeIndex : 0];
@@ -89,7 +90,7 @@ const Header: React.FC = () => {
     }
   }, [activeSection, language]);
 
-  // 3. Smooth Scroll Navigation
+  // 3. Robust Navigation Function
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     const targetId = href.substring(1);
@@ -107,7 +108,7 @@ const Header: React.FC = () => {
       smoothScrollTo(offsetPosition, 1000);
       
       // Update hash in address bar
-      history.pushState(null, '', href);
+      window.history.pushState(null, '', href);
       
       setTimeout(() => {
         isManualScrolling.current = false;
@@ -117,7 +118,8 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-[100] transition-all duration-500 pt-4 pb-2 px-4 pointer-events-none">
+      {/* HEADER WRAPPER - Ensures fixed behavior */}
+      <header className="fixed top-0 left-0 right-0 z-[100] transition-all duration-500 pt-6 px-4 pointer-events-none">
         <div className={`mx-auto max-w-7xl w-full flex items-center justify-between px-4 md:px-6 py-2.5 md:py-3 rounded-full border transition-all duration-500 pointer-events-auto ${
           isScrolled 
           ? 'bg-gray-950/80 backdrop-blur-xl border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]' 
@@ -133,7 +135,7 @@ const Header: React.FC = () => {
               </span>
             </a>
 
-            {/* Nav Links - Centralized */}
+            {/* Desktop Navigation */}
             <NavLinks 
               links={navLinks} 
               activeSection={activeSection} 
@@ -151,7 +153,7 @@ const Header: React.FC = () => {
               containerRef={langMenuRef} 
             />
 
-            {/* Contact CTA - RESTORED */}
+            {/* RESTORED: Contact CTA Button */}
             <a 
               href="#contact" 
               onClick={(e) => scrollToSection(e, '#contact')}
@@ -161,7 +163,7 @@ const Header: React.FC = () => {
               <ArrowUpRight size={14} />
             </a>
 
-            {/* Mobile Toggle */}
+            {/* Mobile Menu Toggle */}
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)} 
               className="lg:hidden text-white p-2 rounded-full hover:bg-white/5 transition-colors"
@@ -172,7 +174,7 @@ const Header: React.FC = () => {
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
+      {/* MOBILE OVERLAY */}
       <div className={`fixed inset-0 bg-gray-950 z-[150] flex flex-col items-center justify-center transition-all duration-500 ${
         isMenuOpen ? 'opacity-100 pointer-events-auto visible' : 'opacity-0 pointer-events-none invisible'
       }`}>
