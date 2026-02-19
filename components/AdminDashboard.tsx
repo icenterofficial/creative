@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Plus, Settings, Database, ExternalLink, LogOut, Users, FileText, Briefcase, LayoutGrid, Menu, Star, Handshake } from 'lucide-react';
 import { getSupabaseClient, DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY } from '../lib/supabase';
@@ -123,7 +124,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
     // Default Templates
     const templates: any = {
       team: { name: '', role: '', roleKm: '', image: '', bio: '', bioKm: '', skills: [], experience: [], socials: {}, pinCode: '1111' },
-      projects: { title: '', category: 'graphicdesign', image: '', client: '', description: '', link: '' },
+      projects: { title: '', category: 'graphicdesign', image: '', client: '', description: '', link: '', challenge: '', challengeKm: '', solution: '', solutionKm: '', result: '', resultKm: '' },
       insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: currentUser.role === 'member' ? currentUser.id : 't1' },
       services: { title: '', titleKm: '', subtitle: '', subtitleKm: '', description: '', descriptionKm: '', features: [], featuresKm: [], icon: 'Box', color: 'bg-indigo-500', image: '' },
       careers: { title: '', type: 'Full-time', location: 'Phnom Penh', department: 'Engineering', icon: 'Code', link: '', description: '' },
@@ -264,7 +265,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   client: item.client,
                   slug: generatedSlug,
                   description: item.description, 
-                  link: item.link
+                  link: item.link,
+                  // New Case Study Fields
+                  challenge: item.challenge,
+                  challenge_km: item.challengeKm,
+                  solution: item.solution,
+                  solution_km: item.solutionKm,
+                  result: item.result,
+                  result_km: item.resultKm
               };
               if (performInsert) payload.created_by = currentUser.id;
           } else if (activeTab === 'services') {
@@ -364,7 +372,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
           // Try to save full payload first
           res = await executeQuery(payload);
 
-          // RETRY STRATEGY (Missing columns fallback logic from previous code...)
+          // RETRY STRATEGY (Missing columns fallback logic...)
           if (res.error && activeTab === 'services' && res.error.message.includes("Could not find the 'image' column")) {
               const { image, ...fallbackPayload } = payload;
               res = await executeQuery(fallbackPayload);
@@ -373,13 +381,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
               const { image, ...fallbackPayload } = payload;
               res = await executeQuery(fallbackPayload);
           }
-          if (res.error && activeTab === 'projects') {
-              const errMsg = res.error.message;
-              if (errMsg.includes("description") || errMsg.includes("link") || errMsg.includes("created_by")) {
-                  const { description, link, created_by, ...fallbackPayload } = payload;
-                  res = await executeQuery(fallbackPayload);
-              }
-          }
+          // Note: Removing fallback for Projects case study fields to ensure they error if column missing, 
+          // prompting user to check database/migrations.
           if (res.error && activeTab === 'careers' && res.error.message.includes("slug")) {
                const { slug, ...fallbackPayload } = payload;
                res = await executeQuery(fallbackPayload);
