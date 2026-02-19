@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { X, RotateCcw, ChevronLeft, ChevronRight, ExternalLink, Globe, Loader2, ArrowRight, ShieldCheck } from 'lucide-react';
+import { X, RotateCcw, ChevronLeft, ChevronRight, ExternalLink, Globe, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 
 interface LivePreviewModalProps {
@@ -15,31 +15,39 @@ const LivePreviewModal: React.FC<LivePreviewModalProps> = ({ url, title, onClose
   const [isLoading, setIsLoading] = useState(true);
   const [currentUrl, setCurrentUrl] = useState(url);
   const [inputValue, setInputValue] = useState(url);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Sync when initial URL prop changes
+  // Sync initial URL
   useEffect(() => {
     setInputValue(url);
     setCurrentUrl(url);
   }, [url]);
 
-  // Function to sync URL from Iframe
-  const syncIframeUrl = () => {
-    try {
-      if (iframeRef.current && iframeRef.current.contentWindow) {
-        const newUrl = iframeRef.current.contentWindow.location.href;
-        if (newUrl && newUrl !== 'about:blank' && newUrl !== currentUrl) {
-          setInputValue(newUrl);
-          setCurrentUrl(newUrl);
+  // Real-time URL Tracker (Polling)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Only sync if the user is NOT currently typing/focusing on the address bar
+      if (!isInputFocused && iframeRef.current) {
+        try {
+          const iframeWindow = iframeRef.current.contentWindow;
+          if (iframeWindow) {
+            const actualUrl = iframeWindow.location.href;
+            // Only update state if the URL is different and not a blank page
+            if (actualUrl && actualUrl !== 'about:blank' && actualUrl !== inputValue) {
+              setInputValue(actualUrl);
+              setCurrentUrl(actualUrl);
+            }
+          }
+        } catch (e) {
+          // Cross-origin restriction: We can't do anything if it's a different domain
+          // But since it's your own site (creative.ponloe.org), it should work.
         }
       }
-    } catch (e) {
-      // Cross-origin error: We cannot read the URL of an external domain
-      // In this case, we keep the last known URL to avoid breaking the UI
-      console.log("Cross-origin restriction: cannot read internal URL.");
-    }
-    setIsLoading(false);
-  };
+    }, 500); // Check every 0.5 seconds
+
+    return () => clearInterval(interval);
+  }, [isInputFocused, inputValue]);
 
   const handleRefresh = () => {
     setIsLoading(true);
@@ -82,17 +90,18 @@ const LivePreviewModal: React.FC<LivePreviewModalProps> = ({ url, title, onClose
 
           {/* Navigation Buttons */}
           <div className="flex items-center gap-0.5">
-            <button className="p-2 text-gray-500 hover:text-white transition-colors"><ChevronLeft size={18} /></button>
-            <button className="p-2 text-gray-500 hover:text-white transition-colors"><ChevronRight size={18} /></button>
+            <button className="p-2 text-gray-500 hover:text-white transition-colors" title="Back"><ChevronLeft size={18} /></button>
+            <button className="p-2 text-gray-500 hover:text-white transition-colors" title="Forward"><ChevronRight size={18} /></button>
             <button 
                 onClick={handleRefresh}
                 className="p-2 text-gray-400 hover:text-white transition-all rounded-lg active:rotate-180 duration-500"
+                title="Reload"
             >
                 <RotateCcw size={16} className={isLoading ? "animate-spin" : ""} />
             </button>
           </div>
 
-          {/* Functional URL Bar */}
+          {/* Real-time Address Bar */}
           <form 
             onSubmit={handleNavigate}
             className="flex-1 bg-black/40 border border-white/5 rounded-xl h-10 flex items-center px-4 gap-3 transition-all focus-within:border-indigo-500/50 focus-within:bg-black/60 group"
@@ -101,8 +110,10 @@ const LivePreviewModal: React.FC<LivePreviewModalProps> = ({ url, title, onClose
             <input 
                 type="text"
                 value={inputValue}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
                 onChange={(e) => setInputValue(e.target.value)}
-                className="flex-1 bg-transparent text-[13px] text-gray-300 outline-none w-full font-mono tracking-tight"
+                className="flex-1 bg-transparent text-[13px] text-gray-300 outline-none w-full font-mono tracking-tight selection:bg-indigo-500/30"
                 spellCheck={false}
             />
             {inputValue !== currentUrl && (
@@ -119,7 +130,7 @@ const LivePreviewModal: React.FC<LivePreviewModalProps> = ({ url, title, onClose
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-white/5 rounded-xl transition-all"
-                title="Open original site"
+                title="Open in new tab"
              >
                 <ExternalLink size={18} />
              </a>
@@ -132,16 +143,15 @@ const LivePreviewModal: React.FC<LivePreviewModalProps> = ({ url, title, onClose
           </div>
         </div>
 
-        {/* Browser Content */}
+        {/* Content Area */}
         <div className="flex-1 bg-white relative">
-          {/* Super Fast Minimal Loader */}
           {isLoading && (
-            <div className="absolute inset-0 bg-[#121212] z-20 flex flex-col items-center justify-center animate-fade-in">
+            <div className="absolute inset-0 bg-[#0f1115] z-20 flex flex-col items-center justify-center animate-fade-in">
                <div className="w-12 h-12 relative">
                   <div className="absolute inset-0 border-4 border-indigo-500/10 rounded-full"></div>
                   <div className="absolute inset-0 border-4 border-t-indigo-500 rounded-full animate-spin"></div>
                </div>
-               <p className="mt-4 text-[11px] text-gray-500 font-mono tracking-[0.3em] uppercase animate-pulse">Rendering Live...</p>
+               <p className="mt-4 text-[11px] text-gray-500 font-mono tracking-[0.3em] uppercase animate-pulse">Syncing Engine...</p>
             </div>
           )}
           
@@ -149,25 +159,25 @@ const LivePreviewModal: React.FC<LivePreviewModalProps> = ({ url, title, onClose
             ref={iframeRef}
             src={currentUrl} 
             className={`w-full h-full border-none transition-opacity duration-300 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
-            onLoad={syncIframeUrl}
+            onLoad={() => setIsLoading(false)}
             title={title}
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
             loading="eager"
           />
         </div>
 
-        {/* Minimal Bottom Bar */}
+        {/* Status Bar */}
         <div className="h-8 bg-[#2d2d2d] border-t border-black/20 flex items-center px-4 justify-between shrink-0">
             <div className="flex items-center gap-2">
                 <div className={`w-1.5 h-1.5 rounded-full ${isLoading ? 'bg-indigo-500 animate-ping' : 'bg-green-500'}`}></div>
                 <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">
-                    {isLoading ? 'Requesting Stream' : 'Live Preview Active'}
+                    {isLoading ? 'Tracking Navigation' : 'Navigation Synced'}
                 </span>
             </div>
             <div className="flex items-center gap-3">
-                 <span className="text-[9px] text-gray-600 font-mono">1280 x 800</span>
+                 <span className="text-[9px] text-gray-600 font-mono">Real-time Location API</span>
                  <div className="w-px h-3 bg-white/5"></div>
-                 <span className="text-[9px] text-indigo-500/50 font-bold uppercase tracking-tighter">Ponloe Engine v2.4</span>
+                 <span className="text-[9px] text-indigo-500/50 font-bold uppercase tracking-tighter">Render Engine v2.5</span>
             </div>
         </div>
       </div>
