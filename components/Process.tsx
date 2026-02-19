@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { PROCESS_STEPS } from '../constants';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -19,16 +20,6 @@ const Process: React.FC = () => {
         </RevealOnScroll>
 
         <div className="relative pt-6 lg:pt-0">
-          {/* --- THE ENERGY LINE (Desktop Only) --- */}
-          {/* Container for the line */}
-          <div className="absolute top-0 left-0 w-full h-[2px] hidden lg:block z-0">
-            {/* Base Line (Dim) */}
-            <div className="absolute inset-0 bg-white/5 rounded-full"></div>
-            
-            {/* Moving Energy Beam */}
-            <div className="absolute top-0 bottom-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-indigo-500 to-transparent blur-[2px] animate-beam-slide opacity-70"></div>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
             {PROCESS_STEPS.map((step, index) => (
               <RevealOnScroll 
@@ -41,7 +32,6 @@ const Process: React.FC = () => {
                   className="group relative bg-gray-900/40 backdrop-blur-sm border border-white/5 p-8 rounded-3xl hover:bg-gray-800/60 transition-all duration-500 hover:-translate-y-3 h-full mt-8 lg:mt-0 hover:shadow-2xl hover:shadow-indigo-500/10 hover:border-indigo-500/30"
                 >
                   {/* --- INTERACTIVE NODE (The Number Circle) --- */}
-                  {/* Situated exactly on the line (top-0 for desktop alignment) */}
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-14 h-14 z-20">
                       {/* Outer Ring (Expands on Hover) */}
                       <div className="absolute inset-0 rounded-full border border-indigo-500/30 bg-gray-950 transition-all duration-500 group-hover:scale-125 group-hover:border-indigo-400/50 group-hover:shadow-[0_0_30px_rgba(99,102,241,0.4)]"></div>
@@ -73,17 +63,6 @@ const Process: React.FC = () => {
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes beamSlide {
-            0% { transform: translateX(-100%); opacity: 0; }
-            50% { opacity: 1; }
-            100% { transform: translateX(400%); opacity: 0; }
-        }
-        .animate-beam-slide {
-            animation: beamSlide 4s linear infinite;
-        }
-      `}</style>
     </section>
   );
 };
