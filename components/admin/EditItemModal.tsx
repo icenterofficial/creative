@@ -1,5 +1,6 @@
+
 import React, { useState, useRef } from 'react';
-import { X, Save, Loader2, Upload, Image as ImageIcon, ExternalLink, Lock, Facebook, Send, Link as LinkIcon, Tag } from 'lucide-react';
+import { X, Save, Loader2, Upload, Image as ImageIcon, ExternalLink, Lock, Facebook, Send, Link as LinkIcon, Tag, FileText, Target, Zap, TrendingUp } from 'lucide-react';
 import { getSupabaseClient } from '../../lib/supabase';
 import { useData } from '../../contexts/DataContext';
 import RichTextEditor from './editor/RichTextEditor';
@@ -85,15 +86,15 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
 
         <form onSubmit={onSave} className="space-y-4 flex-1">
           {Object.keys(editingItem).map((key) => {
-            if (['id', 'comments', 'replies', 'created_at', '_iconString', 'slug', 'orderIndex', 'order_index'].includes(key)) return null;
-            const value = editingItem[key];
+            // Skip fields handled specially or internal fields
+            if (['id', 'comments', 'replies', 'created_at', '_iconString', 'slug', 'orderIndex', 'order_index', 'challenge', 'challengeKm', 'solution', 'solutionKm', 'result', 'resultKm', 'createdBy'].includes(key)) return null;
             
-            // Dynamic Label Generation
+            const value = editingItem[key];
             let label = key.charAt(0).toUpperCase() + key.slice(1);
             if (activeTab === 'services' && key === 'image') label = 'Background Image (Hover Effect)';
             if (activeTab === 'partners' && key === 'image') label = 'Logo Image (Optional)';
 
-            // 1. PIN Code Field (Team only)
+            // Special Fields Handlers (PIN, Socials, Links, etc.) -> SAME AS BEFORE
             if (key === 'pinCode' && activeTab === 'team') {
                 return (
                     <div key={key} className="mb-4">
@@ -106,12 +107,9 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                             onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })}
                             placeholder="e.g. 1234"
                         />
-                        <p className="text-[10px] text-gray-500 mt-1">Used for member login. Keep it simple (4-6 digits).</p>
                     </div>
                 );
             }
-
-            // 2. Social Links Field (Team Only)
             if (key === 'socials' && activeTab === 'team') {
                 const socials = value || { facebook: '', telegram: '' };
                 return (
@@ -119,121 +117,44 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                         <label className="block text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">Social Media Links</label>
                         <div className="grid md:grid-cols-2 gap-4">
                             <div>
-                                <div className="flex items-center gap-2 mb-1 text-xs text-gray-500">
-                                    <Facebook size={12} /> Facebook URL
-                                </div>
-                                <input 
-                                    className="w-full bg-gray-900 border border-white/10 rounded-lg p-3 text-white text-sm focus:border-indigo-500 transition-colors"
-                                    value={socials.facebook || ''}
-                                    onChange={(e) => handleSocialChange('facebook', e.target.value)}
-                                    placeholder="https://facebook.com/username"
-                                />
+                                <label className="block text-xs text-gray-500 mb-1">Facebook</label>
+                                <input className="w-full bg-gray-900 border border-white/10 rounded-lg p-3 text-white text-sm" value={socials.facebook || ''} onChange={(e) => handleSocialChange('facebook', e.target.value)} />
                             </div>
                             <div>
-                                <div className="flex items-center gap-2 mb-1 text-xs text-gray-500">
-                                    <Send size={12} /> Telegram URL
-                                </div>
-                                <input 
-                                    className="w-full bg-gray-900 border border-white/10 rounded-lg p-3 text-white text-sm focus:border-indigo-500 transition-colors"
-                                    value={socials.telegram || ''}
-                                    onChange={(e) => handleSocialChange('telegram', e.target.value)}
-                                    placeholder="https://t.me/username"
-                                />
+                                <label className="block text-xs text-gray-500 mb-1">Telegram</label>
+                                <input className="w-full bg-gray-900 border border-white/10 rounded-lg p-3 text-white text-sm" value={socials.telegram || ''} onChange={(e) => handleSocialChange('telegram', e.target.value)} />
                             </div>
                         </div>
                     </div>
                 );
             }
-
-            // 3. Project Link Field
             if (key === 'link' && activeTab === 'projects') {
                 return (
                     <div key={key} className="mb-4">
                         <label className="block text-xs font-bold text-gray-400 mb-1 flex items-center gap-1"><LinkIcon size={12}/> Live Project Link</label>
-                        <input 
-                            className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white text-sm" 
-                            value={value || ''} 
-                            onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })}
-                            placeholder="https://example.com"
-                        />
+                        <input className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white text-sm" value={value || ''} onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })} />
                     </div>
                 );
             }
-
-            // 4. Project Category (Dynamic Selection)
             if (key === 'category' && activeTab === 'projects') {
                 return (
                     <div key={key} className="mb-4">
                         <label className="block text-xs font-bold text-gray-400 mb-1 flex items-center gap-1"><Tag size={12}/> Category</label>
-                        <input 
-                            list="category-suggestions"
-                            className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white text-sm" 
-                            value={value || ''} 
-                            onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })}
-                            placeholder="Select or Type new category..."
-                        />
-                        <datalist id="category-suggestions">
-                            {uniqueCategories.map(cat => (
-                                <option key={cat} value={cat} />
-                            ))}
-                        </datalist>
+                        <input list="category-suggestions" className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white text-sm" value={value || ''} onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })} />
+                        <datalist id="category-suggestions">{uniqueCategories.map(cat => <option key={cat} value={cat} />)}</datalist>
                     </div>
                 );
             }
-
-            // 5. Icon Selection (Services)
-            if (key === 'icon' && typeof value === 'string') {
-                return (
-                    <div key={key} className="mb-4">
-                        <label className="block text-xs font-bold text-gray-400 mb-1">{label} (Lucide Icon Name)</label>
-                        <div className="flex gap-2">
-                            <input 
-                                className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white" 
-                                value={value} 
-                                onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value })}
-                                placeholder="e.g. Activity, Box, Zap..."
-                            />
-                            <a 
-                                href="https://lucide.dev/icons" 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-xs text-indigo-400 hover:text-white hover:bg-white/10 transition-colors whitespace-nowrap"
-                            >
-                                <ExternalLink size={14} /> Browse Icons
-                            </a>
-                        </div>
-                    </div>
-                );
-            }
-
-             // Skip object rendering for icon if it's a React Node (static data)
-             if (key === 'icon' && typeof value !== 'string') {
-                return (
-                    <div key={key} className="mb-4 p-3 bg-gray-800 rounded-lg">
-                        <label className="block text-xs font-bold text-gray-400 mb-1">Icon</label>
-                        <p className="text-xs text-yellow-500">Static Icon (Cannot edit, will be reset to 'Box' if saved to DB)</p>
-                    </div>
-                );
-            }
-
-
-            // 6. Author Selection (Insights)
             if (key === 'authorId') {
                 return (
                     <div key={key} className="mb-4">
                         <label className="block text-xs font-bold text-gray-400 mb-2">Author</label>
                         {isSuperAdmin ? (
-                            <select className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white" value={value || ''} onChange={(e) => setEditingItem({ ...editingItem, authorId: e.target.value })}>
-                                {team.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-                            </select>
-                        ) : (
-                            <div className="p-3 bg-gray-800 rounded-lg text-gray-400 text-sm">Posting as yourself</div>
-                        )}
+                            <select className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white" value={value || ''} onChange={(e) => setEditingItem({ ...editingItem, authorId: e.target.value })}>{team.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}</select>
+                        ) : (<div className="p-3 bg-gray-800 rounded-lg text-gray-400 text-sm">Posting as yourself</div>)}
                     </div>
                 );
             }
-            
-            // 7. Image Upload
             if (key === 'image') {
                 return (
                     <div key={key} className="space-y-2 mb-4">
@@ -253,37 +174,19 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                     </div>
                 );
             }
-
-            // 8. Rich Text Editor (Supports Project Description too)
             if (key === 'content' || key === 'description' || key === 'bio') {
-                return (
-                    <RichTextEditor 
-                        key={key} 
-                        label={label} 
-                        value={value || ''} 
-                        onChange={(newValue) => setEditingItem({ ...editingItem, [key]: newValue })} 
-                    />
-                );
+                return <RichTextEditor key={key} label={label} value={value || ''} onChange={(newValue) => setEditingItem({ ...editingItem, [key]: newValue })} />;
             }
-            
-            // 9. Arrays
-            if (typeof value === 'object' && value !== null && !Array.isArray(value)) return null; 
             if (Array.isArray(value)) {
                  return (
                     <div key={key} className="mb-4">
                         <label className="block text-xs font-bold text-gray-400 mb-1">{label}</label>
-                        <textarea 
-                            className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white h-24 font-mono text-sm" 
-                            placeholder="Item 1, Item 2, Item 3"
-                            value={value.join(', ')} 
-                            onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value.split(',').map((s:string) => s.trim()) })} 
-                        />
-                        <p className="text-[10px] text-gray-500 mt-1">Separate items with commas.</p>
+                        <textarea className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white h-24 font-mono text-sm" placeholder="Item 1, Item 2" value={value.join(', ')} onChange={(e) => setEditingItem({ ...editingItem, [key]: e.target.value.split(',').map((s:string) => s.trim()) })} />
                     </div>
                  );
             }
+            if (typeof value === 'object' && value !== null) return null;
 
-            // 10. Default Text Input
             return (
               <div key={key}>
                 <label className="block text-xs font-bold text-gray-400 mb-1">{label}</label>
@@ -291,6 +194,82 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
               </div>
             );
           })}
+
+          {/* --- SPECIAL CASE STUDY SECTION FOR PROJECTS --- */}
+          {activeTab === 'projects' && (
+              <div className="mt-8 pt-8 border-t border-white/10">
+                  <h4 className="text-white font-bold mb-4 flex items-center gap-2">
+                      <FileText className="text-indigo-400" size={20}/> Detailed Case Study
+                  </h4>
+                  <div className="space-y-6">
+                      {/* Challenge */}
+                      <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                              <label className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1"><Target size={14}/> The Challenge (EN)</label>
+                              <textarea 
+                                  className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white h-32 focus:ring-2 focus:ring-red-500/50 outline-none text-sm resize-none"
+                                  value={editingItem.challenge || ''}
+                                  onChange={(e) => setEditingItem({ ...editingItem, challenge: e.target.value })}
+                                  placeholder="What was the core problem?"
+                              />
+                          </div>
+                          <div className="space-y-2">
+                              <label className="text-xs font-bold text-red-400 uppercase tracking-wider font-khmer">បញ្ហាប្រឈម (ខ្មែរ)</label>
+                              <textarea 
+                                  className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white h-32 focus:ring-2 focus:ring-red-500/50 outline-none text-sm resize-none font-khmer"
+                                  value={editingItem.challengeKm || ''}
+                                  onChange={(e) => setEditingItem({ ...editingItem, challengeKm: e.target.value })}
+                                  placeholder="តើបញ្ហាស្នូលគឺអ្វី?"
+                              />
+                          </div>
+                      </div>
+
+                      {/* Solution */}
+                      <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                              <label className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1"><Zap size={14}/> The Solution (EN)</label>
+                              <textarea 
+                                  className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white h-32 focus:ring-2 focus:ring-blue-500/50 outline-none text-sm resize-none"
+                                  value={editingItem.solution || ''}
+                                  onChange={(e) => setEditingItem({ ...editingItem, solution: e.target.value })}
+                                  placeholder="How did we solve it?"
+                              />
+                          </div>
+                          <div className="space-y-2">
+                              <label className="text-xs font-bold text-blue-400 uppercase tracking-wider font-khmer">ដំណោះស្រាយ (ខ្មែរ)</label>
+                              <textarea 
+                                  className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white h-32 focus:ring-2 focus:ring-blue-500/50 outline-none text-sm resize-none font-khmer"
+                                  value={editingItem.solutionKm || ''}
+                                  onChange={(e) => setEditingItem({ ...editingItem, solutionKm: e.target.value })}
+                                  placeholder="តើយើងដោះស្រាយដោយរបៀបណា?"
+                              />
+                          </div>
+                      </div>
+
+                      {/* Result */}
+                      <div className="grid md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                              <label className="text-xs font-bold text-green-400 uppercase tracking-wider flex items-center gap-1"><TrendingUp size={14}/> The Result (EN)</label>
+                              <textarea 
+                                  className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white h-32 focus:ring-2 focus:ring-green-500/50 outline-none text-sm resize-none"
+                                  value={editingItem.result || ''}
+                                  onChange={(e) => setEditingItem({ ...editingItem, result: e.target.value })}
+                                  placeholder="What was the impact?"
+                              />
+                          </div>
+                          <div className="space-y-2">
+                              <label className="text-xs font-bold text-green-400 uppercase tracking-wider font-khmer">លទ្ធផល (ខ្មែរ)</label>
+                              <textarea 
+                                  className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white h-32 focus:ring-2 focus:ring-green-500/50 outline-none text-sm resize-none font-khmer"
+                                  value={editingItem.resultKm || ''}
+                                  onChange={(e) => setEditingItem({ ...editingItem, resultKm: e.target.value })}
+                                  placeholder="តើលទ្ធផលទទួលបានអ្វីខ្លះ?"
+                              />
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          )}
 
           <button type="submit" disabled={isSaving || isUploading} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-colors flex justify-center items-center gap-2 mt-6">
             {isSaving ? <><Loader2 size={18} className="animate-spin" /> Saving...</> : <><Save size={18} /> Save & Publish</>}
