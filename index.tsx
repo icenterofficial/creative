@@ -1,15 +1,168 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App';
 
-const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
+    <!-- PRIMARY SEO -->
+    <title>Ponloe Creative | Web App, Design & Architecture Services in Cambodia</title>
+    <meta name="title" content="Ponloe Creative | Web App, Design & Architecture Services in Cambodia">
+    <meta name="description" content="Leading creative agency in Phnom Penh offering Web Development, Mobile Apps, Architecture, and Graphic Design. We provide high-quality solutions for every budget. Start your project today!">
+    <meta name="keywords" content="Web Development Cambodia, App Development Phnom Penh, Affordable Website Design, Architecture Design Khmer, Graphic Design Cambodia, Translation Service, IT Solutions Cambodia, ធ្វើវេបសាយ, សរសេរកម្មវិធី, Ponloe Creative">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="author" content="Ponloe Creative">
+
+    <!-- LOCAL SEO (CAMBODIA) -->
+    <meta name="geo.region" content="KH" />
+    <meta name="geo.placename" content="Phnom Penh" />
+    <meta name="geo.position" content="11.5564;104.9282" />
+    <meta name="ICBM" content="11.5564, 104.9282" />
+
+    <!-- OPEN GRAPH / FACEBOOK -->
+    <meta property="og:type" content="business.business">
+    <meta property="og:url" content="https://ponloe.org/">
+    <meta property="og:title" content="Ponloe Creative - Premium Tech & Design Solutions">
+    <meta property="og:description" content="Expert Web/App Development, Architecture, and Design services in Cambodia. We work with your budget to create something extraordinary.">
+    <meta property="og:image" content="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiuEcfaETv68lAV6WDzh7Gub7lzi2fwpPjmPmcq0EMklRIUB4K8t4rHJBcB7uAK_LMpvQnJpuFV8T_XjnDSoSEIII9FDpOFBU4i1hRpWCxYW5QQQmFoRTRneazGjdgZT8ZME6cDx652INDsd2s6FnV9DiiKyo40XwgHA5gRXn1QM0pD0gr440JEjV1pock/s1600/ponloe.jpg">
+
+    <!-- TWITTER -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://ponloe.org/">
+    <meta property="twitter:title" content="Ponloe Creative - Solutions for Every Budget">
+    <meta property="twitter:description" content="From startups to enterprises, we build websites, apps, and buildings that inspire. Based in Phnom Penh.">
+    <meta property="twitter:image" content="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiuEcfaETv68lAV6WDzh7Gub7lzi2fwpPjmPmcq0EMklRIUB4K8t4rHJBcB7uAK_LMpvQnJpuFV8T_XjnDSoSEIII9FDpOFBU4i1hRpWCxYW5QQQmFoRTRneazGjdgZT8ZME6cDx652INDsd2s6FnV9DiiKyo40XwgHA5gRXn1QM0pD0gr440JEjV1pock/s1600/ponloe.jpg">
+
+    <!-- JSON-LD STRUCTURED DATA (The Secret Weapon for Google) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfessionalService",
+      "name": "Ponloe Creative",
+      "image": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiuEcfaETv68lAV6WDzh7Gub7lzi2fwpPjmPmcq0EMklRIUB4K8t4rHJBcB7uAK_LMpvQnJpuFV8T_XjnDSoSEIII9FDpOFBU4i1hRpWCxYW5QQQmFoRTRneazGjdgZT8ZME6cDx652INDsd2s6FnV9DiiKyo40XwgHA5gRXn1QM0pD0gr440JEjV1pock/s1600/ponloe.jpg",
+      "url": "https://ponloe.org",
+      "telephone": "+85515627458",
+      "email": "creative.ponloe.org@gmail.com",
+      "address": {
+        "@type": "PostalAddress",
+        "streetAddress": "Russey Keo",
+        "addressLocality": "Phnom Penh",
+        "postalCode": "12000",
+        "addressCountry": "KH"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 11.5564,
+        "longitude": 104.9282
+      },
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday"
+        ],
+        "opens": "08:00",
+        "closes": "18:00"
+      },
+      "priceRange": "$$",
+      "description": "Ponloe Creative offers affordable and high-end Web Development, App Development, Graphic Design, and Architecture services in Cambodia. We cater to all budget levels.",
+      "sameAs": [
+        "https://www.facebook.com/ponloe.creative",
+        "https://www.linkedin.com/company/ponloe-creative"
+      ]
+    }
+    </script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Kantumruy+Pro:wght@100..700&display=swap" rel="stylesheet">
+    <style>
+      html {
+        scroll-padding-top: 100px;
+      }
+      body {
+        font-family: 'Outfit', 'Kantumruy Pro', sans-serif;
+        background-color: #030712;
+        color: #F9FAFB;
+        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2 2l7 19.5 3-8.5 8.5-3L2 2z' fill='%236366f1' stroke='white' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, auto;
+        /* FORCE BODY TO TOP */
+        top: 0px !important; 
+        position: static !important;
+      }
+      a, button, input, select, textarea, [role="button"], .cursor-pointer {
+        cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M2 2l7 19.5 3-8.5 8.5-3L2 2z' fill='%23ec4899' stroke='white' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 2 2, pointer;
+      }
+      .font-khmer { font-family: 'Kantumruy Pro', sans-serif; }
+      ::selection { background: #6366f1; color: white; }
+      ::-webkit-scrollbar { width: 6px; }
+      ::-webkit-scrollbar-track { background: #111827; }
+      ::-webkit-scrollbar-thumb { background: #374151; border-radius: 10px; }
+      ::-webkit-scrollbar-thumb:hover { background: #6366f1; }
+      .bg-grain::before {
+        content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        opacity: 0.4;
+      }
+      .text-gradient { background: linear-gradient(135deg, #60A5FA 0%, #A78BFA 50%, #F472B6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+      @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-20px); } }
+      .animate-float { animation: float 6s ease-in-out infinite; }
+      @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      .animate-spin-slow { animation: spin-slow 10s linear infinite; }
+      
+      /* HIDE GOOGLE TRANSLATE BANNER */
+      .goog-te-banner-frame.skiptranslate { display: none !important; } 
+      .goog-te-gadget-icon { display: none !important; } 
+      #google_translate_element { display: none !important; }
+      .goog-tooltip { display: none !important; }
+      .goog-te-balloon-frame { display: none !important; }
+      
+      /* Remove highlighted text background from google translate */
+      font { background-color: transparent !important; box-shadow: none !important; box-sizing: border-box; }
+      
+      /* Ensure sticky header works correctly without the banner pushing it down */
+      body > .skiptranslate {
+          display: none !important;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.564.0",
+    "react-dom": "https://esm.sh/react-dom@^19.2.4",
+    "@dnd-kit/core": "https://esm.sh/@dnd-kit/core@^6.3.1",
+    "@dnd-kit/sortable": "https://esm.sh/@dnd-kit/sortable@^10.0.0",
+    "@dnd-kit/utilities": "https://esm.sh/@dnd-kit/utilities@^3.2.2",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.95.3",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4"
+  }
 }
-
-const root = ReactDOM.createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);
+</script>
+</head>
+  <body class="bg-grain">
+    <div id="root"></div>
+    <div id="google_translate_element"></div>
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+          pageLanguage: 'en',
+          includedLanguages: 'en,km,fr,ja,ko,de,zh-CN,es,ar',
+          autoDisplay: false
+        }, 'google_translate_element');
+      }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    
+    <!-- IMPORTANT: This triggers the React App -->
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
