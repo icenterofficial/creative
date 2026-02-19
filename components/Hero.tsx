@@ -26,68 +26,60 @@ const CountUp: React.FC<{ end: number, duration: number, suffix?: string }> = ({
   return <span>{count}{suffix}</span>;
 };
 
-// --- Slide Reveal Text Component (Fixed) ---
+// --- Slide Reveal Text Component (Robust Version) ---
 const SlideRevealText: React.FC<{ text: string }> = ({ text }) => {
   return (
-    <span className="relative inline-block font-khmer py-1 leading-tight">
-      <span 
-        key={text} 
-        className="shimmer-text block"
-      >
-        {text.split('').map((char, index) => (
-          <span
-            key={index}
-            className="inline-block opacity-0 will-change-transform"
-            style={{
-              animation: `slideLeftToRight 0.8s cubic-bezier(0.2, 0.65, 0.3, 0.9) forwards`,
-              animationDelay: `${index * 0.05}s`, // Stagger delay 0.05s per character
-            }}
-          >
-            {char === ' ' ? '\u00A0' : char}
-          </span>
-        ))}
-      </span>
+    <span className="inline-block relative font-khmer py-1 leading-tight whitespace-nowrap">
+      {text.split('').map((char, index) => (
+        <span
+          key={index}
+          className="inline-block"
+          style={{
+            opacity: 0, // Start hidden
+            animation: `
+                slideIn 0.7s cubic-bezier(0.2, 0.65, 0.3, 0.9) forwards,
+                shimmerWave 2.5s ease-in-out infinite
+            `,
+            // Stagger animations: 
+            // 1. Slide in sequentially
+            // 2. Shimmer wave travels across text
+            animationDelay: `${index * 0.04}s, ${index * 0.1}s`,
+            transform: 'translateX(-30px)', // Initial offset for fallback
+          }}
+        >
+          {char === ' ' ? '\u00A0' : char}
+        </span>
+      ))}
       
       <style>{`
-        .shimmer-text {
-            /* Create a gradient with a distinct white band in the middle */
-            background: linear-gradient(
-                110deg,
-                #818cf8 20%, 
-                #c084fc 40%, 
-                #ffffff 50%, 
-                #c084fc 60%, 
-                #818cf8 80%
-            );
-            background-size: 200% auto;
-            
-            /* Clip background to text */
-            -webkit-background-clip: text;
-            background-clip: text;
-            
-            /* Make text transparent so background shows through */
-            color: transparent;
-            -webkit-text-fill-color: transparent;
-            
-            /* Animate the background position */
-            animation: textShine 4s linear infinite;
-        }
-
-        @keyframes textShine {
-            0% { background-position: 200% center; }
-            100% { background-position: -200% center; }
-        }
-
-        @keyframes slideLeftToRight {
+        @keyframes slideIn {
             0% {
                opacity: 0;
-               transform: translateX(-40px); /* Start from left */
-               filter: blur(10px);
+               transform: translateX(-30px) scale(0.9);
+               filter: blur(4px);
             }
             100% {
                opacity: 1;
-               transform: translateX(0);
+               transform: translateX(0) scale(1);
                filter: blur(0);
+            }
+        }
+        
+        @keyframes shimmerWave {
+            0%, 100% {
+                color: #818cf8; /* Base Color: Indigo-400 */
+                text-shadow: none;
+            }
+            45% {
+                color: #c084fc; /* Transition: Purple */
+            }
+            50% {
+                color: #ffffff; /* Peak: White */
+                text-shadow: 0 0 15px rgba(255, 255, 255, 0.9); /* Strong Glow */
+                transform: scale(1.05); /* Slight pop */
+            }
+            55% {
+                color: #c084fc; /* Transition: Purple */
             }
         }
       `}</style>
