@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
-import { X, ExternalLink, Tag, ArrowRight } from 'lucide-react';
+import { X, ExternalLink, Tag, ArrowRight, Target, Zap, TrendingUp } from 'lucide-react';
 import { Project } from '../types';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
@@ -209,63 +209,114 @@ const Portfolio: React.FC = () => {
            </button>
 
            {/* Modal Content */}
-           <div className="relative w-full max-w-5xl h-auto max-h-[90vh] bg-transparent rounded-3xl overflow-hidden animate-scale-up z-10 flex flex-col md:flex-row shadow-2xl border border-white/5">
+           <div className="relative w-full max-w-6xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10 flex flex-col md:flex-row">
               
               {/* Image Section */}
-              <div className="w-full md:w-2/3 h-[50vh] md:h-auto bg-gray-900 relative overflow-hidden flex items-center justify-center">
+              <div className="w-full md:w-1/2 h-[40vh] md:h-auto bg-gray-900 relative overflow-hidden flex items-center justify-center">
                   <img 
                     src={selectedProject.image} 
                     alt={selectedProject.title} 
-                    className="w-full h-full object-contain md:object-cover"
+                    className="w-full h-full object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-50 md:hidden" />
               </div>
 
               {/* Details Section */}
-              <div className="w-full md:w-1/3 bg-gray-900/90 backdrop-blur-xl border-l border-white/10 p-8 flex flex-col justify-between overflow-y-auto">
-                 <div>
-                    <div className="flex items-center gap-2 mb-4">
-                       <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
-                          <Tag size={12} /> {selectedProject.category}
-                       </span>
+              <div className="w-full md:w-1/2 bg-gray-900 flex flex-col overflow-y-auto">
+                 <div className="p-8 md:p-10 space-y-8">
+                    <div>
+                        <div className="flex items-center gap-2 mb-4">
+                           <span className="px-3 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+                              <Tag size={12} /> {selectedProject.category}
+                           </span>
+                        </div>
+
+                        <h3 className="text-3xl md:text-4xl font-bold text-white mb-2 leading-tight font-khmer">
+                            {selectedProject.title}
+                        </h3>
+                        {selectedProject.client && (
+                            <p className="text-gray-500 text-sm font-khmer mb-6">
+                                {t('Client', 'អតិថិជន')}: <span className="text-white">{selectedProject.client}</span>
+                            </p>
+                        )}
                     </div>
 
-                    <h3 className="text-3xl md:text-4xl font-bold text-white mb-6 leading-tight font-khmer">
-                        {selectedProject.title}
-                    </h3>
+                    {/* --- CASE STUDY SECTION (If Data Exists) --- */}
+                    {(selectedProject.challenge || selectedProject.solution || selectedProject.result) && (
+                        <div className="space-y-6">
+                            <h4 className="text-white font-bold uppercase tracking-wider text-sm border-b border-white/10 pb-2 font-khmer">{t('Project Insights', 'ការយល់ដឹងអំពីគម្រោង')}</h4>
+                            
+                            {/* Challenge */}
+                            {(selectedProject.challenge || selectedProject.challengeKm) && (
+                                <div className="flex gap-4">
+                                    <div className="mt-1 p-2 rounded-lg bg-red-500/10 text-red-400 h-fit border border-red-500/20">
+                                        <Target size={20} />
+                                    </div>
+                                    <div>
+                                        <h5 className="text-white font-bold text-sm mb-1 font-khmer">{t('The Challenge', 'បញ្ហាប្រឈម')}</h5>
+                                        <p className="text-gray-400 text-sm leading-relaxed font-khmer">
+                                            {t(selectedProject.challenge!, selectedProject.challengeKm || selectedProject.challenge!)}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
-                    <div className="space-y-6">
-                        {selectedProject.client && (
-                            <div>
-                                <h4 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-1 font-khmer">{t('Client', 'អតិថិជន')}</h4>
-                                <p className="text-white text-lg font-khmer">{selectedProject.client}</p>
-                            </div>
-                        )}
-                        
-                        <div>
-                            <h4 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2 font-khmer">{t('Description', 'ការពិពណ៌នា')}</h4>
-                            <div className="text-gray-400 leading-relaxed font-khmer">
-                                <ContentRenderer content={t(
-                                    selectedProject.description || "A masterfully crafted project demonstrating our commitment to quality and innovation. Every detail has been meticulously designed to meet the client's vision.",
-                                    selectedProject.description || "គម្រោងដែលបានបង្កើតឡើងដោយប៉ិនប្រសប់ បង្ហាញពីការប្តេជ្ញាចិត្តរបស់យើងចំពោះគុណភាព និងការច្នៃប្រឌិត។ រាល់ព័ត៌មានលម្អិតត្រូវបានរចនាឡើងយ៉ាងយកចិត្តទុកដាក់ ដើម្បីបំពេញតាមចក្ខុវិស័យរបស់អតិថិជន។"
-                                )} />
-                            </div>
+                            {/* Solution */}
+                            {(selectedProject.solution || selectedProject.solutionKm) && (
+                                <div className="flex gap-4">
+                                    <div className="mt-1 p-2 rounded-lg bg-blue-500/10 text-blue-400 h-fit border border-blue-500/20">
+                                        <Zap size={20} />
+                                    </div>
+                                    <div>
+                                        <h5 className="text-white font-bold text-sm mb-1 font-khmer">{t('The Solution', 'ដំណោះស្រាយ')}</h5>
+                                        <p className="text-gray-400 text-sm leading-relaxed font-khmer">
+                                            {t(selectedProject.solution!, selectedProject.solutionKm || selectedProject.solution!)}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Result */}
+                            {(selectedProject.result || selectedProject.resultKm) && (
+                                <div className="flex gap-4">
+                                    <div className="mt-1 p-2 rounded-lg bg-green-500/10 text-green-400 h-fit border border-green-500/20">
+                                        <TrendingUp size={20} />
+                                    </div>
+                                    <div>
+                                        <h5 className="text-white font-bold text-sm mb-1 font-khmer">{t('The Result', 'លទ្ធផល')}</h5>
+                                        <p className="text-gray-400 text-sm leading-relaxed font-khmer">
+                                            {t(selectedProject.result!, selectedProject.resultKm || selectedProject.result!)}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Standard Description */}
+                    <div>
+                        <h4 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2 font-khmer">{t('Description', 'ការពិពណ៌នា')}</h4>
+                        <div className="text-gray-300 leading-relaxed font-khmer text-base">
+                            <ContentRenderer content={t(
+                                selectedProject.description || "A masterfully crafted project demonstrating our commitment to quality and innovation.",
+                                selectedProject.description || "គម្រោងដែលបានបង្កើតឡើងដោយប៉ិនប្រសប់ បង្ហាញពីការប្តេជ្ញាចិត្តរបស់យើងចំពោះគុណភាព និងការច្នៃប្រឌិត។"
+                            )} />
                         </div>
                     </div>
                  </div>
 
-                 <div className="mt-8 pt-8 border-t border-white/10">
+                 <div className="mt-auto p-8 border-t border-white/10 bg-gray-900/50">
                      {selectedProject.link ? (
                          <a 
                             href={selectedProject.link}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="w-full py-4 rounded-xl bg-white text-gray-950 font-bold hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-2 font-khmer"
+                            className="w-full py-4 rounded-xl bg-white text-gray-950 font-bold hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-2 font-khmer shadow-lg hover:shadow-indigo-500/25"
                          >
                             {t('View Live Project', 'មើលគម្រោងផ្ទាល់')} <ExternalLink size={18} />
                          </a>
                      ) : (
-                         <button disabled className="w-full py-4 rounded-xl bg-white/10 text-gray-500 font-bold cursor-not-allowed flex items-center justify-center gap-2 font-khmer">
+                         <button disabled className="w-full py-4 rounded-xl bg-white/5 text-gray-500 font-bold cursor-not-allowed flex items-center justify-center gap-2 font-khmer border border-white/5">
                             {t('No Live Link', 'មិនមានតំណភ្ជាប់')}
                          </button>
                      )}
