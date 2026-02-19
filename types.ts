@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export interface GitHubConfig {
@@ -35,6 +36,14 @@ export interface Project {
   description?: string; // New field
   link?: string;        // New field
   createdBy?: string;   // New field: Stores ID of the creator
+  
+  // Case Study Fields
+  challenge?: string;
+  challengeKm?: string;
+  solution?: string;
+  solutionKm?: string;
+  result?: string;
+  resultKm?: string;
 }
 
 export interface TeamMember {
