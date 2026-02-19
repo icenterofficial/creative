@@ -18,41 +18,45 @@ const LivePreviewModal: React.FC<LivePreviewModalProps> = ({ url, title, onClose
   const [isInputFocused, setIsInputFocused] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Sync initial URL
+  // Sync initial URL when modal opens or url prop changes
   useEffect(() => {
     setInputValue(url);
     setCurrentUrl(url);
   }, [url]);
 
-  // Real-time URL Tracker (Polling)
+  // High-frequency URL Tracker
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Only sync if the user is NOT currently typing/focusing on the address bar
-      if (!isInputFocused && iframeRef.current) {
-        try {
-          const iframeWindow = iframeRef.current.contentWindow;
-          if (iframeWindow) {
-            const actualUrl = iframeWindow.location.href;
-            // Only update state if the URL is different and not a blank page
-            if (actualUrl && actualUrl !== 'about:blank' && actualUrl !== inputValue) {
-              setInputValue(actualUrl);
-              setCurrentUrl(actualUrl);
-            }
-          }
-        } catch (e) {
-          // Cross-origin restriction: We can't do anything if it's a different domain
-          // But since it's your own site (creative.ponloe.org), it should work.
-        }
-      }
-    }, 500); // Check every 0.5 seconds
+    const checkUrl = () => {
+      // Don't override if user is typing manually
+      if (isInputFocused) return;
 
-    return () => clearInterval(interval);
+      try {
+        if (iframeRef.current && iframeRef.current.contentWindow) {
+          const iframeLoc = iframeRef.current.contentWindow.location.href;
+          
+          // Only sync if the URL is valid and actually changed
+          if (iframeLoc && iframeLoc !== 'about:blank' && iframeLoc !== inputValue) {
+            setInputValue(iframeLoc);
+            // We also update currentUrl to keep things consistent for the Refresh button
+            setCurrentUrl(iframeLoc);
+          }
+        }
+      } catch (e) {
+        // This catch block will trigger if the domain is different (Cross-Origin)
+        // Since you are previewing creative.ponloe.org, it should work fine if hosted on the same domain or subdomain.
+      }
+    };
+
+    // Use a faster interval (200ms) for snappy address bar updates
+    const intervalId = setInterval(checkUrl, 200);
+    return () => clearInterval(intervalId);
   }, [isInputFocused, inputValue]);
 
   const handleRefresh = () => {
     setIsLoading(true);
     if (iframeRef.current) {
-      iframeRef.current.src = currentUrl;
+      // Force reload the current internal URL
+      iframeRef.current.src = inputValue; 
     }
   };
 
@@ -65,6 +69,19 @@ const LivePreviewModal: React.FC<LivePreviewModalProps> = ({ url, title, onClose
     setIsLoading(true);
     setCurrentUrl(target);
     setInputValue(target);
+  };
+
+  // Back/Forward buttons logic
+  const goBack = () => {
+    try {
+      if (iframeRef.current?.contentWindow) iframeRef.current.contentWindow.history.back();
+    } catch(e) {}
+  };
+
+  const goForward = () => {
+    try {
+      if (iframeRef.current?.contentWindow) iframeRef.current.contentWindow.history.forward();
+    } catch(e) {}
   };
 
   return createPortal(
@@ -90,8 +107,8 @@ const LivePreviewModal: React.FC<LivePreviewModalProps> = ({ url, title, onClose
 
           {/* Navigation Buttons */}
           <div className="flex items-center gap-0.5">
-            <button className="p-2 text-gray-500 hover:text-white transition-colors" title="Back"><ChevronLeft size={18} /></button>
-            <button className="p-2 text-gray-500 hover:text-white transition-colors" title="Forward"><ChevronRight size={18} /></button>
+            <button onClick={goBack} className="p-2 text-gray-400 hover:text-white transition-colors" title="Back"><ChevronLeft size={18} /></button>
+            <button onClick={goForward} className="p-2 text-gray-400 hover:text-white transition-colors" title="Forward"><ChevronRight size={18} /></button>
             <button 
                 onClick={handleRefresh}
                 className="p-2 text-gray-400 hover:text-white transition-all rounded-lg active:rotate-180 duration-500"
@@ -126,7 +143,7 @@ const LivePreviewModal: React.FC<LivePreviewModalProps> = ({ url, title, onClose
           {/* Actions */}
           <div className="flex items-center gap-1">
              <a 
-                href={currentUrl} 
+                href={inputValue} 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className="p-2.5 text-gray-400 hover:text-indigo-400 hover:bg-white/5 rounded-xl transition-all"
@@ -171,13 +188,13 @@ const LivePreviewModal: React.FC<LivePreviewModalProps> = ({ url, title, onClose
             <div className="flex items-center gap-2">
                 <div className={`w-1.5 h-1.5 rounded-full ${isLoading ? 'bg-indigo-500 animate-ping' : 'bg-green-500'}`}></div>
                 <span className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">
-                    {isLoading ? 'Tracking Navigation' : 'Navigation Synced'}
+                    {isLoading ? 'Tracking Navigation' : 'Live Sync Active'}
                 </span>
             </div>
             <div className="flex items-center gap-3">
-                 <span className="text-[9px] text-gray-600 font-mono">Real-time Location API</span>
+                 <span className="text-[9px] text-gray-600 font-mono">PONLOE RENDER ENGINE V2.6</span>
                  <div className="w-px h-3 bg-white/5"></div>
-                 <span className="text-[9px] text-indigo-500/50 font-bold uppercase tracking-tighter">Render Engine v2.5</span>
+                 <span className="text-[9px] text-indigo-500/50 font-bold uppercase tracking-tighter">SECURE STREAM</span>
             </div>
         </div>
       </div>
