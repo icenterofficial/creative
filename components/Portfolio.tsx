@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
-import { X, ExternalLink, Tag, ArrowRight, Target, Zap, TrendingUp } from 'lucide-react';
+import { X, ExternalLink, Tag, ArrowRight, Target, Zap, TrendingUp, ChevronDown } from 'lucide-react';
 import { Project } from '../types';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
@@ -212,7 +212,7 @@ const Portfolio: React.FC = () => {
            <div className="relative w-full max-w-6xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10 flex flex-col md:flex-row">
               
               {/* Image Section */}
-              <div className="w-full md:w-1/2 h-[40vh] md:h-auto bg-gray-900 relative overflow-hidden flex items-center justify-center">
+              <div className="w-full md:w-1/2 h-[300px] md:h-auto bg-gray-900 relative overflow-hidden flex items-center justify-center shrink-0">
                   <img 
                     src={selectedProject.image} 
                     alt={selectedProject.title} 
@@ -241,68 +241,71 @@ const Portfolio: React.FC = () => {
                         )}
                     </div>
 
-                    {/* --- CASE STUDY SECTION (If Data Exists) --- */}
-                    {(selectedProject.challenge || selectedProject.solution || selectedProject.result) && (
-                        <div className="space-y-6">
-                            <h4 className="text-white font-bold uppercase tracking-wider text-sm border-b border-white/10 pb-2 font-khmer">{t('Project Insights', 'ការយល់ដឹងអំពីគម្រោង')}</h4>
-                            
-                            {/* Challenge */}
-                            {(selectedProject.challenge || selectedProject.challengeKm) && (
-                                <div className="flex gap-4">
-                                    <div className="mt-1 p-2 rounded-lg bg-red-500/10 text-red-400 h-fit border border-red-500/20">
-                                        <Target size={20} />
-                                    </div>
-                                    <div>
-                                        <h5 className="text-white font-bold text-sm mb-1 font-khmer">{t('The Challenge', 'បញ្ហាប្រឈម')}</h5>
-                                        <p className="text-gray-400 text-sm leading-relaxed font-khmer">
-                                            {t(selectedProject.challenge!, selectedProject.challengeKm || selectedProject.challenge!)}
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Solution */}
-                            {(selectedProject.solution || selectedProject.solutionKm) && (
-                                <div className="flex gap-4">
-                                    <div className="mt-1 p-2 rounded-lg bg-blue-500/10 text-blue-400 h-fit border border-blue-500/20">
-                                        <Zap size={20} />
-                                    </div>
-                                    <div>
-                                        <h5 className="text-white font-bold text-sm mb-1 font-khmer">{t('The Solution', 'ដំណោះស្រាយ')}</h5>
-                                        <p className="text-gray-400 text-sm leading-relaxed font-khmer">
-                                            {t(selectedProject.solution!, selectedProject.solutionKm || selectedProject.solution!)}
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Result */}
-                            {(selectedProject.result || selectedProject.resultKm) && (
-                                <div className="flex gap-4">
-                                    <div className="mt-1 p-2 rounded-lg bg-green-500/10 text-green-400 h-fit border border-green-500/20">
-                                        <TrendingUp size={20} />
-                                    </div>
-                                    <div>
-                                        <h5 className="text-white font-bold text-sm mb-1 font-khmer">{t('The Result', 'លទ្ធផល')}</h5>
-                                        <p className="text-gray-400 text-sm leading-relaxed font-khmer">
-                                            {t(selectedProject.result!, selectedProject.resultKm || selectedProject.result!)}
-                                        </p>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
-
                     {/* Standard Description */}
                     <div>
-                        <h4 className="text-gray-500 text-xs font-bold uppercase tracking-wider mb-2 font-khmer">{t('Description', 'ការពិពណ៌នា')}</h4>
                         <div className="text-gray-300 leading-relaxed font-khmer text-base">
                             <ContentRenderer content={t(
-                                selectedProject.description || "A masterfully crafted project demonstrating our commitment to quality and innovation.",
-                                selectedProject.description || "គម្រោងដែលបានបង្កើតឡើងដោយប៉ិនប្រសប់ បង្ហាញពីការប្តេជ្ញាចិត្តរបស់យើងចំពោះគុណភាព និងការច្នៃប្រឌិត។"
+                                selectedProject.description || "",
+                                selectedProject.description || ""
                             )} />
                         </div>
                     </div>
+
+                    {/* --- VERTICAL TIMELINE CASE STUDY SECTION --- */}
+                    {(selectedProject.challenge || selectedProject.solution || selectedProject.result) && (
+                        <div className="relative pl-8 md:pl-10 border-l-2 border-white/5 space-y-12 py-4">
+                            {/* 1. Challenge */}
+                            {(selectedProject.challenge || selectedProject.challengeKm) && (
+                                <RevealOnScroll variant="slide-right">
+                                    <div className="relative group">
+                                        <div className="absolute -left-[45px] md:-left-[53px] top-0 p-2 rounded-xl bg-gray-900 border-2 border-red-500/30 text-red-400 shadow-lg shadow-red-500/10 z-10 group-hover:border-red-500 group-hover:text-red-500 transition-colors">
+                                            <Target size={20} />
+                                        </div>
+                                        <h5 className="text-lg font-bold text-white mb-2 font-khmer flex items-center gap-2">
+                                            {t('The Challenge', 'បញ្ហាប្រឈម')}
+                                        </h5>
+                                        <p className="text-gray-400 text-sm md:text-base leading-relaxed font-khmer bg-white/5 p-4 rounded-xl border border-white/5">
+                                            {t(selectedProject.challenge!, selectedProject.challengeKm || selectedProject.challenge!)}
+                                        </p>
+                                    </div>
+                                </RevealOnScroll>
+                            )}
+
+                            {/* 2. Solution */}
+                            {(selectedProject.solution || selectedProject.solutionKm) && (
+                                <RevealOnScroll variant="slide-right" delay={100}>
+                                    <div className="relative group">
+                                        <div className="absolute -left-[45px] md:-left-[53px] top-0 p-2 rounded-xl bg-gray-900 border-2 border-blue-500/30 text-blue-400 shadow-lg shadow-blue-500/10 z-10 group-hover:border-blue-500 group-hover:text-blue-500 transition-colors">
+                                            <Zap size={20} />
+                                        </div>
+                                        <h5 className="text-lg font-bold text-white mb-2 font-khmer flex items-center gap-2">
+                                            {t('The Solution', 'ដំណោះស្រាយ')}
+                                        </h5>
+                                        <p className="text-gray-400 text-sm md:text-base leading-relaxed font-khmer bg-white/5 p-4 rounded-xl border border-white/5">
+                                            {t(selectedProject.solution!, selectedProject.solutionKm || selectedProject.solution!)}
+                                        </p>
+                                    </div>
+                                </RevealOnScroll>
+                            )}
+
+                            {/* 3. Result */}
+                            {(selectedProject.result || selectedProject.resultKm) && (
+                                <RevealOnScroll variant="slide-right" delay={200}>
+                                    <div className="relative group">
+                                        <div className="absolute -left-[45px] md:-left-[53px] top-0 p-2 rounded-xl bg-gray-900 border-2 border-green-500/30 text-green-400 shadow-lg shadow-green-500/10 z-10 group-hover:border-green-500 group-hover:text-green-500 transition-colors">
+                                            <TrendingUp size={20} />
+                                        </div>
+                                        <h5 className="text-lg font-bold text-white mb-2 font-khmer flex items-center gap-2">
+                                            {t('The Result', 'លទ្ធផល')}
+                                        </h5>
+                                        <p className="text-gray-400 text-sm md:text-base leading-relaxed font-khmer bg-white/5 p-4 rounded-xl border border-white/5">
+                                            {t(selectedProject.result!, selectedProject.resultKm || selectedProject.result!)}
+                                        </p>
+                                    </div>
+                                </RevealOnScroll>
+                            )}
+                        </div>
+                    )}
                  </div>
 
                  <div className="mt-auto p-8 border-t border-white/10 bg-gray-900/50">
