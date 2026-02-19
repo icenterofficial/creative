@@ -10,7 +10,7 @@ import HeroActions from './HeroActions';
 import HeroVisuals from './HeroVisuals';
 
 const Hero: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { team = [], insights = [] } = useData(); 
   
   // Modal States
@@ -73,18 +73,22 @@ const Hero: React.FC = () => {
                 <h1 className="text-5xl md:text-7xl font-black leading-[1.1] tracking-tight text-white font-khmer">
                     {t('We Craft', 'យើងបង្កើត')} <br />
                     
-                    {/* English: Scramble Effect */}
+                    {/* Switch Animation based on Language for better support */}
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 drop-shadow-lg">
-                        <ScrambleText text="Digital Perfection" className="pb-2" />
+                        {language === 'km' ? (
+                             <KhmerFadeText text="ភាពល្អឥតខ្ចោះ" className="pb-2" />
+                        ) : (
+                             <ScrambleText text="Digital Perfection" className="pb-2" />
+                        )}
                     </span>
                 </h1>
 
-                {/* Khmer: NEW Simple Fade Component */}
+                {/* Subtitle - Simple Fade for both languages */}
                 <div className="text-2xl md:text-3xl font-bold font-khmer text-white/90 leading-relaxed mt-2" style={{ textShadow: '0 0 20px rgba(168, 85, 247, 0.4)' }}>
                     <KhmerFadeText 
                         text={t(
                             'Transforming ideas into reality.',
-                            'ភាពល្អឥតខ្ចោះនៃឌីជីថល' 
+                            'បំប្លែងគំនិតទៅជាការពិត' 
                         )} 
                     />
                 </div>
