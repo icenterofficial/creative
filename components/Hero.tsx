@@ -26,53 +26,69 @@ const CountUp: React.FC<{ end: number, duration: number, suffix?: string }> = ({
   return <span>{count}{suffix}</span>;
 };
 
-// --- Slide Reveal Text Component (Updated) ---
+// --- Slide Reveal Text Component (Fixed) ---
 const SlideRevealText: React.FC<{ text: string }> = ({ text }) => {
-  // Use text as key to reset animation when language changes
   return (
-    <span key={text} className="inline-block relative font-khmer pb-2">
-      {/* 
-         Container with Shimmer Gradient:
-         - Uses a distinct gradient with a white center (via-[#ffffff])
-         - 200% background size allows the gradient to move across
-      */}
-      <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-[#6366f1] via-[#ec4899] via-[#ffffff] via-[#ec4899] to-[#6366f1] bg-[length:200%_auto] animate-shine will-change-[background-position]">
+    <span className="relative inline-block font-khmer py-1 leading-tight">
+      <span 
+        key={text} 
+        className="shimmer-text block"
+      >
         {text.split('').map((char, index) => (
           <span
             key={index}
-            className="inline-block opacity-0"
+            className="inline-block opacity-0 will-change-transform"
             style={{
-              // Start from -30px (Left) and fade in to 0 (Right/Center)
-              animation: `slideFadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards`,
-              animationDelay: `${index * 0.04}s` // Stagger delay for wave effect
+              animation: `slideLeftToRight 0.8s cubic-bezier(0.2, 0.65, 0.3, 0.9) forwards`,
+              animationDelay: `${index * 0.05}s`, // Stagger delay 0.05s per character
             }}
           >
-            {/* Preserve spaces */}
             {char === ' ' ? '\u00A0' : char}
           </span>
         ))}
       </span>
       
-      {/* Defined Keyframes locally to ensure they work */}
       <style>{`
-        @keyframes slideFadeIn {
+        .shimmer-text {
+            /* Create a gradient with a distinct white band in the middle */
+            background: linear-gradient(
+                110deg,
+                #818cf8 20%, 
+                #c084fc 40%, 
+                #ffffff 50%, 
+                #c084fc 60%, 
+                #818cf8 80%
+            );
+            background-size: 200% auto;
+            
+            /* Clip background to text */
+            -webkit-background-clip: text;
+            background-clip: text;
+            
+            /* Make text transparent so background shows through */
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            
+            /* Animate the background position */
+            animation: textShine 4s linear infinite;
+        }
+
+        @keyframes textShine {
+            0% { background-position: 200% center; }
+            100% { background-position: -200% center; }
+        }
+
+        @keyframes slideLeftToRight {
             0% {
                opacity: 0;
-               transform: translateX(-30px) skewX(-10deg); /* Start from Left */
-               filter: blur(8px);
+               transform: translateX(-40px); /* Start from left */
+               filter: blur(10px);
             }
             100% {
                opacity: 1;
-               transform: translateX(0) skewX(0deg);
+               transform: translateX(0);
                filter: blur(0);
             }
-        }
-        @keyframes shine {
-            from { background-position: 200% center; }
-            to { background-position: -200% center; }
-        }
-        .animate-shine {
-            animation: shine 5s linear infinite;
         }
       `}</style>
     </span>
