@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, ArrowUpRight, ChevronDown, Check } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -19,7 +18,9 @@ const Header: React.FC = () => {
   const langMenuRef = useRef<HTMLDivElement>(null);
   const mobileLangMenuRef = useRef<HTMLDivElement>(null);
   
+  // CRITICAL: Prevent IntersectionObserver from triggering during manual click scrolls
   const isManualScrolling = useRef(false);
+  
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0, opacity: 0 });
 
   const navLinks = [
@@ -33,39 +34,43 @@ const Header: React.FC = () => {
   const languages = [
     { code: 'en', label: 'English', flag: 'https://upload.wikimedia.org/wikipedia/commons/1/13/United-kingdom_flag_icon_round.svg' },
     { code: 'km', label: 'ខ្មែរ', flag: 'https://upload.wikimedia.org/wikipedia/commons/8/83/Flag_of_Cambodia.svg' },
+    { code: 'fr', label: 'Français', flag: 'https://upload.wikimedia.org/wikipedia/commons/8/8c/Franceroundflag.svg' },
+    { code: 'ja', label: '日本語', flag: 'https://upload.wikimedia.org/wikipedia/commons/9/9e/Flag_of_Japan.svg' },
+    { code: 'ko', label: '한국어', flag: 'https://upload.wikimedia.org/wikipedia/commons/0/09/Flag_of_South_Korea.svg' },
+    { code: 'zh-CN', label: '中文', flag: 'https://upload.wikimedia.org/wikipedia/commons/a/ae/Circle_Flag_of_the_People%27s_Republic_of_China.svg' },
   ];
 
   const currentFlag = languages.find(l => l.code === language)?.flag || languages[0].flag;
 
   useEffect(() => {
-    let scrollTimeout: any;
     const handleScroll = () => {
-      // Use requestAnimationFrame for scroll logic to prevent frame dropping
-      if (!scrollTimeout) {
-        scrollTimeout = requestAnimationFrame(() => {
-            setIsScrolled(window.scrollY > 20);
-            scrollTimeout = null;
-        });
-      }
+      setIsScrolled(window.scrollY > 20);
     };
 
     const handleClickOutside = (event: MouseEvent) => {
         if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) setIsLangMenuOpen(false);
+        if (mobileLangMenuRef.current && !mobileLangMenuRef.current.contains(event.target as Node)) setIsMobileLangMenuOpen(false);
     };
 
-    // Use passive: true to improve scroll performance
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleScroll);
     document.addEventListener('mousedown', handleClickOutside);
     
     const observer = new IntersectionObserver((entries) => {
+      // Don't update if we are scrolling because of a link click
       if (isManualScrolling.current) return;
 
       entries.forEach(entry => {
         if (entry.isIntersecting && entry.target.id) {
-          setActiveSection(entry.target.id);
+          const newSection = entry.target.id;
+          setActiveSection(newSection);
+          
+          const currentHash = window.location.hash;
+          if (!currentHash.includes('/') && currentHash !== '#admin') {
+              window.history.replaceState(null, '', `#${newSection}`);
+          }
         }
       });
-    }, { rootMargin: '-40% 0px -40% 0px' });
+    }, { rootMargin: '-45% 0px -45% 0px' });
 
     document.querySelectorAll('section').forEach(section => {
       if (section.id) observer.observe(section);
@@ -75,7 +80,6 @@ const Header: React.FC = () => {
       window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('mousedown', handleClickOutside);
       observer.disconnect();
-      if (scrollTimeout) cancelAnimationFrame(scrollTimeout);
     };
   }, []);
 
@@ -84,6 +88,8 @@ const Header: React.FC = () => {
     if (activeIndex !== -1 && itemsRef.current[activeIndex]) {
         const { offsetLeft, offsetWidth } = itemsRef.current[activeIndex]!;
         setIndicatorStyle({ left: offsetLeft, width: offsetWidth, opacity: 1 });
+    } else {
+        setIndicatorStyle(prev => ({ ...prev, opacity: 0 }));
     }
   }, [activeSection, language]);
 
@@ -96,14 +102,20 @@ const Header: React.FC = () => {
       isManualScrolling.current = true;
       setActiveSection(targetId);
       
+      try {
+        window.history.pushState(null, '', href);
+      } catch (e) {
+        window.location.hash = href;
+      }
+
       const offset = 80;
       const pos = element.getBoundingClientRect().top + window.pageYOffset - offset;
       
-      smoothScrollTo(pos, 800);
+      smoothScrollTo(pos, 1000);
       
       setTimeout(() => {
           isManualScrolling.current = false;
-      }, 900); 
+      }, 1100); 
 
       setIsMenuOpen(false);
     }
@@ -111,11 +123,11 @@ const Header: React.FC = () => {
 
   return (
     <>
-      <header className="fixed top-6 left-0 right-0 z-50 transition-all duration-300 flex justify-center px-4 pointer-events-none">
-        <div className={`flex items-center justify-between px-4 md:px-6 py-2.5 md:py-3 rounded-full border transition-all duration-500 w-full max-w-6xl pointer-events-auto ${isScrolled ? 'bg-gray-950/80 backdrop-blur-xl border-white/10 shadow-2xl shadow-indigo-500/10' : 'bg-transparent border-transparent'}`}>
+      <header className="fixed top-6 left-0 right-0 z-50 transition-all duration-300 flex justify-center px-4">
+        <div className={`flex items-center justify-between px-4 md:px-6 py-2.5 md:py-3 rounded-full border transition-all duration-300 w-full max-w-6xl ${isScrolled ? 'bg-gray-950/80 backdrop-blur-xl border-white/10 shadow-2xl shadow-indigo-500/10' : 'bg-transparent border-transparent'}`}>
           <a href="#" className="flex items-center gap-2 group relative z-50">
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg">P</div>
-            <span className="text-lg md:text-xl font-bold font-khmer tracking-tight text-white">
+            <span className="text-lg md:text-xl font-bold font-khmer tracking-tight text-white group-hover:text-indigo-400 transition-colors">
               ponloe<span className="text-gray-500 font-normal">.creative</span>
             </span>
           </a>
@@ -127,23 +139,28 @@ const Header: React.FC = () => {
             ))}
           </nav>
 
-          <div className="flex items-center gap-2 relative z-50">
+          <div className="flex items-center gap-2 md:gap-4 relative z-50">
              <div className="relative" ref={langMenuRef}>
-                 <button onClick={() => setIsLangMenuOpen(!isLangMenuOpen)} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-xs font-medium text-gray-300">
-                    <img src={currentFlag} alt={language} className="w-4 h-4 rounded-full object-cover" />
+                 <button onClick={() => setIsLangMenuOpen(!isLangMenuOpen)} className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-xs md:text-sm font-medium text-gray-300 hover:text-white">
+                    <img src={currentFlag} alt={language} className="w-4 h-4 md:w-5 md:h-5 rounded-full object-cover" />
+                    <span className="uppercase hidden md:inline">{language}</span>
                     <ChevronDown size={14} className={`transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
                  </button>
                  {isLangMenuOpen && (
-                     <div className="absolute top-full right-0 mt-2 w-32 bg-gray-900 border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-1">
+                     <div className="absolute top-full right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-1">
                         {languages.map((lang) => (
-                            <button key={lang.code} onClick={() => { setLanguage(lang.code as any); setIsLangMenuOpen(false); }} className={`flex items-center justify-between w-full px-3 py-2 text-xs rounded-xl transition-colors font-khmer ${language === lang.code ? 'bg-indigo-600/20 text-indigo-300' : 'text-gray-400 hover:bg-white/5'}`}>
-                                <span>{lang.label}</span>
-                                {language === lang.code && <Check size={12} />}
+                            <button key={lang.code} onClick={() => { setLanguage(lang.code as any); setIsLangMenuOpen(false); }} className={`flex items-center justify-between w-full px-4 py-2 text-xs md:text-sm rounded-xl transition-colors font-khmer ${language === lang.code ? 'bg-indigo-600/20 text-indigo-300' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
+                                <span className="flex items-center gap-3"><img src={lang.flag} alt={lang.label} className="w-5 h-5 rounded-full object-cover" /><span>{lang.label}</span></span>
+                                {language === lang.code && <Check size={14} />}
                             </button>
                         ))}
                      </div>
                  )}
              </div>
+
+             <a href="#contact" onClick={(e) => scrollToSection(e, '#contact')} className="hidden sm:flex group px-5 py-2.5 rounded-full bg-white text-gray-950 font-bold text-sm hover:scale-105 transition-all duration-300 items-center gap-2 font-khmer">
+              {t("Let's Talk", "ទំនាក់ទំនង")} <ArrowUpRight size={16} className="group-hover:rotate-45 transition-transform" />
+            </a>
 
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="lg:hidden text-white p-2">
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -152,12 +169,12 @@ const Header: React.FC = () => {
         </div>
       </header>
 
-      <div className={`fixed inset-0 bg-gray-950 z-[60] flex items-center justify-center transition-all duration-500 ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-         <div className="flex flex-col items-center gap-8 w-full max-w-sm px-6">
+      <div className={`fixed inset-0 bg-gray-950 z-40 flex items-center justify-center transition-all duration-500 ${isMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+         <div className="flex flex-col items-center gap-8 relative z-10 w-full max-w-sm px-6">
           {navLinks.map((link, idx) => (
-            <a key={link.name} href={link.href} onClick={(e) => scrollToSection(e, link.href)} className={`text-3xl font-bold font-khmer text-white hover:text-indigo-400 transition-all transform ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`} style={{ transitionDelay: `${idx * 50}ms` }}>{link.name}</a>
+            <a key={link.name} href={link.href} onClick={(e) => scrollToSection(e, link.href)} className={`text-3xl font-bold font-khmer text-white hover:text-indigo-400 transition-all transform ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`} style={{ transitionDelay: `${idx * 100}ms` }}>{link.name}</a>
           ))}
-          <button onClick={() => setIsMenuOpen(false)} className="mt-8 p-4 rounded-full bg-white/5 text-white border border-white/10"><X size={24} /></button>
+          <a href="#contact" onClick={(e) => scrollToSection(e, '#contact')} className={`w-full text-center px-8 py-4 rounded-full bg-indigo-600 text-white font-bold text-lg font-khmer shadow-xl transform ${isMenuOpen ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`} style={{ transitionDelay: '300ms' }}>{t("Start a Project", "ចាប់ផ្តើមគម្រោង")}</a>
         </div>
       </div>
     </>
