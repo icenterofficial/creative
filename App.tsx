@@ -15,7 +15,8 @@ import Insights from './components/Insights';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import ScrollButton from './components/ScrollButton';
-import FloatingChat from './components/FloatingChat'; // Imported
+import FloatingChat from './components/FloatingChat'; 
+import CostEstimator from './components/CostEstimator'; // Imported CostEstimator
 import Preloader from './components/Preloader';
 import AdminDashboard from './components/AdminDashboard';
 import { Lock, ArrowRight, X, ShieldCheck } from 'lucide-react';
@@ -180,6 +181,7 @@ function AppContent() {
         <Hero />
         <Partners />
         <Services />
+        <CostEstimator /> {/* Added Cost Estimator Section Here */}
         <Process />
         <Portfolio />
         <Testimonials />
