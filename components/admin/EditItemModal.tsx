@@ -87,9 +87,11 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
           {Object.keys(editingItem).map((key) => {
             if (['id', 'comments', 'replies', 'created_at', '_iconString', 'slug', 'orderIndex', 'order_index'].includes(key)) return null;
             const value = editingItem[key];
-            const label = (activeTab === 'services' && key === 'image') 
-                ? 'Background Image (Hover Effect)' 
-                : key.charAt(0).toUpperCase() + key.slice(1);
+            
+            // Dynamic Label Generation
+            let label = key.charAt(0).toUpperCase() + key.slice(1);
+            if (activeTab === 'services' && key === 'image') label = 'Background Image (Hover Effect)';
+            if (activeTab === 'partners' && key === 'image') label = 'Logo Image (Optional)';
 
             // 1. PIN Code Field (Team only)
             if (key === 'pinCode' && activeTab === 'team') {
