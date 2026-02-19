@@ -31,6 +31,7 @@ export interface Project {
   title: string;
   category: string; // Changed from literal union to string to allow dynamic categories
   image: string;
+  gallery?: string[]; // New: Array of additional images
   client?: string;
   slug?: string;
   description?: string; // New field
