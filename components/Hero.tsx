@@ -29,14 +29,18 @@ const CountUp: React.FC<{ end: number, duration: number, suffix?: string }> = ({
 // --- Scramble Text Component ---
 const ScrambleText: React.FC<{ text: string }> = ({ text }) => {
   const [displayText, setDisplayText] = useState(text);
-  // Updated characters to use Khmer letters instead of messy symbols
-  const chars = "កខគឃងចឆជឈញដឋឌឍណតថទធនបផពភមយរលវសហឡអ០១២៣៤៥៦៧៨៩";
 
   useEffect(() => {
-    setDisplayText(text);
-  }, [text]);
+    // Character sets for different scripts
+    const khmerChars = "កខគឃងចឆជឈញដឋឌឍណតថទធនបផពភមយរលវសហឡអ០១២៣៤៥៦៧៨៩";
+    const latinChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
 
-  useEffect(() => {
+    // Detect if the target text contains Khmer characters
+    const isKhmer = /[\u1780-\u17FF]/.test(text);
+    
+    // Select the appropriate character set based on the text content
+    const chars = isKhmer ? khmerChars : latinChars;
+
     let iterations = 0;
     const interval = setInterval(() => {
       setDisplayText(
