@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
-import { X, ExternalLink, Tag } from 'lucide-react';
+import { X, ExternalLink, Tag, ArrowRight } from 'lucide-react';
 import { Project } from '../types';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
@@ -17,9 +18,9 @@ const Portfolio: React.FC = () => {
   // Use Router Hook: Section 'portfolio', No Prefix needed if using slugs
   const { activeId, openItem, closeItem } = useRouter('portfolio');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isViewAllOpen, setIsViewAllOpen] = useState(false);
 
   // Extract unique categories from projects for the filter list
-  // Added explicit string[] type to fix 'unknown' inference for the cat variable in uniqueCategories.map
   const uniqueCategories: string[] = Array.from(new Set((projects || []).map(p => p.category))).sort();
   
   // Create category list with "All" + Dynamic Categories (mapped to labels if possible, else capitalize)
@@ -45,7 +46,7 @@ const Portfolio: React.FC = () => {
 
   // Lock body scroll when modal is open
   useEffect(() => {
-    if (selectedProject) {
+    if (selectedProject || isViewAllOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -53,7 +54,7 @@ const Portfolio: React.FC = () => {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [selectedProject]);
+  }, [selectedProject, isViewAllOpen]);
 
   return (
     <section id="portfolio" className="py-24 bg-gray-900/50 relative overflow-hidden">
@@ -93,7 +94,7 @@ const Portfolio: React.FC = () => {
 
         {/* Masonry Grid with Tailwind Columns and Staggered Animation */}
         <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
-          {filteredProjects.map((project, index) => (
+          {filteredProjects.slice(0, 6).map((project, index) => (
             <RevealOnScroll key={project.id} delay={index * 100} variant="zoom-in" duration={600}>
               <div 
                 onClick={() => openItem(project.slug || project.id)}
@@ -126,12 +127,69 @@ const Portfolio: React.FC = () => {
         
         <RevealOnScroll variant="fade-up" delay={400}>
           <div className="text-center mt-20">
-             <button className="px-10 py-4 rounded-full border border-white/20 text-white font-bold hover:bg-white hover:text-gray-950 transition-all duration-300 font-khmer">
-               {t('Load More Projects', 'មើលគម្រោងបន្ថែម')}
+             <button 
+                onClick={() => setIsViewAllOpen(true)}
+                className="px-10 py-4 rounded-full border border-white/20 text-white font-bold hover:bg-white hover:text-gray-950 transition-all duration-300 font-khmer flex items-center gap-2 mx-auto"
+             >
+               {t('View All Projects', 'មើលគម្រោងទាំងអស់')} <ArrowRight size={18} />
              </button>
           </div>
         </RevealOnScroll>
       </div>
+
+      {/* View All Projects Modal */}
+      {isViewAllOpen && createPortal(
+         <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4">
+            <div 
+                className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
+                onClick={() => setIsViewAllOpen(false)}
+            />
+             <div className="relative w-full max-w-7xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col">
+                {/* Header */}
+                <div className="flex justify-between items-center p-6 md:p-8 border-b border-white/10 bg-gray-900 z-10">
+                    <div>
+                        <h3 className="text-2xl font-bold text-white font-khmer">{t('All Projects', 'គម្រោងទាំងអស់')}</h3>
+                        <p className="text-gray-400 text-sm font-khmer">{t('Browse our complete portfolio', 'មើលផលប័ត្រពេញលេញរបស់យើង')}</p>
+                    </div>
+                    <button 
+                        onClick={() => setIsViewAllOpen(false)}
+                        className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-full transition-all border border-white/5"
+                    >
+                        <X size={24} />
+                    </button>
+                </div>
+
+                {/* Grid Content */}
+                <div className="flex-1 overflow-y-auto p-6 md:p-8 scrollbar-hide">
+                    {/* Optional: Add filters here if needed, for now showing all sorted by date (implicitly) */}
+                    <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
+                        {(projects || []).map((project) => (
+                             <div 
+                                key={project.id} 
+                                onClick={() => openItem(project.slug || project.id)}
+                                className="group relative rounded-xl overflow-hidden break-inside-avoid bg-gray-800 border border-white/5 hover:border-indigo-500/30 transition-all duration-300 cursor-pointer"
+                            >
+                                <img 
+                                    src={project.image} 
+                                    alt={project.title} 
+                                    className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
+                                    loading="lazy"
+                                />
+                                <div className="absolute inset-0 bg-gray-950/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center text-center p-4">
+                                    <span className="text-indigo-400 text-[10px] font-bold uppercase tracking-wider mb-2 px-2 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">{project.category}</span>
+                                    <h4 className="text-white text-lg font-bold font-khmer">{project.title}</h4>
+                                    <span className="mt-4 text-xs text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1 border-b border-gray-600 pb-0.5 group-hover:border-white group-hover:text-white transition-colors">
+                                        View Details <ArrowRight size={12} />
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+             </div>
+         </div>,
+         document.body
+      )}
 
       {/* Project Detail Modal */}
       {selectedProject && createPortal(
