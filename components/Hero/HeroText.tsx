@@ -1,5 +1,4 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 
 // --- Scramble / Decode Text Effect (English) ---
 export const ScrambleText: React.FC<{ text: string, className?: string }> = ({ text, className }) => {
@@ -9,6 +8,7 @@ export const ScrambleText: React.FC<{ text: string, className?: string }> = ({ t
 
   useEffect(() => {
     let iteration = 0;
+    // Reset to initial scrambled state when text changes
     const interval = setInterval(() => {
       setDisplayText(prev => 
         text
@@ -40,18 +40,31 @@ export const ScrambleText: React.FC<{ text: string, className?: string }> = ({ t
 };
 
 // --- Simple Khmer Fade In (Left to Right) ---
-// This ensures visibility and smooth animation
+// Uses Intl.Segmenter to prevent breaking Khmer clusters (legs/subscripts)
 export const KhmerFadeText: React.FC<{ text: string, className?: string }> = ({ text, className }) => {
+  const segments = useMemo(() => {
+      try {
+          const IntlAny = Intl as any;
+          if (typeof Intl !== 'undefined' && IntlAny.Segmenter) {
+              const segmenter = new IntlAny.Segmenter('km', { granularity: 'grapheme' });
+              return Array.from(segmenter.segment(text)).map((s: any) => s.segment);
+          }
+          return text.split('');
+      } catch (e) {
+          return text.split('');
+      }
+  }, [text]);
+
   return (
     <span className={`inline-block ${className}`}>
-      {text.split('').map((char, index) => (
+      {segments.map((char, index) => (
         <span
           key={index}
           className="inline-block opacity-0"
           style={{
             animation: `simpleFadeRight 0.6s ease-out forwards`,
-            animationDelay: `${index * 0.03}s`, // Fast stagger for smoothness
-            marginRight: char === ' ' ? '0.3em' : '0' // Handle spaces
+            animationDelay: `${index * 0.04}s`,
+            whiteSpace: 'pre' 
           }}
         >
           {char}
@@ -61,7 +74,7 @@ export const KhmerFadeText: React.FC<{ text: string, className?: string }> = ({ 
         @keyframes simpleFadeRight {
           from {
             opacity: 0;
-            transform: translateX(-10px);
+            transform: translateX(-5px);
           }
           to {
             opacity: 1;
