@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { SERVICES, PROJECTS, TEAM, INSIGHTS, JOBS, PARTNERS } from '../constants';
 import { Service, Project, TeamMember, Post, Job, Partner } from '../types';
@@ -74,7 +75,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  slug: p.slug || slugify(p.title),
                  description: p.description, 
                  link: p.link,
-                 createdBy: p.created_by // Map created_by column
+                 createdBy: p.created_by,
+                 // Map Case Study Fields
+                 challenge: p.challenge,
+                 challengeKm: p.challenge_km,
+                 solution: p.solution,
+                 solutionKm: p.solution_km,
+                 result: p.result,
+                 resultKm: p.result_km
              }));
              // STRICT MODE: Use only DB data
              setProjects(formatted);
