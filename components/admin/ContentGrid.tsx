@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Edit, Trash2, FileText, Lock, GripVertical, MapPin, Briefcase } from 'lucide-react';
 import { TeamMember, Project, Post, Service, Job, Partner } from '../../types';
@@ -106,7 +107,10 @@ const ContentGrid: React.FC<ContentGridProps> = ({ activeTab, isSuperAdmin, memb
 
       {/* PROJECTS */}
       {activeTab === 'projects' && (data.projects || []).map(item => {
-        const canDelete = isSuperAdmin || (memberId && item.createdBy === memberId);
+        // PERMISSION LOGIC: Only Admin or Creator can Edit/Delete
+        const isCreator = memberId && item.createdBy === memberId;
+        const canEdit = isSuperAdmin || isCreator;
+
         return (
             <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-4 flex flex-col gap-4">
             <img src={item.image} alt={item.title} className="w-full h-40 object-cover rounded-lg bg-gray-800" />
@@ -118,8 +122,14 @@ const ContentGrid: React.FC<ContentGridProps> = ({ activeTab, isSuperAdmin, memb
                 )}
             </div>
             <div className="mt-auto flex gap-2">
-                <button onClick={() => onEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><Edit size={14} /> Edit</button>
-                {canDelete && (
+                <button 
+                    onClick={() => canEdit && onEdit(item)} 
+                    disabled={!canEdit}
+                    className={`flex-1 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 ${canEdit ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-white/5 text-gray-600 cursor-not-allowed opacity-50'}`}
+                >
+                    <Edit size={14} /> Edit
+                </button>
+                {canEdit && (
                     <button onClick={() => onDelete('project', item.id)} className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg"><Trash2 size={16} /></button>
                 )}
             </div>
