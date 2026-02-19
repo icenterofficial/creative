@@ -117,8 +117,12 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
 
         {/* Orbit Lines */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none z-0" style={{ transform: 'translateZ(10px)' }}>
+            {/* Inner Circle */}
             <circle cx="50%" cy="50%" r="35%" stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" className={isOrbiting ? "animate-spin-slow" : ""} />
+            {/* Middle Circle */}
             <circle cx="50%" cy="50%" r="50%" stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" className={isOrbiting ? "animate-spin-slow reverse" : ""} style={{ animationDirection: 'reverse', animationDuration: '20s' }} />
+            {/* NEW: Outer Network Circle */}
+            <circle cx="50%" cy="50%" r="65%" stroke="rgba(255,255,255,0.02)" strokeWidth="1" strokeDasharray="10 10" fill="none" className={isOrbiting ? "animate-spin-slow" : ""} style={{ animationDuration: '40s' }} />
             
             {/* Connecting Lines */}
             {team.map((member, index) => {
@@ -143,39 +147,72 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
             </defs>
         </svg>
 
-        {/* Team Nodes */}
+        {/* Team Nodes & Light Packets */}
         {team.map((member, index) => {
             const pos = getDynamicPosition(index, team.length, rotationAngle);
+            const delay = index * 0.5; // Stagger animation start times
             
             return (
-                <div
-                key={member.id}
-                className="absolute z-20 cursor-pointer"
-                style={{ 
-                    top: pos.top,
-                    left: pos.left,
-                    marginLeft: `-${parseInt(pos.size.split(' ')[0].replace('w-', '')) * 2}px`, 
-                    marginTop: `-${parseInt(pos.size.split(' ')[1].replace('h-', '')) * 2}px`,
-                    transform: `translateZ(${pos.speed * 30}px)`
-                }}
-                onClick={() => onMemberClick(member)}
-                >
-                <div className={`relative ${pos.size} rounded-2xl overflow-hidden border border-white/20 shadow-lg transition-all duration-300 hover:scale-125 group bg-gray-900 ${isOrbiting ? 'border-indigo-500/50 shadow-indigo-500/30' : ''}`}>
-                    <img 
-                        src={member.image} 
-                        alt={member.name} 
-                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
+                <React.Fragment key={member.id}>
+                    {/* Light Packet (Energy Flow) */}
+                    <div 
+                        className="packet"
+                        style={{
+                            '--target-left': pos.left,
+                            '--target-top': pos.top,
+                            animationDelay: `${delay}s`
+                        } as React.CSSProperties}
                     />
-                    
-                    {/* Tooltip */}
-                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900/90 border border-white/10 px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap z-30 pointer-events-none translate-y-2 group-hover:translate-y-0">
-                        <span className="text-[10px] text-white font-bold block">{member.name}</span>
+
+                    {/* Node */}
+                    <div
+                        className="absolute z-20 cursor-pointer"
+                        style={{ 
+                            top: pos.top,
+                            left: pos.left,
+                            marginLeft: `-${parseInt(pos.size.split(' ')[0].replace('w-', '')) * 2}px`, 
+                            marginTop: `-${parseInt(pos.size.split(' ')[1].replace('h-', '')) * 2}px`,
+                            transform: `translateZ(${pos.speed * 30}px)`
+                        }}
+                        onClick={() => onMemberClick(member)}
+                    >
+                        <div className={`relative ${pos.size} rounded-2xl overflow-hidden border border-white/20 shadow-lg transition-all duration-300 hover:scale-125 group bg-gray-900 ${isOrbiting ? 'border-indigo-500/50 shadow-indigo-500/30' : ''}`}>
+                            <img 
+                                src={member.image} 
+                                alt={member.name} 
+                                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
+                            />
+                            
+                            {/* Tooltip */}
+                            <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-gray-900/90 border border-white/10 px-3 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 whitespace-nowrap z-30 pointer-events-none translate-y-2 group-hover:translate-y-0">
+                                <span className="text-[10px] text-white font-bold block">{member.name}</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                </div>
+                </React.Fragment>
             );
         })}
         </div>
+
+        <style>{`
+            @keyframes travel {
+                0% { left: 50%; top: 50%; opacity: 0; transform: scale(0.2); }
+                10% { opacity: 1; transform: scale(1); }
+                80% { opacity: 1; transform: scale(1); }
+                100% { left: var(--target-left); top: var(--target-top); opacity: 0; transform: scale(0.2); }
+            }
+            .packet {
+                position: absolute;
+                width: 4px;
+                height: 4px;
+                background: #fff;
+                border-radius: 50%;
+                box-shadow: 0 0 8px #60A5FA, 0 0 15px #818CF8;
+                animation: travel 3s infinite linear;
+                pointer-events: none;
+                z-index: 15;
+            }
+        `}</style>
     </div>
   );
 };
