@@ -22,7 +22,9 @@ const Portfolio: React.FC = () => {
 
   // Timeline Scroll Animation State
   const [scrollProgress, setScrollProgress] = useState(0);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // Refs for scrolling containers
+  const modalRef = useRef<HTMLDivElement>(null); // For Mobile scrolling
+  const textContainerRef = useRef<HTMLDivElement>(null); // For Desktop scrolling
   const timelineRef = useRef<HTMLDivElement>(null);
 
   // --- GALLERY STATE ---
@@ -75,9 +77,8 @@ const Portfolio: React.FC = () => {
 
   // Handle Scroll Animation Logic inside Modal
   const handleModalScroll = () => {
-      if (!scrollContainerRef.current || !timelineRef.current) return;
+      if (!timelineRef.current) return;
 
-      const container = scrollContainerRef.current;
       const timeline = timelineRef.current;
       const timelineRect = timeline.getBoundingClientRect();
 
@@ -99,13 +100,19 @@ const Portfolio: React.FC = () => {
 
   // Attach scroll listener when modal opens
   useEffect(() => {
-      const container = scrollContainerRef.current;
-      if (selectedProject && container) {
-          container.addEventListener('scroll', handleModalScroll);
-          handleModalScroll();
-      }
+      const textContainer = textContainerRef.current;
+      const modalContainer = modalRef.current;
+
+      // Attach to both potential scroll containers to handle mobile/desktop switch
+      if (textContainer) textContainer.addEventListener('scroll', handleModalScroll);
+      if (modalContainer) modalContainer.addEventListener('scroll', handleModalScroll);
+      
+      // Initial check
+      handleModalScroll();
+
       return () => {
-          if (container) container.removeEventListener('scroll', handleModalScroll);
+          if (textContainer) textContainer.removeEventListener('scroll', handleModalScroll);
+          if (modalContainer) modalContainer.removeEventListener('scroll', handleModalScroll);
       };
   }, [selectedProject]);
 
@@ -268,8 +275,11 @@ const Portfolio: React.FC = () => {
               <X size={24} />
            </button>
 
-           {/* Modal Content */}
-           <div className="relative w-full max-w-6xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10 flex flex-col md:flex-row">
+           {/* Modal Content - UPDATED FOR MOBILE SCROLLING */}
+           <div 
+                ref={modalRef} 
+                className="relative w-full max-w-6xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-y-auto md:overflow-hidden animate-scale-up z-10 flex flex-col md:flex-row"
+           >
               
               {/* --- IMAGE / GALLERY SECTION --- */}
               <div className="w-full md:w-1/2 h-[350px] md:h-auto bg-gray-900 relative overflow-hidden flex items-center justify-center shrink-0 group/gallery bg-black">
@@ -328,10 +338,10 @@ const Portfolio: React.FC = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-900/50 via-transparent to-transparent opacity-50 pointer-events-none" />
               </div>
 
-              {/* Details Section (Scrollable) */}
+              {/* Details Section (Scrollable on Desktop, Natural Flow on Mobile) */}
               <div 
-                className="w-full md:w-1/2 bg-gray-900 flex flex-col overflow-y-auto scrollbar-hide relative"
-                ref={scrollContainerRef}
+                className="w-full md:w-1/2 bg-gray-900 flex flex-col md:overflow-y-auto scrollbar-hide relative"
+                ref={textContainerRef}
               >
                  <div className="p-8 md:p-10 space-y-8">
                     <div>
