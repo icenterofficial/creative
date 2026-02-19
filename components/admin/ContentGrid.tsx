@@ -190,9 +190,15 @@ const ContentGrid: React.FC<ContentGridProps> = ({ activeTab, isSuperAdmin, memb
       {/* PARTNERS */}
       {activeTab === 'partners' && isSuperAdmin && (data.partners || []).map(item => (
         <div key={item.id} className="bg-gray-900 border border-white/10 rounded-xl p-6 flex flex-col items-center gap-4 text-center hover:bg-white/5 transition-colors">
-            <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-gray-300">
-                {item.icon}
-            </div>
+            {item.image ? (
+                <div className="w-16 h-16 flex items-center justify-center p-2 bg-white rounded-lg">
+                    <img src={item.image} alt={item.name} className="max-w-full max-h-full object-contain" />
+                </div>
+            ) : (
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-gray-300">
+                    {item.icon}
+                </div>
+            )}
             <h4 className="font-bold text-white">{item.name}</h4>
             <div className="mt-auto flex gap-2 w-full">
                 <button onClick={() => onEdit(item)} className="flex-1 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold flex items-center justify-center gap-2"><Edit size={14} /> Edit</button>
