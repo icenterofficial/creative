@@ -18,16 +18,11 @@ const Process: React.FC = () => {
           </div>
         </RevealOnScroll>
 
-        <div className="relative">
-          {/* Connecting Line Background - Positioned relative to the grid */}
-          <RevealOnScroll 
-            variant="grow-x" 
-            delay={200} 
-            duration={1500} 
-            className="absolute top-0 left-0 w-full h-px hidden lg:block z-0 origin-left"
-          >
-            <div className="w-full h-full bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
-          </RevealOnScroll>
+        <div className="relative pt-6 lg:pt-0">
+          {/* Connecting Line Background - Static placement for stability */}
+          <div className="absolute top-0 left-0 w-full h-[1px] hidden lg:block z-0">
+            <div className="w-full h-full bg-gradient-to-r from-indigo-500/0 via-indigo-500/50 to-indigo-500/0" />
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 relative z-10">
             {PROCESS_STEPS.map((step, index) => (
@@ -40,7 +35,7 @@ const Process: React.FC = () => {
                 <div 
                   className="relative group bg-gray-900/50 backdrop-blur-sm border border-white/5 p-8 rounded-2xl hover:bg-gray-800/50 transition-all duration-300 hover:-translate-y-2 h-full mt-6 lg:mt-0"
                 >
-                  {/* Step Number - Adjusted positioning to align with the line at top-0 of container */}
+                  {/* Step Number - Aligned with the top line */}
                   <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-gray-950 border border-indigo-500/30 rounded-full flex items-center justify-center text-indigo-400 font-bold z-20 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-300 shadow-[0_0_15px_rgba(99,102,241,0.3)]">
                     {step.number}
                   </div>
