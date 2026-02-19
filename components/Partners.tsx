@@ -32,14 +32,26 @@ const Partners: React.FC = () => {
               {[...displayPartners, ...displayPartners].map((partner, index) => (
                   <div 
                       key={`${partner.id}-${index}`}
-                      className="flex items-center gap-3 mx-8 md:mx-12 opacity-40 hover:opacity-100 transition-opacity duration-300 group cursor-default"
+                      className="flex items-center gap-3 mx-8 md:mx-12 cursor-default group"
                   >
-                      <div className="text-gray-300 group-hover:text-white transition-colors">
-                          {partner.icon}
-                      </div>
-                      <span className="text-lg font-bold text-gray-300 group-hover:text-white font-khmer whitespace-nowrap">
-                          {partner.name}
-                      </span>
+                      {partner.image ? (
+                          <div className="relative w-32 h-16 flex items-center justify-center">
+                              <img 
+                                src={partner.image} 
+                                alt={partner.name} 
+                                className="max-w-full max-h-full object-contain filter grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-300"
+                              />
+                          </div>
+                      ) : (
+                          <div className="flex items-center gap-3 opacity-40 hover:opacity-100 transition-opacity duration-300">
+                              <div className="text-gray-300 group-hover:text-white transition-colors">
+                                  {partner.icon}
+                              </div>
+                              <span className="text-lg font-bold text-gray-300 group-hover:text-white font-khmer whitespace-nowrap">
+                                  {partner.name}
+                              </span>
+                          </div>
+                      )}
                   </div>
               ))}
           </div>
