@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 // Extended language support
@@ -38,6 +39,23 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
      }
   };
 
+  // Helper: Update SEO Metadata
+  const updateSEOMetadata = (lang: Language) => {
+      if (lang === 'km') {
+          document.title = "Ponloe Creative | ទទួលធ្វើវេបសាយ, កម្មវិធីទូរស័ព្ទ, និងរចនាប្លង់";
+          const metaDesc = document.querySelector('meta[name="description"]');
+          if (metaDesc) {
+              metaDesc.setAttribute('content', 'ទទួលធ្វើវេបសាយ Mobile App រចនាក្រាហ្វិក និងប្លង់ស្ថាបត្យកម្ម ក្នុងតម្លៃសមរម្យ។ ក្រុមការងារជំនាញនៅភ្នំពេញ ផ្តល់ជូនដំណោះស្រាយល្អបំផុតសម្រាប់អាជីវកម្មរបស់អ្នក។');
+          }
+      } else {
+          document.title = "Ponloe Creative | Web App, Design & Architecture Services in Cambodia";
+          const metaDesc = document.querySelector('meta[name="description"]');
+          if (metaDesc) {
+              metaDesc.setAttribute('content', 'Leading creative agency in Phnom Penh offering Web Development, Mobile Apps, Architecture, and Graphic Design. We provide high-quality solutions for every budget.');
+          }
+      }
+  };
+
   // INITIALIZATION
   useEffect(() => {
     // 1. Check URL Path first (e.g., /fr, /km)
@@ -46,6 +64,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     if (SUPPORTED_LANGUAGES.includes(path)) {
         setLanguageState(path);
         setGoogleCookie(path);
+        updateSEOMetadata(path); // Update Title on Load
         // Ensure trailing slash exists if missing
         if (!window.location.pathname.endsWith('/')) {
              const hash = window.location.hash;
@@ -55,6 +74,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
         // If root "/" or invalid, default to 'en' or saved pref, then rewrite URL
         const savedLang = (localStorage.getItem('app_lang') as Language) || 'en';
         setLanguageState(savedLang);
+        updateSEOMetadata(savedLang); // Update Title on Load
         
         // Rewrite URL to include lang with trailing slash without reloading
         const hash = window.location.hash;
@@ -67,6 +87,7 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     const prevLang = language;
     setLanguageState(newLang);
     localStorage.setItem('app_lang', newLang);
+    updateSEOMetadata(newLang); // Update Title Immediately
 
     // Update URL with trailing slash
     const hash = window.location.hash;
