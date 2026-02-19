@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
-import { X, ExternalLink, Tag, ArrowRight, Target, Zap, TrendingUp } from 'lucide-react';
+import { X, ExternalLink, Tag, ArrowRight, Target, Zap, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Project } from '../types';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
@@ -25,6 +25,10 @@ const Portfolio: React.FC = () => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
 
+  // --- GALLERY STATE ---
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [allImages, setAllImages] = useState<string[]>([]);
+
   // Extract unique categories from projects for the filter list
   const uniqueCategories: string[] = Array.from(new Set((projects || []).map(p => p.category))).sort();
   
@@ -43,7 +47,15 @@ const Portfolio: React.FC = () => {
   useEffect(() => {
       if (activeId && projects) {
           const found = projects.find(p => p.slug === activeId || p.id === activeId);
-          setSelectedProject(found || null);
+          if (found) {
+              setSelectedProject(found);
+              // Combine main image + gallery into one list, filtering out empty strings
+              const imgs = [found.image, ...(found.gallery || [])].filter(Boolean);
+              setAllImages(imgs);
+              setActiveImageIndex(0);
+          } else {
+              setSelectedProject(null);
+          }
       } else {
           setSelectedProject(null);
       }
@@ -67,27 +79,21 @@ const Portfolio: React.FC = () => {
 
       const container = scrollContainerRef.current;
       const timeline = timelineRef.current;
-      const containerRect = container.getBoundingClientRect();
       const timelineRect = timeline.getBoundingClientRect();
 
       // Calculate where the timeline starts relative to the viewport
       // We want the line to start filling when the top of the timeline enters the viewport (bottom 80%)
-      // And finish filling as we scroll past.
-      
       const viewportHeight = window.innerHeight;
-      const startTrigger = viewportHeight * 0.8; // Start animation when element is near bottom
+      const startTrigger = viewportHeight * 0.8; 
       
       const distanceTop = startTrigger - timelineRect.top;
       const totalHeight = timelineRect.height + (viewportHeight * 0.3); // Add some buffer
 
       let progress = (distanceTop / totalHeight) * 100;
       
-      // Additional logic: Check if we scrolled past the element
       if (timelineRect.top > startTrigger) progress = 0;
       
-      // Clamp between 0 and 100
       progress = Math.min(100, Math.max(0, progress));
-      
       setScrollProgress(progress);
   };
 
@@ -96,13 +102,21 @@ const Portfolio: React.FC = () => {
       const container = scrollContainerRef.current;
       if (selectedProject && container) {
           container.addEventListener('scroll', handleModalScroll);
-          // Initial check
           handleModalScroll();
       }
       return () => {
           if (container) container.removeEventListener('scroll', handleModalScroll);
       };
   }, [selectedProject]);
+
+  // Gallery Navigation Handlers
+  const handleNextImage = () => {
+      setActiveImageIndex((prev) => (prev + 1) % allImages.length);
+  };
+
+  const handlePrevImage = () => {
+      setActiveImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
 
   return (
     <section id="portfolio" className="py-24 bg-gray-900/50 relative overflow-hidden">
@@ -248,14 +262,58 @@ const Portfolio: React.FC = () => {
            {/* Modal Content */}
            <div className="relative w-full max-w-6xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10 flex flex-col md:flex-row">
               
-              {/* Image Section */}
-              <div className="w-full md:w-1/2 h-[300px] md:h-auto bg-gray-900 relative overflow-hidden flex items-center justify-center shrink-0">
-                  <img 
-                    src={selectedProject.image} 
-                    alt={selectedProject.title} 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-50 md:hidden" />
+              {/* --- IMAGE / GALLERY SECTION --- */}
+              <div className="w-full md:w-1/2 h-[350px] md:h-auto bg-gray-900 relative overflow-hidden flex items-center justify-center shrink-0 group/gallery">
+                  
+                  {/* Active Image */}
+                  {allImages.length > 0 ? (
+                      <div className="w-full h-full relative">
+                          {/* Main Image with Transition */}
+                          <img 
+                            key={activeImageIndex} // Key forces re-render for simple transition
+                            src={allImages[activeImageIndex]} 
+                            alt={selectedProject.title} 
+                            className="w-full h-full object-cover animate-fade-in"
+                          />
+                          
+                          {/* Navigation Buttons (Only if > 1 image) */}
+                          {allImages.length > 1 && (
+                              <>
+                                  <button 
+                                      onClick={(e) => { e.stopPropagation(); handlePrevImage(); }}
+                                      className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 backdrop-blur-md text-white border border-white/10 hover:bg-black/50 transition-all opacity-0 group-hover/gallery:opacity-100 transform translate-x-2 group-hover/gallery:translate-x-0"
+                                  >
+                                      <ChevronLeft size={24} />
+                                  </button>
+                                  <button 
+                                      onClick={(e) => { e.stopPropagation(); handleNextImage(); }}
+                                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 backdrop-blur-md text-white border border-white/10 hover:bg-black/50 transition-all opacity-0 group-hover/gallery:opacity-100 transform -translate-x-2 group-hover/gallery:translate-x-0"
+                                  >
+                                      <ChevronRight size={24} />
+                                  </button>
+                              </>
+                          )}
+
+                          {/* Thumbnails Overlay (Bottom) */}
+                          {allImages.length > 1 && (
+                              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 max-w-[90%] overflow-x-auto scrollbar-hide opacity-0 group-hover/gallery:opacity-100 transition-opacity duration-300">
+                                  {allImages.map((img, idx) => (
+                                      <button 
+                                          key={idx}
+                                          onClick={(e) => { e.stopPropagation(); setActiveImageIndex(idx); }}
+                                          className={`relative w-12 h-12 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${activeImageIndex === idx ? 'border-indigo-500 scale-110' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                                      >
+                                          <img src={img} className="w-full h-full object-cover" alt="" />
+                                      </button>
+                                  ))}
+                              </div>
+                          )}
+                      </div>
+                  ) : (
+                      <div className="text-gray-500">No Image Available</div>
+                  )}
+
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-50 md:hidden pointer-events-none" />
               </div>
 
               {/* Details Section (Scrollable) */}
@@ -296,15 +354,11 @@ const Portfolio: React.FC = () => {
                         <div className="relative py-8" ref={timelineRef}>
                             
                             {/* The Center Lines */}
-                            {/* 1. Static Gray Line */}
                             <div className="absolute left-6 top-4 bottom-4 w-0.5 bg-white/10 z-0"></div>
-                            
-                            {/* 2. Animated Gradient Line */}
                             <div 
                                 className="absolute left-6 top-4 w-0.5 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500 z-0 transition-all duration-300 ease-out"
                                 style={{ height: `${scrollProgress}%` }}
                             >
-                                {/* Glowing Tip */}
                                 <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
                             </div>
 
@@ -312,7 +366,6 @@ const Portfolio: React.FC = () => {
                                 {/* 1. Challenge */}
                                 {(selectedProject.challenge || selectedProject.challengeKm) && (
                                     <div className="relative pl-20 group">
-                                        {/* Icon Node - Centered on Line */}
                                         <div className={`absolute left-0 top-0 w-12 h-12 rounded-full bg-gray-900 border-2 flex items-center justify-center z-10 transition-all duration-500 ${scrollProgress > 10 ? 'border-red-500 text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : 'border-gray-700 text-gray-500'}`}>
                                             <Target size={20} />
                                         </div>
@@ -331,7 +384,6 @@ const Portfolio: React.FC = () => {
                                 {/* 2. Solution */}
                                 {(selectedProject.solution || selectedProject.solutionKm) && (
                                     <div className="relative pl-20 group">
-                                        {/* Icon Node - Centered on Line */}
                                         <div className={`absolute left-0 top-0 w-12 h-12 rounded-full bg-gray-900 border-2 flex items-center justify-center z-10 transition-all duration-500 ${scrollProgress > 45 ? 'border-blue-500 text-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.3)]' : 'border-gray-700 text-gray-500'}`}>
                                             <Zap size={20} />
                                         </div>
@@ -350,7 +402,6 @@ const Portfolio: React.FC = () => {
                                 {/* 3. Result */}
                                 {(selectedProject.result || selectedProject.resultKm) && (
                                     <div className="relative pl-20 group">
-                                        {/* Icon Node - Centered on Line */}
                                         <div className={`absolute left-0 top-0 w-12 h-12 rounded-full bg-gray-900 border-2 flex items-center justify-center z-10 transition-all duration-500 ${scrollProgress > 80 ? 'border-green-500 text-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]' : 'border-gray-700 text-gray-500'}`}>
                                             <TrendingUp size={20} />
                                         </div>
