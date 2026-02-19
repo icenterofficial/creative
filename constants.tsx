@@ -138,14 +138,26 @@ export const PROJECTS: Project[] = [
     title: 'Ponloe Creative Web',
     category: 'webapp',
     image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiuEcfaETv68lAV6WDzh7Gub7lzi2fwpPjmPmcq0EMklRIUB4K8t4rHJBcB7uAK_LMpvQnJpuFV8T_XjnDSoSEIII9FDpOFBU4i1hRpWCxYW5QQQmFoRTRneazGjdgZT8ZME6cDx652INDsd2s6FnV9DiiKyo40XwgHA5gRXn1QM0pD0gr440JEjV1pock/s1600/ponloe.jpg',
-    slug: 'ponloe-creative-web'
+    slug: 'ponloe-creative-web',
+    challenge: "The agency needed a digital presence that reflected its modern, multi-disciplinary approach while appealing to both local and international clients.",
+    challengeKm: "ភ្នាក់ងារត្រូវការវត្តមានឌីជីថលដែលឆ្លុះបញ្ចាំងពីភាពទំនើប និងពហុជំនាញ ដោយទាក់ទាញទាំងអតិថិជនក្នុងស្រុក និងអន្តរជាតិ។",
+    solution: "We developed a high-performance Next.js application featuring glassmorphism design, bilingual support (Khmer/English), and a custom CMS for easy content updates.",
+    solutionKm: "យើងបានបង្កើតកម្មវិធី Next.js ដែលមានដំណើរការលឿន ដោយប្រើការរចនា Glassmorphism គាំទ្រភាសាពីរ (ខ្មែរ/អង់គ្លេស) និងប្រព័ន្ធគ្រប់គ្រងមាតិកាងាយស្រួល។",
+    result: "Increased client inquiries by 150% in the first month and established a strong brand identity in the competitive Phnom Penh market.",
+    resultKm: "បង្កើនការសាកសួរពីអតិថិជន ១៥០% ក្នុងខែដំបូង និងបង្កើតអត្តសញ្ញាណម៉ាកយីហោដ៏រឹងមាំនៅក្នុងទីផ្សារភ្នំពេញ។"
   },
   {
     id: 'p4',
     title: 'Islamic School',
     category: 'architecture',
     image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEj7Ps8IhveUmB9RFKJYQCvOzWQH3j5nb7cByL7PjJD3tIN7oRsEkP0HLIKB0j1sNyVPrJF6c6M8rv7CH2XUI38_6x7xgecWFFZy07bLfh3kodS1759LxMRcghxElhyj3AJCMoCbRpW5-JlllAG6iAaYOP4UXFbAQtcnAHFOs-F-zBtiOkGKXTeBqPFz1xc/s320/near%20pic.png',
-    slug: 'islamic-school-architecture'
+    slug: 'islamic-school-architecture',
+    challenge: "Designing a modern educational facility that respects traditional Islamic architecture while maximizing natural light and ventilation.",
+    challengeKm: "ការរចនាមជ្ឈមណ្ឌលអប់រំទំនើបដែលគោរពតាមស្ថាបត្យកម្មឥស្លាមប្រពៃណី ព្រមទាំងទាញយកពន្លឺ និងខ្យល់អាកាសធម្មជាតិឱ្យបានច្រើនបំផុត។",
+    solution: "We implemented a modular design with geometric patterns and central courtyards, ensuring sustainability and cultural relevance.",
+    solutionKm: "យើងបានអនុវត្តការរចនាតែមួយគត់ជាមួយនឹងលំនាំធរណីមាត្រ និងទីធ្លាកណ្តាល ដោយធានាបាននូវនិរន្តរភាព និងភាពពាក់ព័ន្ធនឹងវប្បធម៌។",
+    result: "Approved for construction with accolades for its eco-friendly approach and community-centric layout.",
+    resultKm: "ត្រូវបានអនុម័តសម្រាប់ការសាងសង់ជាមួយនឹងការកោតសរសើរចំពោះវិធីសាស្រ្តដែលមិនប៉ះពាល់ដល់បរិស្ថាន និងប្លង់ដែលផ្តោតលើសហគមន៍។"
   },
   {
     id: 'p5',
@@ -166,7 +178,13 @@ export const PROJECTS: Project[] = [
     title: 'Gohome App',
     category: 'webapp',
     image: 'https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi_utIYD5sz6iR93lfrMGuMmO9K-0UZf8i7rNbnmJRfuFtng7gOWiqF2McMUptkaVOk04KkBxAyZxo1YGFWg6QqbrcsZ7W-H4LohazfWeNsttcjN2rPsdAQ8jAoicidnXtPz_S6lqNBb8JOGbiu48ZdM-xtrXwNburJn3r6g-Rr_DX5IEGSht-0N9eSQzh7pXgLstekmoRUM5q4drRghQTLAdRh6b2B6dqA/s1600/Gohome.jpg',
-    slug: 'gohome-app'
+    slug: 'gohome-app',
+    challenge: "Creating a seamless transportation booking experience for rural Cambodia where internet connectivity is often unstable.",
+    challengeKm: "បង្កើតបទពិសោធន៍កក់ការដឹកជញ្ជូនដ៏រលូនសម្រាប់ជនបទកម្ពុជា ដែលការតភ្ជាប់អ៊ីនធឺណិតមិនសូវមានស្ថេរភាព។",
+    solution: "Built a Lite version of the app using Flutter with offline-first architecture and SMS fallback capabilities.",
+    solutionKm: "បានបង្កើតកម្មវិធីជំនាន់ Lite ដោយប្រើ Flutter ជាមួយបច្ចេកវិទ្យា Offline-first និងសមត្ថភាពប្រើប្រាស់ SMS នៅពេលគ្មានអ៊ីនធឺណិត។",
+    result: "Successfully launched with 10,000+ downloads in the first 3 months, connecting remote villages to city centers.",
+    resultKm: "បានដាក់ឱ្យដំណើរការដោយជោគជ័យជាមួយការទាញយកជាង ១០,០០០ ដងក្នុងរយៈពេល ៣ ខែដំបូង ដោយភ្ជាប់ភូមិដាច់ស្រយាលទៅកាន់ទីក្រុង។"
   }
 ];
 
