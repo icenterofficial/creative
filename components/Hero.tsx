@@ -26,48 +26,29 @@ const CountUp: React.FC<{ end: number, duration: number, suffix?: string }> = ({
   return <span>{count}{suffix}</span>;
 };
 
-// --- Scramble Text Component ---
-const ScrambleText: React.FC<{ text: string }> = ({ text }) => {
-  const [displayText, setDisplayText] = useState(text);
-
-  useEffect(() => {
-    // Character sets for different scripts
-    const khmerChars = "កខគឃងចឆជឈញដឋឌឍណតថទធនបផពភមយរលវសហឡអ០១២៣៤៥៦៧៨៩";
-    const latinChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
-
-    // Detect if the target text contains Khmer characters
-    const isKhmer = /[\u1780-\u17FF]/.test(text);
-    
-    // Select the appropriate character set based on the text content
-    const chars = isKhmer ? khmerChars : latinChars;
-
-    let iterations = 0;
-    const interval = setInterval(() => {
-      setDisplayText(
-        text
-          .split("")
-          .map((letter, index) => {
-            if (index < iterations) {
-              return text[index];
-            }
-            // Add a check to keep spaces as spaces during animation for better readability
-            if (letter === " ") return " ";
-            return chars[Math.floor(Math.random() * chars.length)];
-          })
-          .join("")
-      );
-
-      if (iterations >= text.length) {
-        clearInterval(interval);
-      }
-
-      iterations += 1 / 3;
-    }, 30);
-
-    return () => clearInterval(interval);
-  }, [text]);
-
-  return <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 font-khmer">{displayText}</span>;
+// --- Slide Reveal Text Component (New) ---
+const SlideRevealText: React.FC<{ text: string }> = ({ text }) => {
+  // Use text as key to reset animation when language changes
+  return (
+    <span key={text} className="inline-block relative font-khmer">
+      {/* Container for gradient text with shimmer animation */}
+      <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 via-white via-indigo-400 to-purple-400 bg-[length:200%_auto] animate-text-shimmer pb-1">
+        {text.split('').map((char, index) => (
+          <span
+            key={index}
+            className="inline-block opacity-0 will-change-transform"
+            style={{
+              animation: `slideFadeIn 0.6s cubic-bezier(0.2, 0.65, 0.3, 0.9) forwards`,
+              animationDelay: `${index * 0.06}s` // Stagger effect
+            }}
+          >
+            {/* Preserve spaces */}
+            {char === ' ' ? '\u00A0' : char}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
 };
 
 // --- Magnetic Button Component ---
@@ -261,7 +242,7 @@ const Hero: React.FC = () => {
             
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] font-khmer tracking-tight">
               {t('Crafting', 'បង្កើត')} <br />
-              <ScrambleText text={t('Digital Perfection', 'ភាពល្អឥតខ្ចោះនៃឌីជីថល')} />
+              <SlideRevealText text={t('Digital Perfection', 'ភាពល្អឥតខ្ចោះនៃឌីជីថល')} />
             </h1>
             
             <p className="text-base md:text-lg lg:text-xl text-gray-400 leading-relaxed font-khmer max-w-xl mx-auto lg:mx-0">
@@ -435,6 +416,17 @@ const Hero: React.FC = () => {
             0% { stroke-dashoffset: 160; opacity: 0; }
             50% { opacity: 1; }
             100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+        @keyframes slideFadeIn {
+            from { opacity: 0; transform: translateX(-15px); filter: blur(4px); }
+            to { opacity: 1; transform: translateX(0); filter: blur(0); }
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% center; }
+            100% { background-position: -200% center; }
+        }
+        .animate-text-shimmer {
+            animation: shimmer 6s linear infinite;
         }
       `}</style>
 
