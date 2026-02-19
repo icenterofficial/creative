@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
-import { X, ExternalLink, Tag, ArrowRight, Target, Zap, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ExternalLink, Tag, ArrowRight, Target, Zap, TrendingUp, ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import { Project } from '../types';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
@@ -168,6 +168,15 @@ const Portfolio: React.FC = () => {
                   className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
                   loading="lazy"
                 />
+                
+                {/* Gallery Indicator (If multiple images) */}
+                {(project.gallery && project.gallery.length > 0) && (
+                    <div className="absolute top-4 right-4 bg-black/50 backdrop-blur-sm px-2 py-1 rounded-md text-white text-xs font-bold flex items-center gap-1 z-10 border border-white/10">
+                        <ImageIcon size={12} />
+                        <span>{project.gallery.length + 1}</span>
+                    </div>
+                )}
+
                 <div className="absolute inset-0 bg-gray-950/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-6 backdrop-blur-[2px]">
                    <div className="flex justify-end translate-y-[-10px] group-hover:translate-y-0 transition-transform duration-300">
                       <div className="h-10 w-10 rounded-full bg-white text-gray-950 flex items-center justify-center">
@@ -263,7 +272,7 @@ const Portfolio: React.FC = () => {
            <div className="relative w-full max-w-6xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10 flex flex-col md:flex-row">
               
               {/* --- IMAGE / GALLERY SECTION --- */}
-              <div className="w-full md:w-1/2 h-[350px] md:h-auto bg-gray-900 relative overflow-hidden flex items-center justify-center shrink-0 group/gallery">
+              <div className="w-full md:w-1/2 h-[350px] md:h-auto bg-gray-900 relative overflow-hidden flex items-center justify-center shrink-0 group/gallery bg-black">
                   
                   {/* Active Image */}
                   {allImages.length > 0 ? (
@@ -273,35 +282,35 @@ const Portfolio: React.FC = () => {
                             key={activeImageIndex} // Key forces re-render for simple transition
                             src={allImages[activeImageIndex]} 
                             alt={selectedProject.title} 
-                            className="w-full h-full object-cover animate-fade-in"
+                            className="w-full h-full object-contain animate-fade-in bg-black"
                           />
                           
-                          {/* Navigation Buttons (Only if > 1 image) */}
+                          {/* Navigation Buttons (Only if > 1 image) - ALWAYS VISIBLE */}
                           {allImages.length > 1 && (
                               <>
                                   <button 
                                       onClick={(e) => { e.stopPropagation(); handlePrevImage(); }}
-                                      className="absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 backdrop-blur-md text-white border border-white/10 hover:bg-black/50 transition-all opacity-0 group-hover/gallery:opacity-100 transform translate-x-2 group-hover/gallery:translate-x-0"
+                                      className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/20 hover:bg-white hover:text-black transition-all shadow-lg z-20 hover:scale-110"
                                   >
                                       <ChevronLeft size={24} />
                                   </button>
                                   <button 
                                       onClick={(e) => { e.stopPropagation(); handleNextImage(); }}
-                                      className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/30 backdrop-blur-md text-white border border-white/10 hover:bg-black/50 transition-all opacity-0 group-hover/gallery:opacity-100 transform -translate-x-2 group-hover/gallery:translate-x-0"
+                                      className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/20 hover:bg-white hover:text-black transition-all shadow-lg z-20 hover:scale-110"
                                   >
                                       <ChevronRight size={24} />
                                   </button>
                               </>
                           )}
 
-                          {/* Thumbnails Overlay (Bottom) */}
+                          {/* Thumbnails Overlay (Bottom) - ALWAYS VISIBLE */}
                           {allImages.length > 1 && (
-                              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 p-2 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 max-w-[90%] overflow-x-auto scrollbar-hide opacity-0 group-hover/gallery:opacity-100 transition-opacity duration-300">
+                              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 p-3 bg-black/60 backdrop-blur-lg rounded-2xl border border-white/20 max-w-[95%] overflow-x-auto scrollbar-hide z-20 shadow-2xl">
                                   {allImages.map((img, idx) => (
                                       <button 
                                           key={idx}
                                           onClick={(e) => { e.stopPropagation(); setActiveImageIndex(idx); }}
-                                          className={`relative w-12 h-12 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${activeImageIndex === idx ? 'border-indigo-500 scale-110' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                                          className={`relative w-14 h-14 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${activeImageIndex === idx ? 'border-indigo-500 scale-110 shadow-lg shadow-indigo-500/50' : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'}`}
                                       >
                                           <img src={img} className="w-full h-full object-cover" alt="" />
                                       </button>
@@ -310,10 +319,13 @@ const Portfolio: React.FC = () => {
                           )}
                       </div>
                   ) : (
-                      <div className="text-gray-500">No Image Available</div>
+                      <div className="text-gray-500 flex flex-col items-center gap-2">
+                          <ImageIcon size={32} />
+                          <span>No Image Available</span>
+                      </div>
                   )}
 
-                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-50 md:hidden pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-gray-900/50 via-transparent to-transparent opacity-50 pointer-events-none" />
               </div>
 
               {/* Details Section (Scrollable) */}
