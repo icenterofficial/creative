@@ -23,7 +23,8 @@ const Footer: React.FC = () => {
             <RevealOnScroll>
                 <h2 className="text-4xl md:text-6xl font-bold text-white font-khmer leading-tight">
                     {t("Let's create something", "តោះបង្កើតអ្វីមួយ")} <br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
+                    {/* Added Drop Shadow Glow Effect */}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 drop-shadow-[0_0_25px_rgba(139,92,246,0.6)] animate-pulse">
                         {t("extraordinary together.", "ដែលអស្ចារ្យទាំងអស់គ្នា។")}
                     </span>
                 </h2>
@@ -32,7 +33,7 @@ const Footer: React.FC = () => {
             <RevealOnScroll delay={100} className="flex flex-col items-start lg:items-end">
                 <a 
                     href="#contact" 
-                    className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white text-gray-950 rounded-full font-bold text-lg hover:bg-indigo-50 transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)]"
+                    className="group relative inline-flex items-center gap-3 px-8 py-4 bg-white text-gray-950 rounded-full font-bold text-lg hover:bg-indigo-50 transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] hover:scale-105"
                 >
                     <span className="font-khmer">{t("Start a Project", "ចាប់ផ្តើមគម្រោង")}</span>
                     <div className="w-8 h-8 rounded-full bg-gray-950 text-white flex items-center justify-center group-hover:bg-indigo-600 transition-colors">
@@ -49,8 +50,8 @@ const Footer: React.FC = () => {
             {/* Brand Column */}
             <div className="lg:col-span-4 space-y-8">
                 <a href="#" className="flex items-center gap-2 group w-fit">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform text-xl">P</div>
-                    <span className="text-3xl font-bold text-white tracking-tight">ponloe<span className="text-gray-500">.creative</span></span>
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-700 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20 group-hover:scale-110 transition-transform text-xl border border-white/10 group-hover:border-indigo-400/50">P</div>
+                    <span className="text-3xl font-bold text-white tracking-tight group-hover:text-indigo-300 transition-colors">ponloe<span className="text-gray-500 group-hover:text-gray-400">.creative</span></span>
                 </a>
                 <p className="text-gray-400 leading-relaxed font-khmer max-w-sm text-lg">
                     {t(
@@ -64,7 +65,7 @@ const Footer: React.FC = () => {
                         { icon: Send, href: "https://telegram.org" }, 
                         { icon: Instagram, href: "https://instagram.com" }
                     ].map((Item, idx) => (
-                        <a key={idx} href={Item.href} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-gray-400 hover:bg-white hover:text-gray-950 hover:scale-110 transition-all duration-300">
+                        <a key={idx} href={Item.href} target="_blank" rel="noreferrer" className="w-12 h-12 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-gray-400 hover:bg-white hover:text-gray-950 hover:scale-110 hover:shadow-[0_0_15px_rgba(255,255,255,0.5)] transition-all duration-300">
                             <Item.icon size={20} />
                         </a>
                     ))}
@@ -78,7 +79,7 @@ const Footer: React.FC = () => {
                     {['Web Development', 'App Development', 'Graphic Design', 'Architecture', 'MVAC System'].map((item) => (
                         <li key={item}>
                             <a href="#services" className="text-gray-500 hover:text-indigo-400 transition-colors text-base font-khmer block hover:translate-x-2 duration-300 flex items-center gap-2 group">
-                                <span className="w-1 h-1 rounded-full bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                                <span className="w-1 h-1 rounded-full bg-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity box-shadow-[0_0_10px_#6366f1]"></span>
                                 {item}
                             </a>
                         </li>
@@ -116,14 +117,14 @@ const Footer: React.FC = () => {
 
             {/* Contact Column - Stylized Card */}
             <div className="lg:col-span-4 md:col-span-2">
-                 <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 border border-white/10 relative overflow-hidden group hover:border-indigo-500/30 transition-colors">
+                 <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 border border-white/10 relative overflow-hidden group hover:border-indigo-500/30 transition-colors hover:shadow-[0_0_30px_rgba(99,102,241,0.15)]">
                      {/* Glow Effect */}
                      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all"></div>
                      
                      <h4 className="text-white font-bold mb-6 font-khmer text-lg relative z-10">{t("Contact Info", "ព័ត៌មានទំនាក់ទំនង")}</h4>
                      <div className="space-y-6 relative z-10">
                         <a href="mailto:creative.ponloe.org@gmail.com" className="flex items-center gap-4 text-gray-400 hover:text-white transition-colors group/link">
-                            <div className="p-3 bg-gray-950 rounded-xl group-hover/link:bg-indigo-600 transition-colors border border-white/5"><Mail size={20} /></div>
+                            <div className="p-3 bg-gray-950 rounded-xl group-hover/link:bg-indigo-600 transition-colors border border-white/5 group-hover/link:shadow-[0_0_15px_rgba(99,102,241,0.5)]"><Mail size={20} /></div>
                             <span className="text-base font-medium">creative.ponloe.org@gmail.com</span>
                         </a>
                         <div className="flex items-center gap-4 text-gray-400 group/link">
@@ -141,17 +142,28 @@ const Footer: React.FC = () => {
                 © {currentYear} Ponloe Creative. All Rights Reserved.
              </p>
              <p className="text-gray-600 text-sm font-khmer flex items-center gap-1.5">
-                Made with <span className="text-red-500 animate-pulse">♥</span> in Cambodia
+                Made with <span className="text-red-500 animate-pulse drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]">♥</span> in Cambodia
              </p>
         </div>
         
-        {/* Massive Watermark Text - Fixed Position at bottom */}
+        {/* Massive Watermark Text - Fixed Position at bottom with SHINE Animation */}
         <div className="absolute bottom-[-5%] left-1/2 -translate-x-1/2 w-full text-center pointer-events-none select-none overflow-hidden z-0">
-            <h1 className="text-[18vw] md:text-[22vw] font-black leading-none text-white/[0.02] tracking-tighter scale-y-110">
+            <h1 className="text-[18vw] md:text-[22vw] font-black leading-none tracking-tighter scale-y-110 bg-gradient-to-r from-white/5 via-white/10 to-white/5 bg-clip-text text-transparent animate-text-shine bg-[length:200%_auto]">
                 PONLOE
             </h1>
         </div>
       </div>
+
+      <style>{`
+        @keyframes shine {
+            to {
+                background-position: 200% center;
+            }
+        }
+        .animate-text-shine {
+            animation: shine 8s linear infinite;
+        }
+      `}</style>
     </footer>
   );
 };
