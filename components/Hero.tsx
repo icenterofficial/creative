@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from 'react';
 import { ArrowRight, Play, Star, Zap, Power } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -28,7 +29,8 @@ const CountUp: React.FC<{ end: number, duration: number, suffix?: string }> = ({
 // --- Scramble Text Component ---
 const ScrambleText: React.FC<{ text: string }> = ({ text }) => {
   const [displayText, setDisplayText] = useState(text);
-  const chars = "!@#$%^&*()_+-=[]{}|;':,.<>/?";
+  // Updated characters to use Khmer letters instead of messy symbols
+  const chars = "កខគឃងចឆជឈញដឋឌឍណតថទធនបផពភមយរលវសហឡអ០១២៣៤៥៦៧៨៩";
 
   useEffect(() => {
     setDisplayText(text);
@@ -44,6 +46,8 @@ const ScrambleText: React.FC<{ text: string }> = ({ text }) => {
             if (index < iterations) {
               return text[index];
             }
+            // Add a check to keep spaces as spaces during animation for better readability
+            if (letter === " ") return " ";
             return chars[Math.floor(Math.random() * chars.length)];
           })
           .join("")
@@ -59,7 +63,7 @@ const ScrambleText: React.FC<{ text: string }> = ({ text }) => {
     return () => clearInterval(interval);
   }, [text]);
 
-  return <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">{displayText}</span>;
+  return <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 font-khmer">{displayText}</span>;
 };
 
 // --- Magnetic Button Component ---
