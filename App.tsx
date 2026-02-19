@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { DataProvider, useData } from './contexts/DataContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Header from './components/Header/index'; 
+import Header from './components/Header'; // Folder import works automatically
 import Hero from './components/Hero';
 import Partners from './components/Partners';
 import Services from './components/Services';
@@ -19,8 +19,9 @@ import FloatingChat from './components/FloatingChat';
 import CostEstimator from './components/CostEstimator'; 
 import Preloader from './components/Preloader';
 import AdminDashboard from './components/AdminDashboard';
-import { Lock, ArrowRight, X } from 'lucide-react';
+import { Lock, ArrowRight, X, ShieldCheck } from 'lucide-react';
 import { useAdminRouter } from './hooks/useRouter';
+import { CurrentUser } from './types';
 
 // Pages
 import About from './components/About';
@@ -86,7 +87,7 @@ function AppContent() {
     <div className="min-h-screen bg-gray-950 text-white overflow-x-hidden selection:bg-indigo-500 selection:text-white relative">
       <Preloader />
       <div 
-        className="pointer-events-none fixed inset-0 z-30 opacity-50"
+        className="pointer-events-none fixed inset-0 z-30 transition-opacity duration-300 opacity-50"
         style={{ background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(99, 102, 241, 0.1), transparent 40%)` }}
       />
       <Header />
