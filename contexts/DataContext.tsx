@@ -174,7 +174,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 id: p.id,
                 name: p.name,
                 icon: getIcon(p.icon, <LucideIcons.Building2 size={32} />),
-                _iconString: p.icon
+                _iconString: p.icon,
+                image: p.image
             }));
             setPartners(formatted);
         }
