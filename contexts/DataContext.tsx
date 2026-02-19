@@ -63,7 +63,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       setIsLoading(true);
       try {
-        // Fetch Projects - Now includes description, link, and created_by
+        // Fetch Projects - Now includes description, link, created_by AND gallery
         const { data: dbProjects } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
         if (dbProjects) {
              const formatted = dbProjects.map((p: any) => ({
@@ -71,6 +71,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  title: p.title,
                  category: p.category,
                  image: p.image,
+                 gallery: p.gallery || [], // Fetch gallery array
                  client: p.client,
                  slug: p.slug || slugify(p.title),
                  description: p.description, 
