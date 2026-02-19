@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { X, Save, Loader2, Upload, Image as ImageIcon, ExternalLink, Lock, Facebook, Send, Link as LinkIcon, Tag, FileText, Target, Zap, TrendingUp } from 'lucide-react';
+import { X, Save, Loader2, Upload, Image as ImageIcon, ExternalLink, Lock, Facebook, Send, Link as LinkIcon, Tag, FileText, Target, Zap, TrendingUp, Images } from 'lucide-react';
 import { getSupabaseClient } from '../../lib/supabase';
 import { useData } from '../../contexts/DataContext';
 import RichTextEditor from './editor/RichTextEditor';
@@ -24,6 +24,10 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
   const { team, projects } = useData();
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Gallery specific upload ref
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const [isGalleryUploading, setIsGalleryUploading] = useState(false);
 
   if (!isOpen || !editingItem) return null;
 
@@ -60,6 +64,20 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
       }
   };
 
+  // Gallery Upload Handler
+  const handleGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+          setIsGalleryUploading(true);
+          const url = await uploadImage(file);
+          if (url) {
+              const currentGallery = editingItem.gallery || [];
+              setEditingItem({ ...editingItem, gallery: [...currentGallery, url] });
+          }
+          setIsGalleryUploading(false);
+      }
+  };
+
   const handleSocialChange = (platform: 'facebook' | 'telegram', value: string) => {
       const currentSocials = editingItem.socials || {};
       setEditingItem({
@@ -87,7 +105,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
         <form onSubmit={onSave} className="space-y-4 flex-1">
           {Object.keys(editingItem).map((key) => {
             // Skip fields handled specially or internal fields
-            if (['id', 'comments', 'replies', 'created_at', '_iconString', 'slug', 'orderIndex', 'order_index', 'challenge', 'challengeKm', 'solution', 'solutionKm', 'result', 'resultKm', 'createdBy'].includes(key)) return null;
+            if (['id', 'comments', 'replies', 'created_at', '_iconString', 'slug', 'orderIndex', 'order_index', 'challenge', 'challengeKm', 'solution', 'solutionKm', 'result', 'resultKm', 'createdBy', 'gallery'].includes(key)) return null;
             
             const value = editingItem[key];
             let label = key.charAt(0).toUpperCase() + key.slice(1);
@@ -195,6 +213,52 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
             );
           })}
 
+          {/* --- GALLERY SECTION FOR PROJECTS --- */}
+          {activeTab === 'projects' && (
+              <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-400 mb-2 flex items-center gap-2"><Images size={14}/> Image Gallery</label>
+                  
+                  {/* Gallery Preview Grid */}
+                  <div className="grid grid-cols-4 gap-2 mb-2">
+                      {(editingItem.gallery || []).map((imgUrl: string, idx: number) => (
+                          <div key={idx} className="relative aspect-square bg-gray-800 rounded-lg overflow-hidden group border border-white/10">
+                              <img src={imgUrl} className="w-full h-full object-cover" />
+                              <button 
+                                  type="button"
+                                  onClick={() => {
+                                      const newGallery = editingItem.gallery.filter((_:any, i:number) => i !== idx);
+                                      setEditingItem({ ...editingItem, gallery: newGallery });
+                                  }}
+                                  className="absolute top-1 right-1 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                  <X size={12} />
+                              </button>
+                          </div>
+                      ))}
+                      {/* Upload Button */}
+                      <button 
+                          type="button" 
+                          onClick={() => galleryInputRef.current?.click()}
+                          disabled={isGalleryUploading}
+                          className="aspect-square bg-white/5 border border-white/10 border-dashed rounded-lg flex flex-col items-center justify-center text-gray-500 hover:text-white hover:bg-white/10 transition-colors"
+                      >
+                          {isGalleryUploading ? <Loader2 size={20} className="animate-spin" /> : <PlusIcon size={20} />}
+                          <span className="text-[10px] mt-1">Add Image</span>
+                      </button>
+                  </div>
+                  
+                  <input type="file" ref={galleryInputRef} className="hidden" accept="image/*" onChange={handleGalleryUpload} />
+                  
+                  {/* Manual URL Input fallback */}
+                  <textarea 
+                      className="w-full bg-gray-800 border border-white/10 rounded-lg p-2 text-white text-xs font-mono h-20"
+                      placeholder="Paste image URLs here (comma separated) for manual entry..."
+                      value={(editingItem.gallery || []).join(', ')}
+                      onChange={(e) => setEditingItem({ ...editingItem, gallery: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+                  />
+              </div>
+          )}
+
           {/* --- SPECIAL CASE STUDY SECTION FOR PROJECTS --- */}
           {activeTab === 'projects' && (
               <div className="mt-8 pt-8 border-t border-white/10">
@@ -271,7 +335,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
               </div>
           )}
 
-          <button type="submit" disabled={isSaving || isUploading} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-colors flex justify-center items-center gap-2 mt-6">
+          <button type="submit" disabled={isSaving || isUploading || isGalleryUploading} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-colors flex justify-center items-center gap-2 mt-6">
             {isSaving ? <><Loader2 size={18} className="animate-spin" /> Saving...</> : <><Save size={18} /> Save & Publish</>}
           </button>
         </form>
@@ -279,4 +343,9 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
     </div>
   );
 };
+
+const PlusIcon = ({ size }: { size: number }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+);
+
 export default EditItemModal;
