@@ -66,25 +66,42 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Fetch Projects - Now includes description, link, created_by AND gallery
         const { data: dbProjects } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
         if (dbProjects) {
-             const formatted = dbProjects.map((p: any) => ({
-                 id: p.id,
-                 title: p.title,
-                 category: p.category,
-                 image: p.image,
-                 gallery: p.gallery || [], // Fetch gallery array
-                 client: p.client,
-                 slug: p.slug || slugify(p.title),
-                 description: p.description, 
-                 link: p.link,
-                 createdBy: p.created_by,
-                 // Map Case Study Fields
-                 challenge: p.challenge,
-                 challengeKm: p.challenge_km,
-                 solution: p.solution,
-                 solutionKm: p.solution_km,
-                 result: p.result,
-                 resultKm: p.result_km
-             }));
+             const formatted = dbProjects.map((p: any) => {
+                 // --- FIX FOR GALLERY COUNT ISSUE ---
+                 // If database column is 'text', Supabase returns a JSON string.
+                 // We must parse it to an Array to get the correct length (count of images),
+                 // otherwise .length will count the characters in the string (e.g. 203 chars).
+                 let galleryData = p.gallery || [];
+                 if (typeof galleryData === 'string') {
+                     try {
+                         // Parse "['url1', 'url2']" string into actual Array
+                         galleryData = JSON.parse(galleryData);
+                     } catch (e) {
+                         console.warn("Failed to parse gallery JSON", e);
+                         galleryData = [];
+                     }
+                 }
+
+                 return {
+                     id: p.id,
+                     title: p.title,
+                     category: p.category,
+                     image: p.image,
+                     gallery: Array.isArray(galleryData) ? galleryData : [], // Ensure it is an array
+                     client: p.client,
+                     slug: p.slug || slugify(p.title),
+                     description: p.description, 
+                     link: p.link,
+                     createdBy: p.created_by,
+                     // Map Case Study Fields
+                     challenge: p.challenge,
+                     challengeKm: p.challenge_km,
+                     solution: p.solution,
+                     solutionKm: p.solution_km,
+                     result: p.result,
+                     resultKm: p.result_km
+                 };
+             });
              // STRICT MODE: Use only DB data
              setProjects(formatted);
         }
