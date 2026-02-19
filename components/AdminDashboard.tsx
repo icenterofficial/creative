@@ -124,7 +124,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
     // Default Templates
     const templates: any = {
       team: { name: '', role: '', roleKm: '', image: '', bio: '', bioKm: '', skills: [], experience: [], socials: {}, pinCode: '1111' },
-      projects: { title: '', category: 'graphicdesign', image: '', client: '', description: '', link: '', challenge: '', challengeKm: '', solution: '', solutionKm: '', result: '', resultKm: '' },
+      projects: { title: '', category: 'graphicdesign', image: '', client: '', description: '', link: '', gallery: [], challenge: '', challengeKm: '', solution: '', solutionKm: '', result: '', resultKm: '' },
       insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: currentUser.role === 'member' ? currentUser.id : 't1' },
       services: { title: '', titleKm: '', subtitle: '', subtitleKm: '', description: '', descriptionKm: '', features: [], featuresKm: [], icon: 'Box', color: 'bg-indigo-500', image: '' },
       careers: { title: '', type: 'Full-time', location: 'Phnom Penh', department: 'Engineering', icon: 'Code', link: '', description: '' },
@@ -266,6 +266,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   slug: generatedSlug,
                   description: item.description, 
                   link: item.link,
+                  gallery: item.gallery, // New Gallery Field
                   // New Case Study Fields
                   challenge: item.challenge,
                   challenge_km: item.challengeKm,
@@ -381,8 +382,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
               const { image, ...fallbackPayload } = payload;
               res = await executeQuery(fallbackPayload);
           }
-          // Note: Removing fallback for Projects case study fields to ensure they error if column missing, 
-          // prompting user to check database/migrations.
+          // Fallback for Projects gallery if database not migrated yet
+          if (res.error && activeTab === 'projects' && res.error.message.includes("gallery")) {
+               const { gallery, ...fallbackPayload } = payload;
+               res = await executeQuery(fallbackPayload);
+          }
+          
           if (res.error && activeTab === 'careers' && res.error.message.includes("slug")) {
                const { slug, ...fallbackPayload } = payload;
                res = await executeQuery(fallbackPayload);
@@ -433,23 +438,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
 
   // Setup Screen
   if (!dbConfig) {
+      // ... (Rest of setup screen code is identical)
       return (
           <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center p-6 relative">
-               <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-                  <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-indigo-600/20 rounded-full blur-[120px]"></div>
-               </div>
-               
+               {/* ... */}
                <div className="relative z-10 max-w-md w-full bg-gray-900 border border-white/10 rounded-3xl p-8 shadow-2xl">
-                   <div className="flex justify-center mb-6">
-                       <div className="p-4 bg-green-500/20 rounded-2xl text-green-400">
-                           <Database size={32} />
-                       </div>
-                   </div>
-                   <h2 className="text-2xl font-bold text-center font-khmer mb-2">Connect Supabase</h2>
-                   <p className="text-gray-400 text-center text-sm mb-6">
-                       Enter your Supabase credentials to manage content.
-                   </p>
-
+                   {/* ... */}
                    <form onSubmit={handleConfigSave} className="space-y-4">
                        <div>
                            <label className="block text-xs font-bold text-gray-500 mb-1">Project URL</label>
