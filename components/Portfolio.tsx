@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
-import { X, ExternalLink, Tag, ArrowRight, Target, Zap, TrendingUp, ChevronDown } from 'lucide-react';
+import { X, ExternalLink, Tag, ArrowRight, Target, Zap, TrendingUp } from 'lucide-react';
 import { Project } from '../types';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
@@ -20,21 +20,26 @@ const Portfolio: React.FC = () => {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isViewAllOpen, setIsViewAllOpen] = useState(false);
 
+  // Timeline Scroll Animation State
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+
   // Extract unique categories from projects for the filter list
   const uniqueCategories: string[] = Array.from(new Set((projects || []).map(p => p.category))).sort();
   
-  // Create category list with "All" + Dynamic Categories (mapped to labels if possible, else capitalize)
+  // Create category list with "All" + Dynamic Categories
   const categories = [
       { id: 'all', label: t('All Work', 'ទាំងអស់') },
       ...uniqueCategories.map(cat => ({ 
           id: cat, 
-          label: cat.charAt(0).toUpperCase() + cat.slice(1) // Simple capitalization 
+          label: cat.charAt(0).toUpperCase() + cat.slice(1) 
       }))
   ];
 
   const filteredProjects = (projects || []).filter(p => filter === 'all' || p.category === filter);
 
-  // Sync Router Active ID with Data (Support finding by ID or Slug)
+  // Sync Router Active ID with Data
   useEffect(() => {
       if (activeId && projects) {
           const found = projects.find(p => p.slug === activeId || p.id === activeId);
@@ -55,6 +60,49 @@ const Portfolio: React.FC = () => {
       document.body.style.overflow = 'unset';
     };
   }, [selectedProject, isViewAllOpen]);
+
+  // Handle Scroll Animation Logic inside Modal
+  const handleModalScroll = () => {
+      if (!scrollContainerRef.current || !timelineRef.current) return;
+
+      const container = scrollContainerRef.current;
+      const timeline = timelineRef.current;
+      const containerRect = container.getBoundingClientRect();
+      const timelineRect = timeline.getBoundingClientRect();
+
+      // Calculate where the timeline starts relative to the viewport
+      // We want the line to start filling when the top of the timeline enters the viewport (bottom 80%)
+      // And finish filling as we scroll past.
+      
+      const viewportHeight = window.innerHeight;
+      const startTrigger = viewportHeight * 0.8; // Start animation when element is near bottom
+      
+      const distanceTop = startTrigger - timelineRect.top;
+      const totalHeight = timelineRect.height + (viewportHeight * 0.3); // Add some buffer
+
+      let progress = (distanceTop / totalHeight) * 100;
+      
+      // Additional logic: Check if we scrolled past the element
+      if (timelineRect.top > startTrigger) progress = 0;
+      
+      // Clamp between 0 and 100
+      progress = Math.min(100, Math.max(0, progress));
+      
+      setScrollProgress(progress);
+  };
+
+  // Attach scroll listener when modal opens
+  useEffect(() => {
+      const container = scrollContainerRef.current;
+      if (selectedProject && container) {
+          container.addEventListener('scroll', handleModalScroll);
+          // Initial check
+          handleModalScroll();
+      }
+      return () => {
+          if (container) container.removeEventListener('scroll', handleModalScroll);
+      };
+  }, [selectedProject]);
 
   return (
     <section id="portfolio" className="py-24 bg-gray-900/50 relative overflow-hidden">
@@ -92,7 +140,7 @@ const Portfolio: React.FC = () => {
             </RevealOnScroll>
         </div>
 
-        {/* Masonry Grid with Tailwind Columns and Staggered Animation */}
+        {/* Masonry Grid */}
         <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
           {filteredProjects.slice(0, 6).map((project, index) => (
             <RevealOnScroll key={project.id} delay={index * 100} variant="zoom-in" duration={600}>
@@ -106,15 +154,12 @@ const Portfolio: React.FC = () => {
                   className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105"
                   loading="lazy"
                 />
-                
-                {/* Premium Overlay */}
                 <div className="absolute inset-0 bg-gray-950/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-6 backdrop-blur-[2px]">
                    <div className="flex justify-end translate-y-[-10px] group-hover:translate-y-0 transition-transform duration-300">
                       <div className="h-10 w-10 rounded-full bg-white text-gray-950 flex items-center justify-center">
                            <span className="text-xl">↗</span>
                       </div>
                    </div>
-                   
                    <div className="translate-y-[10px] group-hover:translate-y-0 transition-transform duration-300">
                       <span className="text-indigo-400 text-xs font-bold uppercase tracking-wider mb-2 block">{project.category}</span>
                       <h3 className="text-white text-2xl font-bold">{project.title}</h3>
@@ -145,7 +190,6 @@ const Portfolio: React.FC = () => {
                 onClick={() => setIsViewAllOpen(false)}
             />
              <div className="relative w-full max-w-7xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col">
-                {/* Header */}
                 <div className="flex justify-between items-center p-6 md:p-8 border-b border-white/10 bg-gray-900 z-10">
                     <div>
                         <h3 className="text-2xl font-bold text-white font-khmer">{t('All Projects', 'គម្រោងទាំងអស់')}</h3>
@@ -158,10 +202,7 @@ const Portfolio: React.FC = () => {
                         <X size={24} />
                     </button>
                 </div>
-
-                {/* Grid Content */}
                 <div className="flex-1 overflow-y-auto p-6 md:p-8 scrollbar-hide">
-                    {/* Optional: Add filters here if needed, for now showing all sorted by date (implicitly) */}
                     <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
                         {(projects || []).map((project) => (
                              <div 
@@ -176,11 +217,7 @@ const Portfolio: React.FC = () => {
                                     loading="lazy"
                                 />
                                 <div className="absolute inset-0 bg-gray-950/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center text-center p-4">
-                                    <span className="text-indigo-400 text-[10px] font-bold uppercase tracking-wider mb-2 px-2 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20">{project.category}</span>
                                     <h4 className="text-white text-lg font-bold font-khmer">{project.title}</h4>
-                                    <span className="mt-4 text-xs text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1 border-b border-gray-600 pb-0.5 group-hover:border-white group-hover:text-white transition-colors">
-                                        View Details <ArrowRight size={12} />
-                                    </span>
                                 </div>
                             </div>
                         ))}
@@ -200,7 +237,7 @@ const Portfolio: React.FC = () => {
              onClick={closeItem}
            />
 
-           {/* Close Button - Fixed Position */}
+           {/* Close Button */}
            <button 
               onClick={closeItem}
               className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all z-50 border border-white/10"
@@ -221,8 +258,11 @@ const Portfolio: React.FC = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-50 md:hidden" />
               </div>
 
-              {/* Details Section */}
-              <div className="w-full md:w-1/2 bg-gray-900 flex flex-col overflow-y-auto">
+              {/* Details Section (Scrollable) */}
+              <div 
+                className="w-full md:w-1/2 bg-gray-900 flex flex-col overflow-y-auto scrollbar-hide relative"
+                ref={scrollContainerRef}
+              >
                  <div className="p-8 md:p-10 space-y-8">
                     <div>
                         <div className="flex items-center gap-2 mb-4">
@@ -251,59 +291,81 @@ const Portfolio: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* --- VERTICAL TIMELINE CASE STUDY SECTION --- */}
+                    {/* --- ANIMATED VERTICAL TIMELINE CASE STUDY --- */}
                     {(selectedProject.challenge || selectedProject.solution || selectedProject.result) && (
-                        <div className="relative pl-8 md:pl-10 border-l-2 border-white/5 space-y-12 py-4">
-                            {/* 1. Challenge */}
-                            {(selectedProject.challenge || selectedProject.challengeKm) && (
-                                <RevealOnScroll variant="slide-right">
-                                    <div className="relative group">
-                                        <div className="absolute -left-[45px] md:-left-[53px] top-0 p-2 rounded-xl bg-gray-900 border-2 border-red-500/30 text-red-400 shadow-lg shadow-red-500/10 z-10 group-hover:border-red-500 group-hover:text-red-500 transition-colors">
+                        <div className="relative py-8" ref={timelineRef}>
+                            
+                            {/* The Center Lines */}
+                            {/* 1. Static Gray Line */}
+                            <div className="absolute left-6 top-4 bottom-4 w-0.5 bg-white/10 z-0"></div>
+                            
+                            {/* 2. Animated Gradient Line */}
+                            <div 
+                                className="absolute left-6 top-4 w-0.5 bg-gradient-to-b from-indigo-500 via-purple-500 to-pink-500 z-0 transition-all duration-300 ease-out"
+                                style={{ height: `${scrollProgress}%` }}
+                            >
+                                {/* Glowing Tip */}
+                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.8)]"></div>
+                            </div>
+
+                            <div className="space-y-16">
+                                {/* 1. Challenge */}
+                                {(selectedProject.challenge || selectedProject.challengeKm) && (
+                                    <div className="relative pl-20 group">
+                                        {/* Icon Node - Centered on Line */}
+                                        <div className={`absolute left-0 top-0 w-12 h-12 rounded-full bg-gray-900 border-2 flex items-center justify-center z-10 transition-all duration-500 ${scrollProgress > 10 ? 'border-red-500 text-red-500 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : 'border-gray-700 text-gray-500'}`}>
                                             <Target size={20} />
                                         </div>
-                                        <h5 className="text-lg font-bold text-white mb-2 font-khmer flex items-center gap-2">
-                                            {t('The Challenge', 'បញ្ហាប្រឈម')}
-                                        </h5>
-                                        <p className="text-gray-400 text-sm md:text-base leading-relaxed font-khmer bg-white/5 p-4 rounded-xl border border-white/5">
-                                            {t(selectedProject.challenge!, selectedProject.challengeKm || selectedProject.challenge!)}
-                                        </p>
+                                        
+                                        <RevealOnScroll variant="slide-right">
+                                            <h5 className={`text-lg font-bold mb-2 font-khmer transition-colors duration-500 ${scrollProgress > 10 ? 'text-red-400' : 'text-gray-400'}`}>
+                                                {t('The Challenge', 'បញ្ហាប្រឈម')}
+                                            </h5>
+                                            <p className="text-gray-400 text-sm md:text-base leading-relaxed font-khmer bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-red-500/20 transition-colors">
+                                                {t(selectedProject.challenge!, selectedProject.challengeKm || selectedProject.challenge!)}
+                                            </p>
+                                        </RevealOnScroll>
                                     </div>
-                                </RevealOnScroll>
-                            )}
+                                )}
 
-                            {/* 2. Solution */}
-                            {(selectedProject.solution || selectedProject.solutionKm) && (
-                                <RevealOnScroll variant="slide-right" delay={100}>
-                                    <div className="relative group">
-                                        <div className="absolute -left-[45px] md:-left-[53px] top-0 p-2 rounded-xl bg-gray-900 border-2 border-blue-500/30 text-blue-400 shadow-lg shadow-blue-500/10 z-10 group-hover:border-blue-500 group-hover:text-blue-500 transition-colors">
+                                {/* 2. Solution */}
+                                {(selectedProject.solution || selectedProject.solutionKm) && (
+                                    <div className="relative pl-20 group">
+                                        {/* Icon Node - Centered on Line */}
+                                        <div className={`absolute left-0 top-0 w-12 h-12 rounded-full bg-gray-900 border-2 flex items-center justify-center z-10 transition-all duration-500 ${scrollProgress > 45 ? 'border-blue-500 text-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.3)]' : 'border-gray-700 text-gray-500'}`}>
                                             <Zap size={20} />
                                         </div>
-                                        <h5 className="text-lg font-bold text-white mb-2 font-khmer flex items-center gap-2">
-                                            {t('The Solution', 'ដំណោះស្រាយ')}
-                                        </h5>
-                                        <p className="text-gray-400 text-sm md:text-base leading-relaxed font-khmer bg-white/5 p-4 rounded-xl border border-white/5">
-                                            {t(selectedProject.solution!, selectedProject.solutionKm || selectedProject.solution!)}
-                                        </p>
-                                    </div>
-                                </RevealOnScroll>
-                            )}
 
-                            {/* 3. Result */}
-                            {(selectedProject.result || selectedProject.resultKm) && (
-                                <RevealOnScroll variant="slide-right" delay={200}>
-                                    <div className="relative group">
-                                        <div className="absolute -left-[45px] md:-left-[53px] top-0 p-2 rounded-xl bg-gray-900 border-2 border-green-500/30 text-green-400 shadow-lg shadow-green-500/10 z-10 group-hover:border-green-500 group-hover:text-green-500 transition-colors">
+                                        <RevealOnScroll variant="slide-right" delay={100}>
+                                            <h5 className={`text-lg font-bold mb-2 font-khmer transition-colors duration-500 ${scrollProgress > 45 ? 'text-blue-400' : 'text-gray-400'}`}>
+                                                {t('The Solution', 'ដំណោះស្រាយ')}
+                                            </h5>
+                                            <p className="text-gray-400 text-sm md:text-base leading-relaxed font-khmer bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-blue-500/20 transition-colors">
+                                                {t(selectedProject.solution!, selectedProject.solutionKm || selectedProject.solution!)}
+                                            </p>
+                                        </RevealOnScroll>
+                                    </div>
+                                )}
+
+                                {/* 3. Result */}
+                                {(selectedProject.result || selectedProject.resultKm) && (
+                                    <div className="relative pl-20 group">
+                                        {/* Icon Node - Centered on Line */}
+                                        <div className={`absolute left-0 top-0 w-12 h-12 rounded-full bg-gray-900 border-2 flex items-center justify-center z-10 transition-all duration-500 ${scrollProgress > 80 ? 'border-green-500 text-green-500 shadow-[0_0_20px_rgba(34,197,94,0.3)]' : 'border-gray-700 text-gray-500'}`}>
                                             <TrendingUp size={20} />
                                         </div>
-                                        <h5 className="text-lg font-bold text-white mb-2 font-khmer flex items-center gap-2">
-                                            {t('The Result', 'លទ្ធផល')}
-                                        </h5>
-                                        <p className="text-gray-400 text-sm md:text-base leading-relaxed font-khmer bg-white/5 p-4 rounded-xl border border-white/5">
-                                            {t(selectedProject.result!, selectedProject.resultKm || selectedProject.result!)}
-                                        </p>
+
+                                        <RevealOnScroll variant="slide-right" delay={200}>
+                                            <h5 className={`text-lg font-bold mb-2 font-khmer transition-colors duration-500 ${scrollProgress > 80 ? 'text-green-400' : 'text-gray-400'}`}>
+                                                {t('The Result', 'លទ្ធផល')}
+                                            </h5>
+                                            <p className="text-gray-400 text-sm md:text-base leading-relaxed font-khmer bg-white/5 p-6 rounded-2xl border border-white/5 hover:border-green-500/20 transition-colors">
+                                                {t(selectedProject.result!, selectedProject.resultKm || selectedProject.result!)}
+                                            </p>
+                                        </RevealOnScroll>
                                     </div>
-                                </RevealOnScroll>
-                            )}
+                                )}
+                            </div>
                         </div>
                     )}
                  </div>
