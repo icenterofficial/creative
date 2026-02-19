@@ -97,8 +97,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
             // Fallback for static items without _iconString, default to empty to allow editing
             itemToEdit.icon = ''; 
         }
-        // Ensure image field exists even if empty, so the modal renders the uploader (for services)
-        if (activeTab === 'services' && !itemToEdit.image) {
+        // Ensure image field exists even if empty, so the modal renders the uploader (for services/partners)
+        if ((activeTab === 'services' || activeTab === 'partners') && !itemToEdit.image) {
             itemToEdit.image = '';
         }
     }
@@ -127,7 +127,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
       insights: { title: '', titleKm: '', excerpt: '', content: '', date: new Date().toISOString().split('T')[0], category: 'Design', image: '', authorId: currentUser.role === 'member' ? currentUser.id : 't1' },
       services: { title: '', titleKm: '', subtitle: '', subtitleKm: '', description: '', descriptionKm: '', features: [], featuresKm: [], icon: 'Box', color: 'bg-indigo-500', image: '' },
       careers: { title: '', type: 'Full-time', location: 'Phnom Penh', department: 'Engineering', icon: 'Code', link: '', description: '' },
-      partners: { name: '', icon: 'Building2' }
+      partners: { name: '', icon: 'Building2', image: '' }
     };
     setEditingItem(templates[activeTab]);
     setIsModalOpen(true);
@@ -329,6 +329,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
               payload = {
                   name: item.name,
                   icon: (typeof item.icon === 'string' && item.icon.trim()) ? item.icon : 'Building2',
+                  image: item.image
               }
           }
 
@@ -365,6 +366,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
 
           // RETRY STRATEGY (Missing columns fallback logic from previous code...)
           if (res.error && activeTab === 'services' && res.error.message.includes("Could not find the 'image' column")) {
+              const { image, ...fallbackPayload } = payload;
+              res = await executeQuery(fallbackPayload);
+          }
+          if (res.error && activeTab === 'partners' && res.error.message.includes("Could not find the 'image' column")) {
               const { image, ...fallbackPayload } = payload;
               res = await executeQuery(fallbackPayload);
           }
