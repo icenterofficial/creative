@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { DataProvider, useData } from './contexts/DataContext';
@@ -14,6 +15,7 @@ import Insights from './components/Insights';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import ScrollButton from './components/ScrollButton';
+import FloatingChat from './components/FloatingChat'; // Imported
 import Preloader from './components/Preloader';
 import AdminDashboard from './components/AdminDashboard';
 import { Lock, ArrowRight, X, ShieldCheck } from 'lucide-react';
@@ -101,8 +103,6 @@ function AppContent() {
       } 
       
       // 2. CHECK DYNAMIC TEAM PINS (FROM SUPABASE)
-      // Note: In production, do not expose PINs in the public 'team' array. 
-      // Ideally, use a backend function to verify PIN. Here we use client-side check for simplicity.
       const foundMember = team.find(m => m.pinCode === pin);
       
       if (foundMember) {
@@ -188,6 +188,9 @@ function AppContent() {
         <Contact />
       </main>
       <Footer />
+      
+      {/* Navigation Tools */}
+      <FloatingChat />
       <ScrollButton />
       
       {/* Full Screen Page Overlays */}
