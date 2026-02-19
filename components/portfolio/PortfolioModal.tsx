@@ -1,12 +1,13 @@
 
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, ExternalLink, Tag } from 'lucide-react';
+import { X, ExternalLink, Tag, Monitor } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { Project } from '../../types';
 import ContentRenderer from '../ContentRenderer';
 import ProjectGallery from './ProjectGallery';
 import CaseStudy from './CaseStudy';
+import LivePreviewModal from './LivePreviewModal';
 
 interface PortfolioModalProps {
   project: Project;
@@ -17,6 +18,7 @@ const PortfolioModal: React.FC<PortfolioModalProps> = ({ project, onClose }) => 
   const { t } = useLanguage();
   const textContainerRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
+  const [isLivePreviewOpen, setIsLivePreviewOpen] = useState(false);
 
   // Determine images
   const allImages = [project.image, ...(project.gallery || [])].filter(Boolean);
@@ -37,7 +39,7 @@ const PortfolioModal: React.FC<PortfolioModalProps> = ({ project, onClose }) => 
           <X size={24} />
        </button>
 
-       {/* Modal Content - UPDATED FOR MOBILE SCROLLING */}
+       {/* Modal Content */}
        <div 
             ref={modalRef} 
             className="relative w-full max-w-6xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-y-auto md:overflow-hidden animate-scale-up z-10 flex flex-col md:flex-row"
@@ -48,7 +50,7 @@ const PortfolioModal: React.FC<PortfolioModalProps> = ({ project, onClose }) => 
               <ProjectGallery images={allImages} title={project.title} />
           </div>
 
-          {/* --- RIGHT: DETAILS SECTION (Scrollable) --- */}
+          {/* --- RIGHT: DETAILS SECTION --- */}
           <div 
             className="w-full md:w-1/2 bg-gray-900 flex flex-col md:overflow-y-auto scrollbar-hide relative"
             ref={textContainerRef}
@@ -82,14 +84,6 @@ const PortfolioModal: React.FC<PortfolioModalProps> = ({ project, onClose }) => 
                 </div>
 
                 {/* --- ANIMATED CASE STUDY TIMELINE --- */}
-                {/* We pass both refs: 
-                    - In Desktop mode: 'textContainerRef' is the scrollable element.
-                    - In Mobile mode: 'modalRef' (parent) is the scrollable element.
-                    We pass the appropriate ref to the CaseStudy component or let CaseStudy handle logic. 
-                    Actually, passing 'textContainerRef' works best for Desktop. 
-                    For Mobile, the CaseStudy is inside the flow, so standard window scroll or container scroll works.
-                    Here we pass 'textContainerRef' for the desktop effect, and can fallback to 'modalRef' for mobile in the component logic.
-                */}
                 <CaseStudy 
                     challenge={project.challenge}
                     challengeKm={project.challengeKm}
@@ -97,26 +91,29 @@ const PortfolioModal: React.FC<PortfolioModalProps> = ({ project, onClose }) => 
                     solutionKm={project.solutionKm}
                     result={project.result}
                     resultKm={project.resultKm}
-                    // For mobile, the scrollable element is modalRef. For desktop, it's textContainerRef.
-                    // We can pass a ref that we switch based on screen size, or pass both.
-                    // For simplicity in this structure, we'll pass textContainerRef, 
-                    // and inside CaseStudy we can add logic to check window width if needed, 
-                    // OR we just attach listener to the mobile container too if we can access it.
-                    // A simple trick: pass the Ref that is actually scrolling.
                     scrollContainerRef={window.innerWidth < 768 ? modalRef : textContainerRef}
                 />
              </div>
 
              <div className="mt-auto p-8 border-t border-white/10 bg-gray-900/50">
                  {project.link ? (
-                     <a 
-                        href={project.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full py-4 rounded-xl bg-white text-gray-950 font-bold hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-2 font-khmer shadow-lg hover:shadow-indigo-500/25"
-                     >
-                        {t('View Live Project', 'មើលគម្រោងផ្ទាល់')} <ExternalLink size={18} />
-                     </a>
+                     <div className="flex flex-col sm:flex-row gap-3">
+                         <button 
+                            onClick={() => setIsLivePreviewOpen(true)}
+                            className="flex-1 py-4 rounded-xl bg-white text-gray-950 font-bold hover:bg-indigo-500 hover:text-white transition-all flex items-center justify-center gap-2 font-khmer shadow-lg hover:shadow-indigo-500/25"
+                         >
+                            <Monitor size={18} /> {t('View Live Preview', 'មើលគម្រោងផ្ទាល់')}
+                         </button>
+                         <a 
+                            href={project.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-6 py-4 rounded-xl bg-white/5 text-white font-bold hover:bg-white/10 transition-all flex items-center justify-center border border-white/10"
+                            title="Open in new tab"
+                         >
+                            <ExternalLink size={18} />
+                         </a>
+                     </div>
                  ) : (
                      <button disabled className="w-full py-4 rounded-xl bg-white/5 text-gray-500 font-bold cursor-not-allowed flex items-center justify-center gap-2 font-khmer border border-white/5">
                         {t('No Live Link', 'មិនមានតំណភ្ជាប់')}
@@ -125,6 +122,15 @@ const PortfolioModal: React.FC<PortfolioModalProps> = ({ project, onClose }) => 
              </div>
           </div>
        </div>
+
+       {/* Live Preview Modal Overlay */}
+       {isLivePreviewOpen && project.link && (
+         <LivePreviewModal 
+            url={project.link} 
+            title={project.title} 
+            onClose={() => setIsLivePreviewOpen(false)} 
+         />
+       )}
     </div>,
     document.body
   );
