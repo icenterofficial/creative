@@ -5,12 +5,11 @@ import { useData } from '../../contexts/DataContext';
 import { MemberDetailModal, AuthorArticlesModal, ArticleDetailModal } from '../TeamModals';
 import { TeamMember, Post } from '../../types';
 
-import { ScrambleText, KhmerFadeText } from './HeroText';
 import HeroActions from './HeroActions';
 import HeroVisuals from './HeroVisuals';
 
 const Hero: React.FC = () => {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const { team = [], insights = [] } = useData(); 
   
   // Modal States
@@ -73,24 +72,18 @@ const Hero: React.FC = () => {
                 <h1 className="text-5xl md:text-7xl font-black leading-[1.1] tracking-tight text-white font-khmer">
                     {t('We Craft', 'យើងបង្កើត')} <br />
                     
-                    {/* Switch Animation based on Language for better support */}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 drop-shadow-lg">
-                        {language === 'km' ? (
-                             <KhmerFadeText text="ភាពល្អឥតខ្ចោះ" className="pb-2" />
-                        ) : (
-                             <ScrambleText text="Digital Perfection" className="pb-2" />
-                        )}
+                    {/* Simplified: No more complex JS animation, just pure text for stability */}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 drop-shadow-lg pb-2 inline-block">
+                        {t('Digital Perfection', 'ភាពល្អឥតខ្ចោះ')}
                     </span>
                 </h1>
 
-                {/* Subtitle - Simple Fade for both languages */}
+                {/* Subtitle */}
                 <div className="text-2xl md:text-3xl font-bold font-khmer text-white/90 leading-relaxed mt-2" style={{ textShadow: '0 0 20px rgba(168, 85, 247, 0.4)' }}>
-                    <KhmerFadeText 
-                        text={t(
-                            'Transforming ideas into reality.',
-                            'បំប្លែងគំនិតទៅជាការពិត' 
-                        )} 
-                    />
+                    {t(
+                        'Transforming ideas into reality.',
+                        'បំប្លែងគំនិតទៅជាការពិត' 
+                    )}
                 </div>
             </div>
             
