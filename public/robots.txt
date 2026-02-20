@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ponloe.org/sitemap.xml
