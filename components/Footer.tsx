@@ -1,11 +1,12 @@
-
 import React from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
-import { ArrowUpRight, Facebook, Send, Instagram, Mail, MapPin } from 'lucide-react';
+import { ArrowUpRight, Facebook, Send, Instagram, Mail, MapPin, Download } from 'lucide-react';
+import { usePWA } from '../hooks/usePWA';
 import RevealOnScroll from './RevealOnScroll';
 
 const Footer: React.FC = () => {
   const { t } = useLanguage();
+  const { isInstallable, installPWA } = usePWA();
   const currentYear = new Date().getFullYear();
 
   return (
@@ -150,9 +151,20 @@ const Footer: React.FC = () => {
 
         {/* Bottom Bar */}
         <div className="relative border-t border-white/5 pt-8 pb-12 flex flex-col md:flex-row justify-between items-center gap-4 z-20">
-             <p className="text-gray-600 text-sm font-khmer">
-                © {currentYear} Ponloe Creative. All Rights Reserved.
-             </p>
+             <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8">
+               <p className="text-gray-600 text-sm font-khmer">
+                  © {currentYear} Ponloe Creative. All Rights Reserved.
+               </p>
+               {isInstallable && (
+                 <button 
+                   onClick={installPWA}
+                   className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-indigo-400 text-sm font-bold transition-all duration-300 group"
+                 >
+                   <Download size={16} className="group-hover:bounce" />
+                   <span className="font-khmer">{t("Install App", "ដំឡើងកម្មវិធី")}</span>
+                 </button>
+               )}
+             </div>
              <p className="text-gray-600 text-sm font-khmer flex items-center gap-1.5">
                 Made with <span className="text-red-500 animate-pulse drop-shadow-[0_0_5px_rgba(239,68,68,0.8)]">♥</span> in Cambodia
              </p>
