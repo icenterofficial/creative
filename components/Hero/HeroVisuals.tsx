@@ -1,6 +1,5 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Zap } from 'lucide-react';
 import { TeamMember } from '../../types';
 
 interface HeroVisualsProps {
@@ -9,8 +8,8 @@ interface HeroVisualsProps {
 }
 
 const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
-  const [isOrbiting, setIsOrbiting] = useState(true); // Default to orbiting
-  const [isCoreHovered, setIsCoreHovered] = useState(false); // New: Overdrive state
+  const [isOrbiting, setIsOrbiting] = useState(true);
+  const [isCoreHovered, setIsCoreHovered] = useState(false);
   const [rotationAngle, setRotationAngle] = useState(0);
   const [hoveredMemberId, setHoveredMemberId] = useState<string | null>(null);
   
@@ -20,22 +19,19 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
   const mouse = useRef({ x: 0, y: 0 });
   const smoothMouse = useRef({ x: 0, y: 0 });
 
-  // Generate random particles for 3D depth
   const particles = useMemo(() => {
       return Array.from({ length: 30 }).map((_, i) => ({
           x: Math.random() * 100,
           y: Math.random() * 100,
-          z: Math.random() * 100 - 50, // -50 to 50
+          z: Math.random() * 100 - 50,
           size: Math.random() * 3 + 1,
           duration: Math.random() * 10 + 10
       }));
   }, []);
 
-  // Handle Rotation Logic - Speed up when core is hovered
   useEffect(() => {
     const animateRotation = () => {
         if (isOrbiting) {
-            // Base speed 0.002, Overdrive speed 0.01
             const speed = isCoreHovered ? 0.01 : 0.002;
             setRotationAngle(prev => prev + speed); 
             animationRef.current = requestAnimationFrame(animateRotation);
@@ -51,7 +47,6 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
     return () => cancelAnimationFrame(animationRef.current);
   }, [isOrbiting, isCoreHovered]);
 
-  // Handle Real-time Mouse Tracking (Parallax Effect)
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
         mouse.current = {
@@ -90,11 +85,10 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
     };
   }, []);
 
-  // Helper to calculate dynamic positions
   const getDynamicPosition = (index: number, total: number, currentRotation: number) => {
       const angle = (index / total) * 2 * Math.PI - (Math.PI / 2) + currentRotation;
       const radiusBase = 38; 
-      const radiusVar = (index % 2 === 0 ? 4 : -4); // Zigzag slightly
+      const radiusVar = (index % 2 === 0 ? 4 : -4);
       const radius = radiusBase + radiusVar;
 
       const left = 50 + radius * Math.cos(angle);
@@ -114,7 +108,6 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
             className="relative w-full h-full flex items-center justify-center transition-transform duration-100 ease-out preserve-3d"
             style={{ transformStyle: 'preserve-3d' }}
         >
-            {/* --- 0. 3D FLOATING PARTICLES (New) --- */}
             {particles.map((p, i) => (
                 <div
                     key={i}
@@ -131,7 +124,7 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
                 />
             ))}
 
-            {/* --- 1. CENTER CORE (PONLOE) --- */}
+            {/* --- 1. CENTER CORE (PONLOE LOGO) --- */}
             <div 
                 className="absolute z-10 cursor-pointer group/core"
                 style={{ transform: 'translateZ(30px)' }}
@@ -139,16 +132,31 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
                 onMouseLeave={() => setIsCoreHovered(false)}
                 onClick={() => setIsOrbiting(!isOrbiting)}
             >
-                {/* Core Energy Field */}
-                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/20 rounded-full blur-[60px] transition-all duration-500 ${isCoreHovered ? 'scale-150 opacity-90' : 'scale-100 opacity-40 animate-pulse'}`}></div>
+                {/* Core Energy Field (ពន្លឺជុំវិញ) */}
+                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/20 rounded-full blur-[60px] transition-all duration-500 ${isCoreHovered || !isOrbiting ? 'scale-150 opacity-90' : 'scale-100 opacity-40 animate-pulse'}`}></div>
                 
+                {/* ស្រទាប់ពន្លឺបន្ថែមពេលចុច (Active Glow) */}
+                {!isOrbiting && (
+                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-cyan-400/30 rounded-full blur-[40px] animate-pulse"></div>
+                )}
+
                 {/* Core Physical Object */}
-                <div className={`relative w-28 h-28 bg-gray-950/80 backdrop-blur-xl border-2 transition-all duration-500 rounded-full flex flex-col items-center justify-center z-20 animate-float ${isCoreHovered ? 'border-indigo-300 shadow-[0_0_80px_rgba(99,102,241,0.8)] scale-110' : 'border-white/10'}`}>
-                    <Zap size={32} className={`text-white transition-all duration-300 ${isCoreHovered ? 'fill-indigo-300 text-indigo-300 scale-125' : 'fill-white/20'}`} />
-                    <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white mt-2 drop-shadow-md">Ponloe</span>
+                <div className={`relative w-28 h-28 bg-gray-950/80 backdrop-blur-xl border-2 transition-all duration-500 rounded-full flex flex-col items-center justify-center z-20 animate-float ${isCoreHovered || !isOrbiting ? 'border-indigo-300 shadow-[0_0_80px_rgba(99,102,241,0.8)] scale-110' : 'border-white/10'}`}>
                     
-                    {/* High-speed Ring (Visible on hover) */}
-                    <div className={`absolute inset-0 rounded-full border-t-2 border-indigo-400 w-full h-full ${isCoreHovered ? 'animate-spin-super-fast opacity-100' : 'opacity-0'}`}></div>
+                    {/* SVG LOGO ថ្មី */}
+                    <svg viewBox="0 0 2160 2160" className={`w-14 h-14 transition-all duration-500 ${isCoreHovered || !isOrbiting ? 'scale-125 filter drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]' : 'opacity-60'}`}>
+                        <defs>
+                            <linearGradient id="core_gradient" gradientUnits="userSpaceOnUse" x1="1269.9144" y1="1075.2654" x2="892.25574" y2="1103.478">
+                                <stop offset="0" stopColor="#5555F9"/><stop offset="1" stopColor="#2D86FF"/>
+                            </linearGradient>
+                        </defs>
+                        <path fill="url(#core_gradient)" d="M1059.04 933.134C1062.61 919.977 1067.51 888.023 1076.25 880.968C1092.44 877.391 1098.51 929.642 1102.9 942.387C1114.81 976.95 1123.86 1005.88 1154.09 1030.14C1186.56 1056.2 1230.43 1067.48 1270.71 1075.99C1276.06 1077.13 1285.53 1079.41 1285.89 1086.01C1287.02 1097.14 1264.91 1099.6 1256.56 1101.5C1211.8 1111.73 1159.49 1124.78 1131.88 1164.55C1106.07 1201.74 1100.82 1241.65 1089.83 1283.86C1088.16 1290.25 1079.56 1296.05 1074.16 1289.14C1069.17 1282.31 1068.01 1269.09 1065.53 1261.18C1051.09 1201.97 1038.59 1153.13 979.073 1125.88C958.148 1115.76 937.804 1109.87 915.413 1104.41C905.678 1102.04 880.128 1098.46 874.5 1090.95C873.607 1087.93 873.481 1088.28 874.045 1085.21C874.468 1082.92 877.832 1078.88 879.831 1078.27C889.391 1075.35 900.543 1073.06 910.179 1070.54C937.237 1063.49 961.511 1056.04 986.191 1042.59C1032.25 1017.49 1045.4 980.701 1059.04 933.134ZM879.378 1088.75C879.819 1088.87 883.698 1089.61 883.798 1089.57C900.292 1083.02 917.27 1078.43 934.024 1072.79C937.349 1071.67 936.82 1071.39 937.72 1069.09C927.333 1072.15 885.541 1083.41 879.378 1088.75ZM1072.86 910.995C1074.28 905.7 1080.69 888.634 1080.67 886.444C1079.73 884.986 1079.69 884.58 1078.42 883.515C1075.68 887.219 1069.81 907.215 1071.53 911.103L1072.86 910.995Z"/>
+                    </svg>
+
+                    <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white mt-1 drop-shadow-md">Ponloe</span>
+                    
+                    {/* High-speed Ring (Visible on hover/click) */}
+                    <div className={`absolute inset-0 rounded-full border-t-2 border-indigo-400 w-full h-full ${isCoreHovered || !isOrbiting ? 'animate-spin-super-fast opacity-100' : 'opacity-0'}`}></div>
                 </div>
             </div>
 
@@ -168,16 +176,14 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
                     </filter>
                 </defs>
 
-                {/* Circles */}
                 <circle cx="50%" cy="50%" r="35%" stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" className={isOrbiting ? "animate-spin-slow" : ""} style={{ animationDuration: isCoreHovered ? '5s' : '20s' }} />
                 <circle cx="50%" cy="50%" r="50%" stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" />
                 <circle cx="50%" cy="50%" r="60%" stroke="rgba(99, 102, 241, 0.1)" strokeWidth="1" strokeDasharray="4 8" fill="none" className="animate-spin-slow" style={{ animationDuration: isCoreHovered ? '10s' : '60s' }} />
 
-                {/* Connecting Lines */}
                 {team.map((member, index) => {
                     const pos = getDynamicPosition(index, team.length, rotationAngle);
                     const isHovered = hoveredMemberId === member.id;
-                    const isCoreActive = isCoreHovered; // Also highlight lines when core is active
+                    const isCoreActive = isCoreHovered || !isOrbiting;
                     
                     return (
                         <line 
@@ -198,53 +204,45 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
                 const pos = getDynamicPosition(index, team.length, rotationAngle);
                 const delay = index * 0.8; 
                 const isHovered = hoveredMemberId === member.id;
-                
-                // Tilt logic: Cards face the mouse slightly
-                const tiltX = (smoothMouse.current.y * 15); // Rotate X based on Y mouse
-                const tiltY = -(smoothMouse.current.x * 15); // Rotate Y based on X mouse
+                const tiltX = (smoothMouse.current.y * 15);
+                const tiltY = -(smoothMouse.current.x * 15);
 
                 return (
                     <React.Fragment key={member.id}>
-                        {/* --- ENERGY PACKET (The Light) --- */}
                         <div 
                             className="packet-container"
                             style={{
                                 '--target-left': pos.left,
                                 '--target-top': pos.top,
-                                animationDuration: isCoreHovered ? '1s' : '4s', // Speed up when core hovered
+                                animationDuration: isCoreHovered || !isOrbiting ? '1s' : '4s',
                                 animationDelay: `${delay}s`
                             } as React.CSSProperties}
                         >
-                            <div className="packet-head" style={{ boxShadow: isCoreHovered ? '0 0 15px #fff, 0 0 30px cyan' : '' }}></div>
+                            <div className="packet-head" style={{ boxShadow: isCoreHovered || !isOrbiting ? '0 0 15px #fff, 0 0 30px cyan' : '' }}></div>
                             <div className="packet-tail"></div>
                         </div>
 
-                        {/* --- NODE WRAPPER --- */}
                         <div
                             className="absolute z-20 cursor-pointer"
                             style={{ 
                                 top: pos.top,
                                 left: pos.left,
                                 transform: `translate(-50%, -50%) translateZ(${pos.speed * 20}px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`,
-                                transition: 'transform 0.1s ease-out' // Smooth tilt
+                                transition: 'transform 0.1s ease-out'
                             }}
                             onMouseEnter={() => setHoveredMemberId(member.id)}
                             onMouseLeave={() => setHoveredMemberId(null)}
                             onClick={() => onMemberClick(member)}
                         >
-                            {/* Main Node Card */}
                             <div className={`
                                 relative rounded-full p-[2px] transition-all duration-500 group
                                 ${isHovered ? 'scale-125 z-50' : 'scale-100'}
                             `}>
-                                {/* Rotating Rings */}
                                 <div className={`absolute -inset-4 rounded-full border-t-2 border-l-2 border-indigo-400/0 transition-all duration-500 ${isHovered ? 'border-indigo-400/80 opacity-100 animate-spin' : 'opacity-0'}`} style={{ animationDuration: '3s' }}></div>
                                 <div className={`absolute -inset-2 rounded-full border-b-2 border-r-2 border-purple-400/0 transition-all duration-500 ${isHovered ? 'border-purple-400/80 opacity-100 animate-spin reverse' : 'opacity-0'}`} style={{ animationDuration: '5s' }}></div>
 
-                                {/* Impact Ripple */}
-                                <div className="absolute inset-0 rounded-full border border-indigo-400 opacity-0 ripple-effect" style={{ animationDelay: `${delay + 2.5}s`, animationDuration: isCoreHovered ? '1s' : '4s' }}></div>
+                                <div className="absolute inset-0 rounded-full border border-indigo-400 opacity-0 ripple-effect" style={{ animationDelay: `${delay + 2.5}s`, animationDuration: isCoreHovered || !isOrbiting ? '1s' : '4s' }}></div>
 
-                                {/* Image Container */}
                                 <div className={`
                                     relative overflow-hidden rounded-full border-2 bg-gray-900
                                     ${isHovered ? 'border-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.5)]' : 'border-white/20 shadow-lg'}
@@ -256,11 +254,9 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
                                         alt={member.name} 
                                         className={`w-full h-full object-cover transition-all duration-500 ${isHovered ? 'grayscale-0 scale-110' : 'grayscale scale-100'}`} 
                                     />
-                                    {/* Flash Effect */}
-                                    <div className="absolute inset-0 bg-indigo-500/0 mix-blend-overlay flash-effect" style={{ animationDelay: `${delay + 2.5}s`, animationDuration: isCoreHovered ? '1s' : '4s' }}></div>
+                                    <div className="absolute inset-0 bg-indigo-500/0 mix-blend-overlay flash-effect" style={{ animationDelay: `${delay + 2.5}s`, animationDuration: isCoreHovered || !isOrbiting ? '1s' : '4s' }}></div>
                                 </div>
 
-                                {/* Name Tooltip */}
                                 <div className={`
                                     absolute left-1/2 -translate-x-1/2 -bottom-8 
                                     transition-all duration-300 transform
