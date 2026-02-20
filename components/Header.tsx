@@ -1,7 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, ArrowUpRight, ChevronDown, Check } from 'lucide-react';
+import { Menu, X, ArrowUpRight, ChevronDown, Check, Globe } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { smoothScrollTo } from '../utils/scroll';
+import PonloeLogo from './PonloeLogo';
 
 const Header: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -9,14 +11,12 @@ const Header: React.FC = () => {
   const [activeSection, setActiveSection] = useState('home');
   
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
-  const [isMobileLangMenuOpen, setIsMobileLangMenuOpen] = useState(false);
   
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage, t, languageName } = useLanguage();
 
   const navRef = useRef<HTMLElement>(null);
   const itemsRef = useRef<(HTMLAnchorElement | null)[]>([]);
   const langMenuRef = useRef<HTMLDivElement>(null);
-  const mobileLangMenuRef = useRef<HTMLDivElement>(null);
   
   // CRITICAL: Prevent IntersectionObserver from triggering during manual click scrolls
   const isManualScrolling = useRef(false);
@@ -34,10 +34,13 @@ const Header: React.FC = () => {
   const languages = [
     { code: 'en', label: 'English', flag: 'https://upload.wikimedia.org/wikipedia/commons/1/13/United-kingdom_flag_icon_round.svg' },
     { code: 'km', label: 'ខ្មែរ', flag: 'https://upload.wikimedia.org/wikipedia/commons/8/83/Flag_of_Cambodia.svg' },
-    { code: 'fr', label: 'Français', flag: 'https://upload.wikimedia.org/wikipedia/commons/8/8c/Franceroundflag.svg' },
+    { code: 'fr', label: 'Français', flag: 'https://upload.wikimedia.org/wikipedia/commons/c/c3/Flag_of_France.svg' },
     { code: 'ja', label: '日本語', flag: 'https://upload.wikimedia.org/wikipedia/commons/9/9e/Flag_of_Japan.svg' },
     { code: 'ko', label: '한국어', flag: 'https://upload.wikimedia.org/wikipedia/commons/0/09/Flag_of_South_Korea.svg' },
-    { code: 'zh-CN', label: '中文', flag: 'https://upload.wikimedia.org/wikipedia/commons/a/ae/Circle_Flag_of_the_People%27s_Republic_of_China.svg' },
+    { code: 'de', label: 'Deutsch', flag: 'https://upload.wikimedia.org/wikipedia/commons/b/ba/Flag_of_Germany.svg' },
+    { code: 'zh-CN', label: '中文', flag: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Flag_of_the_People%27s_Republic_of_China.svg' },
+    { code: 'es', label: 'Español', flag: 'https://upload.wikimedia.org/wikipedia/commons/9/9a/Flag_of_Spain.svg' },
+    { code: 'ar', label: 'العربية', flag: 'https://upload.wikimedia.org/wikipedia/commons/0/0d/Flag_of_Saudi_Arabia.svg' },
   ];
 
   const currentFlag = languages.find(l => l.code === language)?.flag || languages[0].flag;
@@ -49,14 +52,12 @@ const Header: React.FC = () => {
 
     const handleClickOutside = (event: MouseEvent) => {
         if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) setIsLangMenuOpen(false);
-        if (mobileLangMenuRef.current && !mobileLangMenuRef.current.contains(event.target as Node)) setIsMobileLangMenuOpen(false);
     };
 
     window.addEventListener('scroll', handleScroll);
     document.addEventListener('mousedown', handleClickOutside);
     
     const observer = new IntersectionObserver((entries) => {
-      // Don't update if we are scrolling because of a link click
       if (isManualScrolling.current) return;
 
       entries.forEach(entry => {
@@ -109,7 +110,7 @@ const Header: React.FC = () => {
       }
 
       const offset = 80;
-      const pos = element.getBoundingClientRect().top + window.pageYOffset - offset;
+      const pos = element.getBoundingClientRect().top + window.scrollY - offset;
       
       smoothScrollTo(pos, 1000);
       
@@ -124,9 +125,9 @@ const Header: React.FC = () => {
   return (
     <>
       <header className="fixed top-6 left-0 right-0 z-50 transition-all duration-300 flex justify-center px-4">
-        <div className={`flex items-center justify-between px-4 md:px-6 py-2.5 md:py-3 rounded-full border transition-all duration-300 w-full max-w-6xl ${isScrolled ? 'bg-gray-950/80 backdrop-blur-xl border-white/10 shadow-2xl shadow-indigo-500/10' : 'bg-transparent border-transparent'}`}>
-          <a href="#" className="flex items-center gap-2 group relative z-50">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg">P</div>
+        <div className={`flex items-center justify-between px-4 md:px-6 py-2.5 md:py-3 rounded-full border transition-all duration-300 w-full max-w-6xl ${isScrolled ? 'bg-gray-950/80 backdrop-blur-xl border-white/10 shadow-2xl shadow-indigo-500/10' : 'bg-white/5 backdrop-blur-md border-white/5'}`}>
+          <a href="#home" onClick={(e) => scrollToSection(e, '#home')} className="flex items-center gap-2 group relative z-50">
+            <PonloeLogo size={32} />
             <span className="text-lg md:text-xl font-bold font-khmer tracking-tight text-white group-hover:text-indigo-400 transition-colors">
               ponloe<span className="text-gray-500 font-normal">.creative</span>
             </span>
@@ -143,23 +144,29 @@ const Header: React.FC = () => {
              <div className="relative" ref={langMenuRef}>
                  <button onClick={() => setIsLangMenuOpen(!isLangMenuOpen)} className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-xs md:text-sm font-medium text-gray-300 hover:text-white">
                     <img src={currentFlag} alt={language} className="w-4 h-4 md:w-5 md:h-5 rounded-full object-cover" />
-                    <span className="uppercase hidden md:inline">{language}</span>
+                    <span className="uppercase hidden md:inline">{languageName}</span>
                     <ChevronDown size={14} className={`transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
                  </button>
                  {isLangMenuOpen && (
-                     <div className="absolute top-full right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-1">
-                        {languages.map((lang) => (
-                            <button key={lang.code} onClick={() => { setLanguage(lang.code as any); setIsLangMenuOpen(false); }} className={`flex items-center justify-between w-full px-4 py-2 text-xs md:text-sm rounded-xl transition-colors font-khmer ${language === lang.code ? 'bg-indigo-600/20 text-indigo-300' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
-                                <span className="flex items-center gap-3"><img src={lang.flag} alt={lang.label} className="w-5 h-5 rounded-full object-cover" /><span>{lang.label}</span></span>
-                                {language === lang.code && <Check size={14} />}
-                            </button>
-                        ))}
+                     <div className="absolute top-full right-0 mt-2 w-48 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden p-1.5 animate-scale-up origin-top-right">
+                        <div className="px-3 py-2 border-b border-white/5 mb-1 flex items-center gap-2 text-gray-500">
+                          <Globe size={12} />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Select Language</span>
+                        </div>
+                        <div className="max-h-[300px] overflow-y-auto scrollbar-hide">
+                          {languages.map((lang) => (
+                              <button key={lang.code} onClick={() => { setLanguage(lang.code as any); setIsLangMenuOpen(false); }} className={`flex items-center justify-between w-full px-4 py-2 text-xs md:text-sm rounded-xl transition-colors font-khmer ${language === lang.code ? 'bg-indigo-600/20 text-indigo-300' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
+                                  <span className="flex items-center gap-3"><img src={lang.flag} alt={lang.label} className="w-5 h-5 rounded-full object-cover" /><span>{lang.label}</span></span>
+                                  {language === lang.code && <Check size={14} />}
+                              </button>
+                          ))}
+                        </div>
                      </div>
                  )}
              </div>
 
              <a href="#contact" onClick={(e) => scrollToSection(e, '#contact')} className="hidden sm:flex group px-5 py-2.5 rounded-full bg-white text-gray-950 font-bold text-sm hover:scale-105 transition-all duration-300 items-center gap-2 font-khmer">
-              {t("Let's Talk", "ទំនាក់ទំនង")} <ArrowUpRight size={16} className="group-hover:rotate-45 transition-transform" />
+              {t("Get a Quote", "ស្នើសុំតម្លៃ")} <ArrowUpRight size={16} className="group-hover:rotate-45 transition-transform" />
             </a>
 
             <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="lg:hidden text-white p-2">
