@@ -19,6 +19,9 @@ import FloatingChat from './components/FloatingChat';
 import CostEstimator from './components/CostEstimator'; 
 import Preloader from './components/Preloader';
 import AdminDashboard from './components/AdminDashboard';
+import SplashScreen from './components/SplashScreen';
+import OfflinePage from './components/OfflinePage';
+import InstallPrompt from './components/InstallPrompt';
 import { Lock, ArrowRight, X, ShieldCheck } from 'lucide-react';
 import { useAdminRouter } from './hooks/useRouter';
 import { CurrentUser } from './types';
@@ -86,6 +89,9 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-gray-950 text-white overflow-x-hidden selection:bg-indigo-500 selection:text-white relative">
       <Preloader />
+      <SplashScreen />
+      <OfflinePage />
+      <InstallPrompt />
       <div 
         className="pointer-events-none fixed inset-0 z-30 transition-opacity duration-300 opacity-50"
         style={{ background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(99, 102, 241, 0.1), transparent 40%)` }}
