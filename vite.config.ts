@@ -16,18 +16,58 @@ export default defineConfig({
         theme_color: '#030712',
         background_color: '#030712',
         display: 'standalone',
+        scope: '/',
+        start_url: '/',
+        orientation: 'portrait-primary',
+        categories: ['business', 'productivity'],
+        screenshots: [
+          {
+            src: '/ponloe-logo.svg',
+            sizes: '540x720',
+            type: 'image/svg+xml',
+            form_factor: 'narrow'
+          },
+          {
+            src: '/ponloe-logo.svg',
+            sizes: '1280x720',
+            type: 'image/svg+xml',
+            form_factor: 'wide'
+          }
+        ],
         icons: [
           {
             src: '/ponloe-logo.svg',
             sizes: 'any',
             type: 'image/svg+xml',
-            purpose: 'any'
+            purpose: 'any maskable'
+          }
+        ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,jpg,jpeg,gif,webp,woff,woff2,ttf,eot}'],
+        maximumFileSizeToCacheInBytes: 5000000,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              }
+            }
           },
           {
-            src: '/ponloe-logo.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'maskable'
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'gstatic-fonts-cache',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              }
+            }
           }
         ]
       }
