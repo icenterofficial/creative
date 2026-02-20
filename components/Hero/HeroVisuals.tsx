@@ -87,7 +87,8 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
 
   const getDynamicPosition = (index: number, total: number, currentRotation: number) => {
       const angle = (index / total) * 2 * Math.PI - (Math.PI / 2) + currentRotation;
-      const radiusBase = 38; 
+      // Increased RadiusBase from 38 to 46 to make room for the giant logo
+      const radiusBase = 46; 
       const radiusVar = (index % 2 === 0 ? 4 : -4);
       const radius = radiusBase + radiusVar;
 
@@ -102,7 +103,7 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
   };
 
   return (
-    <div className="relative hidden lg:block h-[600px] w-full" style={{ perspective: '1000px' }}>
+    <div className="relative hidden lg:block h-[700px] w-full" style={{ perspective: '1200px' }}>
         <div 
             ref={constellationRef}
             className="relative w-full h-full flex items-center justify-center transition-transform duration-100 ease-out preserve-3d"
@@ -124,37 +125,40 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
                 />
             ))}
 
-            {/* --- 1. CENTER CORE (PONLOE LOGO) --- */}
+            {/* --- 1. CENTER CORE (GIANT LOGO) --- */}
             <div 
                 className="absolute z-10 cursor-pointer group/core"
-                style={{ transform: 'translateZ(30px)' }}
+                style={{ transform: 'translateZ(50px)' }}
                 onMouseEnter={() => setIsCoreHovered(true)}
                 onMouseLeave={() => setIsCoreHovered(false)}
                 onClick={() => setIsOrbiting(!isOrbiting)}
             >
-                {/* Core Energy Field (ពន្លឺជុំវិញ) */}
-                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/20 rounded-full blur-[60px] transition-all duration-500 ${isCoreHovered || !isOrbiting ? 'scale-150 opacity-90' : 'scale-100 opacity-40 animate-pulse'}`}></div>
+                {/* Core Energy Field (Increased Bloom Size) */}
+                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] transition-all duration-700 ${isCoreHovered || !isOrbiting ? 'scale-125 opacity-80' : 'scale-100 opacity-30 animate-pulse'}`}></div>
                 
-                {/* ស្រទាប់ពន្លឺបន្ថែមពេលចុច (Active Glow) */}
+                {/* Active Inner Glow */}
                 {!isOrbiting && (
-                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-cyan-400/30 rounded-full blur-[40px] animate-pulse"></div>
+                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-cyan-400/20 rounded-full blur-[60px] animate-pulse"></div>
                 )}
 
-                {/* Core Physical Object */}
-                <div className={`relative w-28 h-28 bg-gray-950/80 backdrop-blur-xl border-2 transition-all duration-500 rounded-full flex flex-col items-center justify-center z-20 animate-float ${isCoreHovered || !isOrbiting ? 'border-indigo-300 shadow-[0_0_80px_rgba(99,102,241,0.8)] scale-110' : 'border-white/10'}`}>
+                {/* Giant Core Physical Container - Increased to w-64 h-64 */}
+                <div className={`relative w-64 h-64 bg-gray-950/90 backdrop-blur-2xl border-2 transition-all duration-700 rounded-full flex items-center justify-center z-20 animate-float ${isCoreHovered || !isOrbiting ? 'border-indigo-400 shadow-[0_0_120px_rgba(99,102,241,0.6)] scale-110' : 'border-white/10'}`}>
                     
-                    {/* SVG LOGO ថ្មី - Increased size from w-14 to w-20 */}
-                    <svg viewBox="0 0 2160 2160" className={`w-20 h-20 transition-all duration-500 ${isCoreHovered || !isOrbiting ? 'scale-115 filter drop-shadow-[0_0_15px_rgba(255,255,255,0.8)]' : 'opacity-70'}`}>
+                    {/* GIANT SVG LOGO - Increased to w-48 h-48 (~5x bigger than original w-14) */}
+                    <svg viewBox="0 0 2160 2160" className={`w-48 h-48 transition-all duration-700 ${isCoreHovered || !isOrbiting ? 'scale-105 filter drop-shadow-[0_0_30px_rgba(255,255,255,0.6)]' : 'opacity-80'}`}>
                         <defs>
-                            <linearGradient id="core_gradient" gradientUnits="userSpaceOnUse" x1="1269.9144" y1="1075.2654" x2="892.25574" y2="1103.478">
+                            <linearGradient id="giant_core_gradient" gradientUnits="userSpaceOnUse" x1="1269.9144" y1="1075.2654" x2="892.25574" y2="1103.478">
                                 <stop offset="0" stopColor="#5555F9"/><stop offset="1" stopColor="#2D86FF"/>
                             </linearGradient>
                         </defs>
-                        <path fill="url(#core_gradient)" d="M1059.04 933.134C1062.61 919.977 1067.51 888.023 1076.25 880.968C1092.44 877.391 1098.51 929.642 1102.9 942.387C1114.81 976.95 1123.86 1005.88 1154.09 1030.14C1186.56 1056.2 1230.43 1067.48 1270.71 1075.99C1276.06 1077.13 1285.53 1079.41 1285.89 1086.01C1287.02 1097.14 1264.91 1099.6 1256.56 1101.5C1211.8 1111.73 1159.49 1124.78 1131.88 1164.55C1106.07 1201.74 1100.82 1241.65 1089.83 1283.86C1088.16 1290.25 1079.56 1296.05 1074.16 1289.14C1069.17 1282.31 1068.01 1269.09 1065.53 1261.18C1051.09 1201.97 1038.59 1153.13 979.073 1125.88C958.148 1115.76 937.804 1109.87 915.413 1104.41C905.678 1102.04 880.128 1098.46 874.5 1090.95C873.607 1087.93 873.481 1088.28 874.045 1085.21C874.468 1082.92 877.832 1078.88 879.831 1078.27C889.391 1075.35 900.543 1073.06 910.179 1070.54C937.237 1063.49 961.511 1056.04 986.191 1042.59C1032.25 1017.49 1045.4 980.701 1059.04 933.134ZM879.378 1088.75C879.819 1088.87 883.698 1089.61 883.798 1089.57C900.292 1083.02 917.27 1078.43 934.024 1072.79C937.349 1071.67 936.82 1071.39 937.72 1069.09C927.333 1072.15 885.541 1083.41 879.378 1088.75ZM1072.86 910.995C1074.28 905.7 1080.69 888.634 1080.67 886.444C1079.73 884.986 1079.69 884.58 1078.42 883.515C1075.68 887.219 1069.81 907.215 1071.53 911.103L1072.86 910.995Z"/>
+                        <path fill="url(#giant_core_gradient)" d="M1059.04 933.134C1062.61 919.977 1067.51 888.023 1076.25 880.968C1092.44 877.391 1098.51 929.642 1102.9 942.387C1114.81 976.95 1123.86 1005.88 1154.09 1030.14C1186.56 1056.2 1230.43 1067.48 1270.71 1075.99C1276.06 1077.13 1285.53 1079.41 1285.89 1086.01C1287.02 1097.14 1264.91 1099.6 1256.56 1101.5C1211.8 1111.73 1159.49 1124.78 1131.88 1164.55C1106.07 1201.74 1100.82 1241.65 1089.83 1283.86C1088.16 1290.25 1079.56 1296.05 1074.16 1289.14C1069.17 1282.31 1068.01 1269.09 1065.53 1261.18C1051.09 1201.97 1038.59 1153.13 979.073 1125.88C958.148 1115.76 937.804 1109.87 915.413 1104.41C905.678 1102.04 880.128 1098.46 874.5 1090.95C873.607 1087.93 873.481 1088.28 874.045 1085.21C874.468 1082.92 877.832 1078.88 879.831 1078.27C889.391 1075.35 900.543 1073.06 910.179 1070.54C937.237 1063.49 961.511 1056.04 986.191 1042.59C1032.25 1017.49 1045.4 980.701 1059.04 933.134ZM879.378 1088.75C879.819 1088.87 883.698 1089.61 883.798 1089.57C900.292 1083.02 917.27 1078.43 934.024 1072.79C937.349 1071.67 936.82 1071.39 937.72 1069.09C927.333 1072.15 885.541 1083.41 879.378 1088.75ZM1072.86 910.995C1074.28 905.7 1080.69 888.634 1080.67 886.444C1079.73 884.986 1079.69 884.58 1078.42 883.515C1075.68 887.219 1069.81 907.215 1071.53 911.103L1072.86 910.995Z"/>
                     </svg>
                     
-                    {/* High-speed Ring (Visible on hover/click) */}
-                    <div className={`absolute inset-0 rounded-full border-t-2 border-indigo-400 w-full h-full ${isCoreHovered || !isOrbiting ? 'animate-spin-super-fast opacity-100' : 'opacity-0'}`}></div>
+                    {/* High-speed Ring Outer */}
+                    <div className={`absolute -inset-4 rounded-full border border-indigo-500/30 w-[calc(100%+32px)] h-[calc(100%+32px)] ${isCoreHovered || !isOrbiting ? 'animate-spin-slow opacity-100' : 'opacity-0'}`}></div>
+                    
+                    {/* Spin Ring Inner */}
+                    <div className={`absolute inset-0 rounded-full border-t-4 border-indigo-400 w-full h-full ${isCoreHovered || !isOrbiting ? 'animate-spin-super-fast opacity-100' : 'opacity-0'}`}></div>
                 </div>
             </div>
 
@@ -176,7 +180,7 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
 
                 <circle cx="50%" cy="50%" r="35%" stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" className={isOrbiting ? "animate-spin-slow" : ""} style={{ animationDuration: isCoreHovered ? '5s' : '20s' }} />
                 <circle cx="50%" cy="50%" r="50%" stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" />
-                <circle cx="50%" cy="50%" r="60%" stroke="rgba(99, 102, 241, 0.1)" strokeWidth="1" strokeDasharray="4 8" fill="none" className="animate-spin-slow" style={{ animationDuration: isCoreHovered ? '10s' : '60s' }} />
+                <circle cx="50%" cy="50%" r="65%" stroke="rgba(99, 102, 241, 0.1)" strokeWidth="1" strokeDasharray="4 8" fill="none" className="animate-spin-slow" style={{ animationDuration: isCoreHovered ? '10s' : '60s' }} />
 
                 {team.map((member, index) => {
                     const pos = getDynamicPosition(index, team.length, rotationAngle);
@@ -330,7 +334,7 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
                 to { transform: rotate(360deg); }
             }
             .animate-spin-super-fast {
-                animation: spin-super-fast 0.5s linear infinite;
+                animation: spin-super-fast 0.4s linear infinite;
             }
             @keyframes float-particle {
                 0%, 100% { transform: translateY(0) translateZ(0); opacity: 0.2; }
