@@ -87,8 +87,8 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
 
   const getDynamicPosition = (index: number, total: number, currentRotation: number) => {
       const angle = (index / total) * 2 * Math.PI - (Math.PI / 2) + currentRotation;
-      // Adjusted Radius to 42 for better balance with the w-28 core
-      const radiusBase = 42; 
+      // Updated Radius to 38 as requested
+      const radiusBase = 38; 
       const radiusVar = (index % 2 === 0 ? 3 : -3);
       const radius = radiusBase + radiusVar;
 
@@ -125,7 +125,7 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
                 />
             ))}
 
-            {/* --- 1. CENTER CORE (OPTIMIZED SIZE) --- */}
+            {/* --- 1. CENTER CORE (RESIZED) --- */}
             <div 
                 className="absolute z-10 cursor-pointer group/core"
                 style={{ transform: 'translateZ(40px)' }}
@@ -134,25 +134,22 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
                 onClick={() => setIsOrbiting(!isOrbiting)}
             >
                 {/* Core Ambient Glow */}
-                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/20 rounded-full blur-[60px] transition-all duration-500 ${isCoreHovered || !isOrbiting ? 'scale-150 opacity-80' : 'scale-100 opacity-40 animate-pulse'}`}></div>
+                <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-indigo-500/20 rounded-full blur-[60px] transition-all duration-500 ${isCoreHovered || !isOrbiting ? 'scale-125 opacity-80' : 'scale-100 opacity-40 animate-pulse'}`}></div>
                 
-                {/* Active Pulse Glow */}
-                {!isOrbiting && (
-                   <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-40 h-40 bg-cyan-400/30 rounded-full blur-[40px] animate-pulse"></div>
-                )}
-
-                {/* Physical Core Container - Set back to w-28 h-28 as requested */}
-                <div className={`relative w-28 h-28 bg-gray-950/90 backdrop-blur-xl border-2 transition-all duration-500 rounded-full flex items-center justify-center z-20 animate-float ${isCoreHovered || !isOrbiting ? 'border-indigo-400 shadow-[0_0_80px_rgba(99,102,241,0.6)] scale-110' : 'border-white/10'}`}>
+                {/* Physical Core Container - Set to ~22 units (w-20) */}
+                <div className={`relative w-20 h-20 bg-gray-950/90 backdrop-blur-xl border-2 transition-all duration-500 rounded-full flex items-center justify-center z-20 animate-float ${isCoreHovered || !isOrbiting ? 'border-indigo-400 shadow-[0_0_50px_rgba(99,102,241,0.5)] scale-110' : 'border-white/10'}`}>
                     
-                    {/* SVG LOGO - Proportionate w-20 h-20 for w-28 container */}
-                    <svg viewBox="0 0 2160 2160" className={`w-20 h-20 transition-all duration-500 ${isCoreHovered || !isOrbiting ? 'scale-110 filter drop-shadow-[0_0_15px_rgba(255,255,255,0.7)]' : 'opacity-80'}`}>
-                        <defs>
-                            <linearGradient id="final_core_gradient" gradientUnits="userSpaceOnUse" x1="1269.9144" y1="1075.2654" x2="892.25574" y2="1103.478">
-                                <stop offset="0" stopColor="#5555F9"/><stop offset="1" stopColor="#2D86FF"/>
-                            </linearGradient>
-                        </defs>
-                        <path fill="url(#final_core_gradient)" d="M1059.04 933.134C1062.61 919.977 1067.51 888.023 1076.25 880.968C1092.44 877.391 1098.51 929.642 1102.9 942.387C1114.81 976.95 1123.86 1005.88 1154.09 1030.14C1186.56 1056.2 1230.43 1067.48 1270.71 1075.99C1276.06 1077.13 1285.53 1079.41 1285.89 1086.01C1287.02 1097.14 1264.91 1099.6 1256.56 1101.5C1211.8 1111.73 1159.49 1124.78 1131.88 1164.55C1106.07 1201.74 1100.82 1241.65 1089.83 1283.86C1088.16 1290.25 1079.56 1296.05 1074.16 1289.14C1069.17 1282.31 1068.01 1269.09 1065.53 1261.18C1051.09 1201.97 1038.59 1153.13 979.073 1125.88C958.148 1115.76 937.804 1109.87 915.413 1104.41C905.678 1102.04 880.128 1098.46 874.5 1090.95C873.607 1087.93 873.481 1088.28 874.045 1085.21C874.468 1082.92 877.832 1078.88 879.831 1078.27C889.391 1075.35 900.543 1073.06 910.179 1070.54C937.237 1063.49 961.511 1056.04 986.191 1042.59C1032.25 1017.49 1045.4 980.701 1059.04 933.134ZM879.378 1088.75C879.819 1088.87 883.698 1089.61 883.798 1089.57C900.292 1083.02 917.27 1078.43 934.024 1072.79C937.349 1071.67 936.82 1071.39 937.72 1069.09C927.333 1072.15 885.541 1083.41 879.378 1088.75ZM1072.86 910.995C1074.28 905.7 1080.69 888.634 1080.67 886.444C1079.73 884.986 1079.69 884.58 1078.42 883.515C1075.68 887.219 1069.81 907.215 1071.53 911.103L1072.86 910.995Z"/>
-                    </svg>
+                    {/* SVG LOGO - Increased to ~42 units (w-40) which overflows the core beautifully */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <svg viewBox="0 0 2160 2160" className={`w-40 h-40 transition-all duration-500 shrink-0 ${isCoreHovered || !isOrbiting ? 'scale-105 filter drop-shadow-[0_0_20px_rgba(255,255,255,0.8)]' : 'opacity-90'}`}>
+                            <defs>
+                                <linearGradient id="final_core_gradient" gradientUnits="userSpaceOnUse" x1="1269.9144" y1="1075.2654" x2="892.25574" y2="1103.478">
+                                    <stop offset="0" stopColor="#5555F9"/><stop offset="1" stopColor="#2D86FF"/>
+                                </linearGradient>
+                            </defs>
+                            <path fill="url(#final_core_gradient)" d="M1059.04 933.134C1062.61 919.977 1067.51 888.023 1076.25 880.968C1092.44 877.391 1098.51 929.642 1102.9 942.387C1114.81 976.95 1123.86 1005.88 1154.09 1030.14C1186.56 1056.2 1230.43 1067.48 1270.71 1075.99C1276.06 1077.13 1285.53 1079.41 1285.89 1086.01C1287.02 1097.14 1264.91 1099.6 1256.56 1101.5C1211.8 1111.73 1159.49 1124.78 1131.88 1164.55C1106.07 1201.74 1100.82 1241.65 1089.83 1283.86C1088.16 1290.25 1079.56 1296.05 1074.16 1289.14C1069.17 1282.31 1068.01 1269.09 1065.53 1261.18C1051.09 1201.97 1038.59 1153.13 979.073 1125.88C958.148 1115.76 937.804 1109.87 915.413 1104.41C905.678 1102.04 880.128 1098.46 874.5 1090.95C873.607 1087.93 873.481 1088.28 874.045 1085.21C874.468 1082.92 877.832 1078.88 879.831 1078.27C889.391 1075.35 900.543 1073.06 910.179 1070.54C937.237 1063.49 961.511 1056.04 986.191 1042.59C1032.25 1017.49 1045.4 980.701 1059.04 933.134ZM879.378 1088.75C879.819 1088.87 883.698 1089.61 883.798 1089.57C900.292 1083.02 917.27 1078.43 934.024 1072.79C937.349 1071.67 936.82 1071.39 937.72 1069.09C927.333 1072.15 885.541 1083.41 879.378 1088.75ZM1072.86 910.995C1074.28 905.7 1080.69 888.634 1080.67 886.444C1079.73 884.986 1079.69 884.58 1078.42 883.515C1075.68 887.219 1069.81 907.215 1071.53 911.103L1072.86 910.995Z"/>
+                        </svg>
+                    </div>
                     
                     {/* Spin Ring */}
                     <div className={`absolute inset-0 rounded-full border-t-2 border-indigo-400 w-full h-full ${isCoreHovered || !isOrbiting ? 'animate-spin-super-fast opacity-100' : 'opacity-0'}`}></div>
@@ -175,9 +172,9 @@ const HeroVisuals: React.FC<HeroVisualsProps> = ({ team, onMemberClick }) => {
                     </filter>
                 </defs>
 
-                <circle cx="50%" cy="50%" r="35%" stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" className={isOrbiting ? "animate-spin-slow" : ""} style={{ animationDuration: isCoreHovered ? '5s' : '20s' }} />
-                <circle cx="50%" cy="50%" r="50%" stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" />
-                <circle cx="50%" cy="50%" r="62%" stroke="rgba(99, 102, 241, 0.08)" strokeWidth="1" strokeDasharray="4 8" fill="none" className="animate-spin-slow" style={{ animationDuration: isCoreHovered ? '10s' : '60s' }} />
+                <circle cx="50%" cy="50%" r="30%" stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" className={isOrbiting ? "animate-spin-slow" : ""} style={{ animationDuration: isCoreHovered ? '5s' : '20s' }} />
+                <circle cx="50%" cy="50%" r="45%" stroke="rgba(255,255,255,0.03)" strokeWidth="1" fill="none" />
+                <circle cx="50%" cy="50%" r="58%" stroke="rgba(99, 102, 241, 0.08)" strokeWidth="1" strokeDasharray="4 8" fill="none" className="animate-spin-slow" style={{ animationDuration: isCoreHovered ? '10s' : '60s' }} />
 
                 {team.map((member, index) => {
                     const pos = getDynamicPosition(index, team.length, rotationAngle);
