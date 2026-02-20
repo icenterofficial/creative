@@ -1,5 +1,6 @@
+
 import React, { useEffect, useState } from 'react';
-import { Zap } from 'lucide-react';
+import PonloeLogo from './PonloeLogo';
 
 const Preloader: React.FC = () => {
   const [count, setCount] = useState(0);
@@ -52,12 +53,12 @@ const Preloader: React.FC = () => {
       {/* Background Texture */}
       <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none"></div>
 
-      <div className={`flex flex-col items-center gap-8 transition-opacity duration-500 ${isFinished ? 'opacity-0' : 'opacity-100'}`}>
-         {/* Pulsing Logo */}
-         <div className="relative">
-            <div className="absolute inset-0 bg-indigo-500 blur-2xl opacity-20 animate-pulse"></div>
-            <div className="w-20 h-20 bg-gradient-to-br from-gray-900 to-gray-800 border border-white/10 rounded-2xl flex items-center justify-center relative z-10 shadow-2xl">
-                <Zap size={40} className="text-white fill-white animate-pulse" />
+      <div className={`flex flex-col items-center gap-4 transition-opacity duration-500 ${isFinished ? 'opacity-0' : 'opacity-100'}`}>
+         {/* Pulsing Brand Logo */}
+         <div className="relative mb-6">
+            <div className="absolute inset-0 bg-indigo-500/20 blur-[80px] rounded-full animate-pulse"></div>
+            <div className="relative z-10 animate-float">
+                <PonloeLogo size={140} />
             </div>
          </div>
          
@@ -66,15 +67,15 @@ const Preloader: React.FC = () => {
              <span className="text-8xl md:text-9xl font-bold text-white font-mono tracking-tighter">
                 {count}%
              </span>
-             <div className="h-1 w-32 bg-gray-800 rounded-full mt-4 overflow-hidden">
+             <div className="h-1 w-40 bg-white/5 rounded-full mt-6 overflow-hidden border border-white/5">
                 <div 
-                    className="h-full bg-indigo-500 transition-all duration-100 ease-out"
+                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-100 ease-out shadow-[0_0_15px_rgba(99,102,241,0.5)]"
                     style={{ width: `${count}%` }}
                 />
              </div>
          </div>
          
-         <p className="text-gray-500 font-khmer text-sm animate-pulse tracking-[0.2em] uppercase mt-4">
+         <p className="text-gray-500 font-khmer text-xs md:text-sm animate-pulse tracking-[0.4em] uppercase mt-8 opacity-60">
             Ponloe Creative
          </p>
       </div>
