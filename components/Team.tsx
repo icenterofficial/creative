@@ -97,9 +97,9 @@ const Team: React.FC = () => {
                   </div>
 
                   {/* Profile Section - Horizontal Layout */}
-                  <div className="flex gap-4 px-6 py-6 flex-1">
+                  <div className="flex gap-4 px-6 pt-4 pb-3 flex-1">
                     {/* Profile Image */}
-                    <div className="shrink-0">
+                    <div className="shrink-0 -mt-10">
                       <div className="w-24 h-24 rounded-full border-4 border-gray-900 overflow-hidden bg-gray-800 group-hover:border-indigo-500 transition-colors">
                         <img 
                           src={member.image} 
@@ -110,7 +110,7 @@ const Team: React.FC = () => {
                     </div>
 
                     {/* Member Info */}
-                    <div className="flex-1 flex flex-col justify-start">
+                    <div className="flex-1 flex flex-col justify-start pt-2">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h3 className="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors">{member.name}</h3>
                         {postCount > 0 && (
@@ -124,7 +124,7 @@ const Team: React.FC = () => {
                   </div>
 
                   {/* Social Links */}
-                  <div className="px-6 pb-6 border-t border-white/10 flex gap-3" onClick={(e) => e.stopPropagation()}>
+                  <div className="px-6 py-4 border-t border-white/10 flex gap-3" onClick={(e) => e.stopPropagation()}>
                     {member.socials.facebook && (
                       <a href={member.socials.facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 text-gray-400 rounded-lg hover:bg-[#1877F2] hover:text-white transition-all">
                         <Facebook size={18} />
