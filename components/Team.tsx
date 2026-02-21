@@ -8,12 +8,17 @@ import { MemberDetailModal, AuthorArticlesModal, ArticleDetailModal } from './Te
 import RevealOnScroll from './RevealOnScroll';
 import { useRouter } from '../hooks/useRouter';
 
-const Team: React.FC = () => {
+interface TeamProps {
+  showPopupOnMount?: boolean;
+  usePathRouting?: boolean;
+}
+
+const Team: React.FC<TeamProps> = ({ showPopupOnMount = false, usePathRouting = false }) => {
   const { t } = useLanguage();
   const { team, insights } = useData();
   
-  // Use Router Hook: Section 'team', No prefix
-  const { activeId, openItem, closeItem } = useRouter('team');
+  // Use Router Hook: Section 'team'
+  const { activeId, openItem, closeItem } = useRouter('team', '', usePathRouting);
   
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null);
   const [authorPosts, setAuthorPosts] = useState<Post[] | null>(null);
