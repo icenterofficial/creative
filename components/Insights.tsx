@@ -9,18 +9,23 @@ import RevealOnScroll from './RevealOnScroll';
 import { AuthorArticlesModal, ArticleDetailModal, MemberDetailModal } from './TeamModals';
 import { useRouter } from '../hooks/useRouter';
 
-const Insights: React.FC = () => {
+interface InsightsProps {
+  showPopupOnMount?: boolean;
+  usePathRouting?: boolean;
+}
+
+const Insights: React.FC<InsightsProps> = ({ showPopupOnMount = false, usePathRouting = false }) => {
   const { t } = useLanguage();
   const { insights = [], team = [] } = useData();
 
-  // Use Router Hook for Posts: Section 'insights', No prefix
-  const { activeId, openItem, closeItem } = useRouter('insights');
+  // Use Router Hook for Posts: Section 'insights'
+  const { activeId, openItem, closeItem } = useRouter('insights', '', usePathRouting);
   
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [selectedAuthor, setSelectedAuthor] = useState<TeamMember | null>(null);
   const [authorPosts, setAuthorPosts] = useState<Post[] | null>(null);
   
-  const [isViewAllOpen, setIsViewAllOpen] = useState(false);
+  const [isViewAllOpen, setIsViewAllOpen] = useState(showPopupOnMount || false);
 
   // Sync Router Active ID with Data (Support finding by ID or Slug)
   useEffect(() => {
@@ -31,6 +36,11 @@ const Insights: React.FC = () => {
           setSelectedPost(null);
       }
   }, [activeId, insights]);
+
+  // Sync isViewAllOpen with showPopupOnMount prop
+  useEffect(() => {
+    setIsViewAllOpen(showPopupOnMount);
+  }, [showPopupOnMount]);
 
   // Lock body scroll when any modal is open
   useEffect(() => {
@@ -54,6 +64,24 @@ const Insights: React.FC = () => {
   const handleShowArticles = (member: TeamMember) => {
       const posts = (insights || []).filter(p => p.authorId === member.id);
       setAuthorPosts(posts);
+  };
+
+  const handleViewAllClick = () => {
+    setIsViewAllOpen(true);
+    if (usePathRouting) {
+      const currentLang = window.location.pathname.split('/')[1];
+      const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
+      const langPrefix = currentLang && supportedLangs.includes(currentLang) ? `/${currentLang}` : '';
+      window.history.pushState({ insightsOpen: true }, '', `${langPrefix}/insights`);
+      window.dispatchEvent(new Event('popstate'));
+    } else {
+      window.location.hash = 'insights';
+    }
+  };
+
+  const handleViewAllClose = () => {
+    setIsViewAllOpen(false);
+    closeItem();
   };
 
   // Helper component to render Author Info on Card
@@ -96,7 +124,7 @@ const Insights: React.FC = () => {
              </div>
              
              <button 
-               onClick={() => setIsViewAllOpen(true)}
+               onClick={handleViewAllClick}
                className="hidden md:flex items-center gap-2 text-white hover:text-indigo-400 transition-colors font-bold group font-khmer cursor-pointer"
              >
                 {t('View All Posts', 'មើលអត្ថបទទាំងអស់')} <ArrowRight className="group-hover:translate-x-1 transition-transform" />
@@ -162,7 +190,7 @@ const Insights: React.FC = () => {
 
           <div className="mt-10 md:hidden text-center">
                <button 
-                  onClick={() => setIsViewAllOpen(true)}
+                  onClick={handleViewAllClick}
                   className="inline-flex items-center gap-2 text-white hover:text-indigo-400 transition-colors font-bold font-khmer cursor-pointer"
                >
                 {t('View All Posts', 'មើលអត្ថបទទាំងអស់')} <ArrowRight />
@@ -176,7 +204,7 @@ const Insights: React.FC = () => {
          <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4">
             <div 
                 className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
-                onClick={() => setIsViewAllOpen(false)}
+                onClick={handleViewAllClose}
             />
              <div className="relative w-full max-w-7xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col">
                 {/* Header */}
@@ -186,7 +214,7 @@ const Insights: React.FC = () => {
                         <p className="text-gray-400 text-sm font-khmer">{t('Explore our latest thoughts and updates', 'ស្វែងរកគំនិត និងព័ត៌មានថ្មីៗរបស់យើង')}</p>
                     </div>
                     <button 
-                        onClick={() => setIsViewAllOpen(false)}
+                        onClick={handleViewAllClose}
                         className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-full transition-all border border-white/5"
                     >
                         <X size={24} />
