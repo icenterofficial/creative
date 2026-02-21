@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, ArrowUpRight, ChevronDown, Check, Globe } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { smoothScrollTo } from '../utils/scroll';
+import { hapticLanguageChange, hapticTap } from '../utils/haptic';
 import PonloeLogo from './PonloeLogo';
 
 const Header: React.FC = () => {
@@ -99,6 +100,7 @@ const Header: React.FC = () => {
 
   const scrollToSection = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
+    hapticTap(); // Add haptic feedback on navigation
     const targetId = href.substring(1);
     const element = document.getElementById(targetId);
     
@@ -125,6 +127,17 @@ const Header: React.FC = () => {
     }
   };
 
+  const handleLanguageChange = (langCode: string) => {
+    hapticLanguageChange(); // Strong haptic feedback for language change
+    setLanguage(langCode as any);
+    setIsLangMenuOpen(false);
+  };
+
+  const toggleMenu = () => {
+    hapticTap(); // Haptic feedback on menu toggle
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
     <>
       <header className="fixed top-6 left-0 right-0 z-50 transition-all duration-300 flex justify-center px-4">
@@ -145,7 +158,13 @@ const Header: React.FC = () => {
 
           <div className="flex items-center gap-2 md:gap-4 relative z-50">
              <div className="relative" ref={langMenuRef}>
-                 <button onClick={() => setIsLangMenuOpen(!isLangMenuOpen)} className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-xs md:text-sm font-medium text-gray-300 hover:text-white">
+                 <button 
+                   onClick={() => {
+                     hapticTap();
+                     setIsLangMenuOpen(!isLangMenuOpen);
+                   }}
+                   className="flex items-center gap-1.5 md:gap-2 px-2 md:px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/5 transition-all text-xs md:text-sm font-medium text-gray-300 hover:text-white"
+                 >
                     <img src={currentFlag} alt={language} className="w-4 h-4 md:w-5 md:h-5 rounded-full object-cover" />
                     <span className="uppercase hidden md:inline">{languageName}</span>
                     <ChevronDown size={14} className={`transition-transform ${isLangMenuOpen ? 'rotate-180' : ''}`} />
@@ -158,7 +177,11 @@ const Header: React.FC = () => {
                         </div>
                         <div className="max-h-[300px] overflow-y-auto scrollbar-hide">
                           {languages.map((lang) => (
-                              <button key={lang.code} onClick={() => { setLanguage(lang.code as any); setIsLangMenuOpen(false); }} className={`flex items-center justify-between w-full px-4 py-2 text-xs md:text-sm rounded-xl transition-colors font-khmer ${language === lang.code ? 'bg-indigo-600/20 text-indigo-300' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}>
+                              <button 
+                                key={lang.code} 
+                                onClick={() => handleLanguageChange(lang.code)}
+                                className={`flex items-center justify-between w-full px-4 py-2 text-xs md:text-sm rounded-xl transition-colors font-khmer ${language === lang.code ? 'bg-indigo-600/20 text-indigo-300' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                              >
                                   <span className="flex items-center gap-3"><img src={lang.flag} alt={lang.label} className="w-5 h-5 rounded-full object-cover" /><span>{lang.label}</span></span>
                                   {language === lang.code && <Check size={14} />}
                               </button>
@@ -172,7 +195,7 @@ const Header: React.FC = () => {
               {t("Get a Quote", "ស្នើសុំតម្លៃ")} <ArrowUpRight size={16} className="group-hover:rotate-45 transition-transform" />
             </a>
 
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="lg:hidden text-white p-2">
+            <button onClick={toggleMenu} className="lg:hidden text-white p-2">
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
