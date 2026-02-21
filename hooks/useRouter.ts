@@ -18,34 +18,36 @@ export const useRouter = (section: string, idPrefix: string = '', usePathRouting
 
   useEffect(() => {
     const handleRouteChange = () => {
-      if (usePathRouting && section === 'portfolio') {
-        // ១. Path-based routing សម្រាប់ Portfolio: /portfolio/slug
-        const pathname = window.location.pathname;
-        // Regex ស្វែងរក slug បន្ទាប់ពី /portfolio/
-        const portfolioMatch = /\/portfolio\/([^/]+)/.exec(pathname);
+      const pathname = window.location.pathname;
+      const hash = window.location.hash;
+
+      if (usePathRouting) {
+        // ១. Path-based routing: /section/slug ឬ /lang/section/slug
+        // Regex ស្វែងរក slug បន្ទាប់ពី /section/
+        const regex = new RegExp(`\\/${section}\\/([^/]+)`);
+        const match = regex.exec(pathname);
         
-        if (portfolioMatch && portfolioMatch[1]) {
-          setActiveId(portfolioMatch[1]);
+        if (match && match[1]) {
+          setActiveId(match[1]);
         } else {
           setActiveId(null);
         }
       } else {
         // ២. Hash-based routing សម្រាប់ Section ផ្សេងៗ: #section/id
-        const hash = window.location.hash;
         const prefix = `#${section}/`;
 
         if (hash.startsWith(prefix)) {
           const urlId = hash.replace(prefix, '');
           setActiveId(urlId || null);
-        } else if (hash === `#${section}` || !hash.includes('/')) {
-          setActiveId((prev) => (prev ? null : prev));
+        } else {
+          setActiveId(null);
         }
       }
     };
 
     handleRouteChange();
     window.addEventListener('hashchange', handleRouteChange);
-    window.addEventListener('popstate', handleRouteChange); // តាមដានការប្តូរ Path (Forward/Back)
+    window.addEventListener('popstate', handleRouteChange);
     
     return () => {
       window.removeEventListener('hashchange', handleRouteChange);
@@ -55,15 +57,15 @@ export const useRouter = (section: string, idPrefix: string = '', usePathRouting
 
   const openItem = useCallback((dataId: string) => {
     const urlId = toUrlId(dataId);
-    
-    if (usePathRouting && section === 'portfolio') {
-      // ប្តូរទៅជា Clean Path URL: /portfolio/slug
-      const currentLang = window.location.pathname.split('/')[1];
-      const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
-      const newPath = currentLang && supportedLangs.includes(currentLang) 
-        ? `/${currentLang}/portfolio/${urlId}` 
-        : `/portfolio/${urlId}`;
-      
+    const currentPath = window.location.pathname;
+    const parts = currentPath.split('/');
+    const currentLang = parts[1];
+    const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
+    const langPrefix = currentLang && supportedLangs.includes(currentLang) ? `/${currentLang}` : '';
+
+    if (usePathRouting) {
+      // ប្តូរទៅជា Clean Path URL: /section/slug
+      const newPath = `${langPrefix}/${section}/${urlId}`;
       window.history.pushState({ section, id: urlId }, '', newPath);
       window.dispatchEvent(new Event('popstate'));
     } else {
@@ -73,28 +75,26 @@ export const useRouter = (section: string, idPrefix: string = '', usePathRouting
   }, [section, toUrlId, usePathRouting]);
 
   const closeItem = useCallback(() => {
+    const currentPath = window.location.pathname;
+    const parts = currentPath.split('/');
+    const currentLang = parts[1];
+    const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
+    const langPrefix = currentLang && supportedLangs.includes(currentLang) ? `/${currentLang}` : '';
+
     try {
-        if (usePathRouting && section === 'portfolio') {
-          // ពេលបិទ ឱ្យត្រឡប់មក /portfolio វិញ
-          const currentLang = window.location.pathname.split('/')[1];
-          const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
-          const newPath = currentLang && supportedLangs.includes(currentLang) 
-            ? `/${currentLang}/portfolio` 
-            : `/portfolio`;
-          
-          window.history.replaceState(null, '', newPath);
+        if (usePathRouting) {
+          // ពេលបិទ ឱ្យត្រឡប់មក /#section វិញភ្លាមៗ
+          const newUrl = `${langPrefix || '/'}/#${section}`;
+          window.history.pushState(null, '', newUrl);
           window.dispatchEvent(new Event('popstate'));
+          window.dispatchEvent(new Event('hashchange'));
         } else {
           // សម្រាប់ Hash ឱ្យត្រឡប់មក #section វិញ
-          window.history.replaceState(null, '', `#${section}`);
+          window.history.pushState(null, '', `${langPrefix || '/'}/#${section}`);
           window.dispatchEvent(new Event('hashchange'));
         }
     } catch (e) {
-        if (usePathRouting && section === 'portfolio') {
-          window.location.pathname = '/portfolio';
-        } else {
-          window.location.hash = section;
-        }
+        window.location.hash = section;
     }
   }, [section, usePathRouting]);
 
