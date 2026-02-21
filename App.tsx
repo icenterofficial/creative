@@ -19,20 +19,18 @@ import Preloader from './components/Preloader';
 import SplashScreen from './components/SplashScreen';
 import OfflinePage from './components/OfflinePage';
 import InstallPrompt from './components/InstallPrompt';
-import { Lock, ArrowRight, X, ShieldCheck } from 'lucide-react';
+import { Lock, ArrowRight, X } from 'lucide-react';
 import { useAdminRouter } from './hooks/useRouter';
-import { CurrentUser } from './types';
 
 // Pages
 import About from './components/About';
 import Careers from './components/Careers';
 import PrivacyPolicy from './components/PrivacyPolicy';
 
-// Lazy Load Heavy Components (Code Splitting for better initial load)
+// Lazy Load Heavy Components
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 const CostEstimator = React.lazy(() => import('./components/CostEstimator'));
 
-// Fallback Loading Component
 const ComponentFallback: React.FC = () => (
   <div className="w-full h-screen flex items-center justify-center bg-gray-950">
     <div className="flex flex-col items-center gap-4">
@@ -62,17 +60,17 @@ function AppContent() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // Handle pathname and hash changes for routing
+  // --- ROUTING LOGIC ---
   useEffect(() => {
     const handleRouteChange = () => {
         const pathname = window.location.pathname;
         const hash = window.location.hash;
         
-        // Check if pathname is /portfolio or /en/portfolio or /km/portfolio etc (including nested)
+        // Regex to match /portfolio or /en/portfolio or /km/portfolio (including nested /portfolio/slug)
         const portfolioMatch = /\/(en|km|fr|ja|ko|de|zh-CN|es|ar)?\/portfolio(?:\/([^/]+))?/.exec(pathname);
         
         if (portfolioMatch) {
-            // Direct access to /portfolio or /portfolio/slug - show popup
+            // If path contains /portfolio, show the portfolio popup
             setShouldShowPortfolioPopup(true);
             setActivePage(null);
         } else if (hash === '#about') {
@@ -85,6 +83,7 @@ function AppContent() {
             setActivePage('privacy');
             setShouldShowPortfolioPopup(false);
         } else {
+            // Default home state
             if (!['#about', '#careers', '#privacy'].includes(hash)) setActivePage(null);
             setShouldShowPortfolioPopup(false);
         }
@@ -131,11 +130,14 @@ function AppContent() {
       <SplashScreen />
       <OfflinePage />
       <InstallPrompt />
+      
       <div 
         className="pointer-events-none fixed inset-0 z-30 transition-opacity duration-300 opacity-50"
         style={{ background: `radial-gradient(600px circle at ${mousePosition.x}px ${mousePosition.y}px, rgba(99, 102, 241, 0.1), transparent 40%)` }}
       />
+      
       <Header />
+      
       <main className="relative z-10">
         <Hero />
         <Partners />
@@ -144,18 +146,30 @@ function AppContent() {
           <CostEstimator />
         </Suspense>
         <Process />
-        <Portfolio showPopupOnMount={shouldShowPortfolioPopup} onPopupClose={() => setShouldShowPortfolioPopup(false)} usePathRouting={true} />
+        
+        {/* Portfolio Component with Path Routing Enabled */}
+        <Portfolio 
+            showPopupOnMount={shouldShowPortfolioPopup} 
+            onPopupClose={() => setShouldShowPortfolioPopup(false)} 
+            usePathRouting={true} 
+        />
+        
         <Testimonials />
         <Team />
         <Insights />
         <Contact />
       </main>
+      
       <Footer />
       <FloatingChat />
       <ScrollButton />
+      
+      {/* Overlay Pages */}
       {activePage === 'about' && <About onClose={() => window.location.hash = ''} />}
       {activePage === 'careers' && <Careers onClose={() => window.location.hash = ''} />}
       {activePage === 'privacy' && <PrivacyPolicy onClose={() => window.location.hash = ''} />}
+      
+      {/* Admin Login Modal */}
       {isAdminOpen && (
           <div className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-md">
               <div className="bg-gray-900 border border-white/10 p-8 rounded-3xl shadow-2xl w-full max-w-sm relative">
