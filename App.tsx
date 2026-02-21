@@ -12,7 +12,6 @@ import Testimonials from './components/Testimonials';
 import Team from './components/Team';
 import Insights from './components/Insights';
 import Contact from './components/Contact';
-import Footer from './components/Footer';
 import ScrollButton from './components/ScrollButton';
 import FloatingChat from './components/FloatingChat'; 
 import Preloader from './components/Preloader';
@@ -76,13 +75,14 @@ function AppContent() {
         const langRegex = /^\/(en|km|fr|ja|ko|de|zh-CN|es|ar)?/;
         const pathWithoutLang = pathname.replace(langRegex, '');
 
-        // Check for popups
+        // Check for path-based popups (deep-linking support)
         setShouldShowPortfolioPopup(pathWithoutLang.startsWith('/portfolio'));
         setShouldShowServicesPopup(pathWithoutLang.startsWith('/services'));
         setShouldShowInsightsPopup(pathWithoutLang.startsWith('/insights'));
         setShouldShowTeamPopup(pathWithoutLang.startsWith('/team'));
         setShouldShowEstimatorPopup(pathWithoutLang.startsWith('/estimator'));
 
+        // Check for hash-based pages
         if (hash === '#about') {
             setActivePage('about');
         } else if (hash === '#careers') {
