@@ -48,7 +48,7 @@ const Preloader: React.FC = () => {
 
   return (
     <div 
-      className={`fixed inset-0 z-[99999] flex flex-col items-center justify-center bg-gray-950 transition-transform duration-1000 ease-[cubic-bezier(0.76,0,0.24,1)] ${isFinished ? '-translate-y-full' : 'translate-y-0'}`}
+      className={`fixed inset-0 z-[11000] flex flex-col items-center justify-center bg-gray-950 transition-transform duration-1000 ease-[cubic-bezier(0.76,0,0.24,1)] ${isFinished ? '-translate-y-full' : 'translate-y-0'}`}
     >
       {/* Background Texture */}
       <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none"></div>
