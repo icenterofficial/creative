@@ -204,7 +204,7 @@ const Insights: React.FC<InsightsProps> = ({ showPopupOnMount = false, usePathRo
       </div>
 
       {/* "View All Posts" Modal */}
-      {isViewAll && createPortal(
+      {isViewAllOpen && createPortal(
          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 overflow-hidden">
             <div 
                 className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
