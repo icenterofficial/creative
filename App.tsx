@@ -194,8 +194,8 @@ function AppContent() {
       
       {/* Admin Login Modal */}
       {isAdminOpen && (
-          <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-md">
-              <div className="bg-gray-900 border border-white/10 p-8 rounded-3xl shadow-2xl w-full max-w-sm relative">
+          <div className="fixed inset-0 z-[12000] flex items-center justify-center p-4 bg-gray-950/80 backdrop-blur-md overflow-hidden">
+              <div className="bg-gray-900 border border-white/10 p-8 rounded-3xl shadow-2xl w-full max-w-sm relative z-[12001]">
                   <button onClick={closeAdmin} className="absolute top-4 right-4 text-gray-500 hover:text-white"><X size={20} /></button>
                   <div className="flex flex-col items-center mb-6">
                       <div className="w-16 h-16 bg-indigo-500/10 rounded-full flex items-center justify-center mb-4 text-indigo-400"><Lock size={32} /></div>
