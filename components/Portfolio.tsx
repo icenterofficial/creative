@@ -42,6 +42,11 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
       }
   }, [activeId, projects]);
 
+  // Sync isViewAllOpen with showPopupOnMount prop
+  useEffect(() => {
+    setIsViewAllOpen(showPopupOnMount);
+  }, [showPopupOnMount]);
+
   // Handle Body Scroll Lock
   useEffect(() => {
     if (selectedProject || isViewAllOpen) {
@@ -81,18 +86,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
     hapticTap();
     setIsViewAllOpen(false);
     onPopupClose?.();
-    
-    if (usePathRouting) {
-      // បង្ខំឱ្យ URL ត្រឡប់មក /#portfolio វិញភ្លាមៗ (បញ្ជៀសការជាប់នៅ /portfolio)
-      const currentLang = window.location.pathname.split('/')[1];
-      const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
-      const langPrefix = currentLang && supportedLangs.includes(currentLang) ? `/${currentLang}` : '';
-      
-      window.history.replaceState(null, '', `${langPrefix}/#portfolio`);
-      window.dispatchEvent(new Event('popstate'));
-    } else {
-      window.location.hash = '';
-    }
+    closeItem(); // Use the hook's closeItem to handle URL restoration
   };
 
   const filteredProjects = (projects || []).filter(p => filter === 'all' || p.category === filter);
