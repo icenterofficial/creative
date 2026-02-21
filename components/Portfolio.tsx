@@ -8,14 +8,17 @@ import { Project } from '../types';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
 import { useRouter } from '../hooks/useRouter';
+import { hapticMedium, hapticTap } from '../utils/haptic';
 
 // Sub-components
 import PortfolioFilters from './portfolio/PortfolioFilters';
 import PortfolioCard from './portfolio/PortfolioCard';
 import PortfolioModal from './portfolio/PortfolioModal';
+import SkeletonCard from './SkeletonCard';
 
 const Portfolio: React.FC = () => {
   const [filter, setFilter] = useState<string>('all');
+  const [isFilteringLoading, setIsFilteringLoading] = useState(false);
   const { t } = useLanguage();
   const { projects = [] } = useData();
 
@@ -58,6 +61,18 @@ const Portfolio: React.FC = () => {
     };
   }, [selectedProject, isViewAllOpen]);
 
+  // Handle filter change with loading state and haptic feedback
+  const handleFilterChange = (newFilter: string) => {
+    hapticMedium(); // Haptic feedback on filter change
+    setFilter(newFilter);
+    
+    // Simulate loading state for better UX
+    setIsFilteringLoading(true);
+    setTimeout(() => {
+      setIsFilteringLoading(false);
+    }, 300);
+  };
+
   return (
     <section id="portfolio" className="py-24 bg-gray-900/50 relative overflow-hidden">
       {/* Background Text */}
@@ -79,28 +94,40 @@ const Portfolio: React.FC = () => {
               <PortfolioFilters 
                 categories={categories} 
                 currentFilter={filter} 
-                onFilterChange={setFilter} 
+                onFilterChange={handleFilterChange}
               />
             </RevealOnScroll>
         </div>
 
-        {/* Masonry Grid (Limit to 6 items) */}
+        {/* Masonry Grid with Skeleton Loading */}
         <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
-          {filteredProjects.slice(0, 6).map((project, index) => (
-            <PortfolioCard 
-                key={project.id} 
-                project={project} 
-                index={index} 
-                onClick={() => openItem(project.slug || project.id)} 
-            />
-          ))}
+          {isFilteringLoading ? (
+            // Show skeleton cards while filtering
+            <SkeletonCard count={6} className="break-inside-avoid" />
+          ) : (
+            // Show actual portfolio cards
+            filteredProjects.slice(0, 6).map((project, index) => (
+              <PortfolioCard 
+                  key={project.id} 
+                  project={project} 
+                  index={index} 
+                  onClick={() => {
+                    hapticTap();
+                    openItem(project.slug || project.id);
+                  }}
+              />
+            ))
+          )}
         </div>
         
         <RevealOnScroll variant="fade-up" delay={400}>
           <div className="text-center mt-20">
              <button 
-                onClick={() => setIsViewAllOpen(true)}
-                className="px-10 py-4 rounded-full border border-white/20 text-white font-bold hover:bg-white hover:text-gray-950 transition-all duration-300 font-khmer flex items-center gap-2 mx-auto"
+                onClick={() => {
+                  hapticTap();
+                  setIsViewAllOpen(true);
+                }}
+                className="px-10 py-4 rounded-full border border-white/20 text-white font-bold hover:bg-white hover:text-gray-950 transition-all duration-300 font-khmer flex items-center gap-2 mx-auto active:scale-95"
              >
                {t('View All Projects', 'មើលគម្រោងទាំងអស់')} <ArrowRight size={18} />
              </button>
@@ -113,7 +140,10 @@ const Portfolio: React.FC = () => {
          <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4">
             <div 
                 className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
-                onClick={() => setIsViewAllOpen(false)}
+                onClick={() => {
+                  hapticTap();
+                  setIsViewAllOpen(false);
+                }}
             />
              <div className="relative w-full max-w-7xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col">
                 <div className="flex justify-between items-center p-6 md:p-8 border-b border-white/10 bg-gray-900 z-10">
@@ -122,8 +152,11 @@ const Portfolio: React.FC = () => {
                         <p className="text-gray-400 text-sm font-khmer">{t('Browse our complete portfolio', 'មើលផលប័ត្រពេញលេញរបស់យើង')}</p>
                     </div>
                     <button 
-                        onClick={() => setIsViewAllOpen(false)}
-                        className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-full transition-all border border-white/5"
+                        onClick={() => {
+                          hapticTap();
+                          setIsViewAllOpen(false);
+                        }}
+                        className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-full transition-all border border-white/5 active:scale-95"
                     >
                         <X size={24} />
                     </button>
@@ -133,8 +166,11 @@ const Portfolio: React.FC = () => {
                         {(projects || []).map((project) => (
                              <div 
                                 key={project.id} 
-                                onClick={() => openItem(project.slug || project.id)}
-                                className="group relative rounded-xl overflow-hidden break-inside-avoid bg-gray-800 border border-white/5 hover:border-indigo-500/30 transition-all duration-300 cursor-pointer"
+                                onClick={() => {
+                                  hapticTap();
+                                  openItem(project.slug || project.id);
+                                }}
+                                className="group relative rounded-xl overflow-hidden break-inside-avoid bg-gray-800 border border-white/5 hover:border-indigo-500/30 transition-all duration-300 cursor-pointer active:scale-95"
                             >
                                 <img 
                                     src={project.image} 
