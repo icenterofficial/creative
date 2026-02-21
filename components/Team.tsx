@@ -90,6 +90,15 @@ const Team: React.FC = () => {
                     {/* Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/50 to-transparent" />
 
+                    {/* Article Count Badge */}
+                    {postCount > 0 && (
+                      <div className="absolute top-4 left-4 z-20">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-900/70 backdrop-blur-md border border-indigo-500/50 text-indigo-200 text-[10px] font-bold uppercase tracking-wider shadow-lg">
+                          <FileText size={11} /> {postCount} {t('Articles', 'អត្ថបទ')}
+                        </span>
+                      </div>
+                    )}
+
                     {/* Info Icon */}
                     <div className="absolute top-4 right-4 text-gray-400 group-hover:text-indigo-400 transition-colors z-10">
                       <Info size={20} />
@@ -111,14 +120,7 @@ const Team: React.FC = () => {
 
                     {/* Member Info */}
                     <div className="flex-1 flex flex-col justify-start -mt-2.5">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <h3 className="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors">{member.name}</h3>
-                        {postCount > 0 && (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-900/50 border border-indigo-500/30 text-indigo-200 text-[9px] font-bold uppercase tracking-wider shadow-sm shrink-0">
-                            <FileText size={9} /> {postCount}
-                          </span>
-                        )}
-                      </div>
+                      <h3 className="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors mb-1">{member.name}</h3>
                       <p className="text-indigo-400 text-xs font-khmer">{t(member.role, member.roleKm)}</p>
                     </div>
                   </div>
