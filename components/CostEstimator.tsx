@@ -17,7 +17,6 @@ interface AddOn {
   label: string;
   labelKm: string;
   price: number;
-  unit?: string; // Added unit support (e.g., /pc)
 }
 
 interface ServiceOption {
@@ -76,37 +75,35 @@ const CostEstimator: React.FC<CostEstimatorProps> = ({ showPopupOnMount = false,
       label: 'Graphic Design',
       labelKm: 'រចនាក្រាហ្វិក',
       icon: <Palette size={32} strokeWidth={1.5} />,
-      basePrice: 0, // UPDATED: Base price is now 0 as per request
+      basePrice: 0,
       addOns: [
-        // Section: Poster Design (រចនាផ្ទាំងរូបភាព)
         { id: 'poster_1pc', label: 'Poster Design (1pc)', labelKm: 'រចនាផ្ទាំងរូបភាព (1pc)', price: 10 },
         { id: 'poster_10pc', label: 'Poster Package (10pcs)', labelKm: 'កញ្ចប់រចនាផ្ទាំងរូបភាព (10pcs)', price: 95 },
         { id: 'poster_15pc', label: 'Monthly Package (15pcs)', labelKm: 'កញ្ចប់រចនាផ្ទាំងរូបភាពប្រចាំខែ (15pcs)', price: 130 },
         { id: 'poster_event', label: 'Event Poster (1pc)', labelKm: 'កញ្ចប់រចនាផ្ទាំងរូបភាពបុណ្យជាតិ (1pc)', price: 10 },
-
-        // Section: Logo Design (រចនាសញ្ញាសម្គាល់)
         { id: 'logo_new', label: 'Logo Design (New)', labelKm: 'រចនាផ្លាកសញ្ញាថ្មី (1pc)', price: 69 },
         { id: 'logo_redesign', label: 'Logo Redesign', labelKm: 'រចនាផ្លាកសញ្ញាឡើងវិញ (Redesign)', price: 22 },
         { id: 'logo_branding', label: 'Logo + Branding Guideline', labelKm: 'រចនាផ្លាកសញ្ញា + Branding Guideline', price: 99 },
-
-        // Section: Others (រចនាផ្សេងៗ)
         { id: 'fb_cover', label: 'Facebook Cover', labelKm: 'រចនា Facebook Cover (1pc)', price: 11 },
         { id: 'menu_design', label: 'Menu Design', labelKm: 'រចនារចនាសម្ព័ន្ធផ្សេងៗ (Menu)', price: 13 },
-        { id: 'envelope', label: 'Envelope Design', labelKm: 'រចនាក្របសៀវភៅ (Envelope)', price: 15 },
-        // Note: "Custom Design" based on negotiation cannot be calculated here, so omitted or handled via contact form.
       ]
     },
     {
       id: 'architecture',
-      label: 'Architecture',
-      labelKm: 'ស្ថាបត្យកម្ម',
+      label: 'Architecture (3D)',
+      labelKm: 'ស្ថាបត្យកម្ម (3D Concept)',
       icon: <Home size={32} strokeWidth={1.5} />,
-      basePrice: 500,
+      basePrice: 0, // Base price 0, sum depends on selection
       addOns: [
-        { id: '3d-ext', label: '3D Exterior Rendering', labelKm: 'រចនា 3D ផ្នែកខាងក្រៅ', price: 300 },
-        { id: '3d-int', label: '3D Interior Design', labelKm: 'រចនា 3D ផ្នែកខាងក្នុង', price: 400 },
-        { id: 'blueprint', label: 'Construction Blueprint', labelKm: 'ប្លង់សាងសង់លម្អិត', price: 500 },
-        { id: 'video', label: 'Walkthrough Video', labelKm: 'វីដេអូបង្ហាញគម្រោង', price: 250 },
+        // Items from the image provided, priced competitively (30-40% cheaper than market)
+        { id: 'fence_gate', label: 'Steel Fence/Gate Design', labelKm: 'រចនាទ្វាររបងដែកស្វិត', price: 40 },
+        { id: 'association_house', label: 'Association House Design', labelKm: 'រចនាផ្ទះជំនួយពីសមាគម', price: 85 },
+        { id: 'coffee_shop', label: 'Coffee Shop Design', labelKm: 'រចនាហាងកាហ្វេ', price: 120 },
+        { id: 'restaurant', label: 'Restaurant Design', labelKm: 'រចនាភោជនីយដ្ឋាន', price: 150 },
+        { id: 'villa', label: 'Villa House Design', labelKm: 'រចនាផ្ទះវីឡា', price: 220 },
+        { id: 'school', label: 'School Design', labelKm: 'រចនាសាលារៀន', price: 350 },
+        // Add-on for details
+        { id: '2d_layout', label: '2D Layout Plan', labelKm: 'ប្លង់រៀបចំសង្ហារឹម (2D Layout)', price: 50 },
       ]
     }
   ];
