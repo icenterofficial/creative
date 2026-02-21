@@ -84,6 +84,10 @@ const Insights: React.FC<InsightsProps> = ({ showPopupOnMount = false, usePathRo
     closeItem();
   };
 
+  const handleArticleDetailClose = () => {
+    window.history.back();
+  };
+
   // Helper component to render Author Info on Card
   const AuthorBadge = ({ authorId }: { authorId: string }) => {
       const author = (team || []).find(t => t.id === authorId);
@@ -271,7 +275,7 @@ const Insights: React.FC<InsightsProps> = ({ showPopupOnMount = false, usePathRo
       {selectedPost && (
           <ArticleDetailModal 
             post={selectedPost}
-            onClose={closeItem}
+            onClose={handleArticleDetailClose}
             onAuthorClick={handleAuthorClick}
           />
       )}
