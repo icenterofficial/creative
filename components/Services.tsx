@@ -64,11 +64,8 @@ const SortableServiceItem: React.FC<SortableServiceItemProps> = ({ service, inde
     zIndex: isDragging ? 50 : 'auto',
   };
 
-  // Layout Logic: Specific services span 2 columns
   const isLarge = index === 0 || index === 6 || service.id === 'courses';
   const gridClass = isLarge ? 'lg:col-span-2' : 'lg:col-span-1';
-
-  // Determine Background Image: Use Dynamic first, then Fallback
   const bgImage = service.image || SERVICE_IMAGES_FALLBACK[service.id];
 
   return (
@@ -79,13 +76,10 @@ const SortableServiceItem: React.FC<SortableServiceItemProps> = ({ service, inde
       {...listeners}
       className={`group relative p-[1px] rounded-3xl overflow-hidden ${gridClass} cursor-grab active:cursor-grabbing`}
     >
-      {/* Rotating Gradient Border Background */}
       <div className={`absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 transition-opacity duration-500 animate-spin-slow blur-lg ${isDragging ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`} />
       
-      {/* Inner Card Content */}
       <div className={`relative h-full bg-gray-900/90 backdrop-blur-xl rounded-[23px] p-8 border border-white/10 transition-all duration-300 overflow-hidden ${isDragging ? 'bg-gray-800 scale-[1.02] shadow-2xl' : 'hover:bg-gray-900/80'}`}>
           
-          {/* Background Image Always Visible with Hover Darkening */}
           {bgImage && (
             <div 
                 className="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-60 transition-opacity duration-500 ease-out grayscale-[0.3] group-hover:grayscale-0 pointer-events-none"
@@ -93,10 +87,7 @@ const SortableServiceItem: React.FC<SortableServiceItemProps> = ({ service, inde
             />
           )}
           
-          {/* Dark Overlay for Better Text Readability - Always Visible */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/40 to-gray-950/80 group-hover:from-transparent group-hover:via-gray-900/50 group-hover:to-gray-950/90 transition-all duration-500 pointer-events-none" />
-
-          {/* Hover Internal Glow (Existing) - Placed AFTER image to overlay color tint */}
           <div className={`absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-500 bg-gradient-to-br ${service.color.replace('bg-', 'from-')} to-transparent rounded-[23px] pointer-events-none`} />
           
           <div className="relative z-10 h-full flex flex-col justify-between">
@@ -139,21 +130,18 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
   const { services = [] } = useData();
   const { t } = useLanguage();
   
-  // Use Router Hook: Section 'services'
   const { activeId, openItem, closeItem } = useRouter('services', '', usePathRouting);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
 
   const [items, setItems] = useState<Service[]>(services || []);
   const [hasReordered, setHasReordered] = useState(false);
 
-  // Sync with context if services change externally
   useEffect(() => {
     if (services) {
         setItems(services);
     }
   }, [services]);
 
-  // Sync Router Active ID with Data
   useEffect(() => {
       if (activeId && services) {
           const found = services.find(s => s.id === activeId);
@@ -163,25 +151,12 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
       }
   }, [activeId, services]);
 
-  // Sensors for Drag and Drop
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, 
-      },
-    }),
-    useSensor(TouchSensor, {
-      activationConstraint: {
-        delay: 250,
-        tolerance: 5,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 250, tolerance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Lock body scroll when modal is open
   useEffect(() => {
     if (selectedService) {
       document.body.style.overflow = 'hidden';
@@ -195,7 +170,6 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-
     if (over && active.id !== over.id) {
       setItems((items) => {
         const oldIndex = items.findIndex((item) => item.id === active.id);
@@ -211,7 +185,6 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
     setHasReordered(false);
   };
 
-  // Helper to get modal image
   const getModalImage = (service: Service | null) => {
     if (!service) return '';
     return service.image || SERVICE_IMAGES_FALLBACK[service.id] || '';
@@ -219,7 +192,6 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
 
   return (
     <section id="services" className="py-24 bg-gray-950 relative overflow-hidden">
-      {/* Background Text */}
       <ScrollBackgroundText text="EXPERTISE" className="top-10" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -245,7 +217,6 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
           </div>
         </RevealOnScroll>
 
-        {/* DnD Context Wrapper */}
         <DndContext 
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -271,7 +242,6 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
             </SortableContext>
         </DndContext>
         
-        {/* Helper text for mobile */}
         <div className="mt-6 text-center md:hidden">
             <p className="text-gray-600 text-xs font-khmer italic">{t('Press and hold to reorder services', 'ចុចឱ្យជាប់ដើម្បីរៀបចំសេវាកម្មឡើងវិញ')}</p>
         </div>
@@ -285,10 +255,12 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
             onClick={closeItem}
           />
           
-          {/* Main Container - Adjusted Height Logic */}
-          <div className="relative w-full max-w-5xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col md:flex-row h-[90vh] md:h-auto md:max-h-[85vh]">
+          {/* Main Container */}
+          {/* h-[90vh] ensures the modal has a fixed height relative to viewport */}
+          {/* flex-col md:flex-row enables split layout on desktop and stacked on mobile */}
+          <div className="relative w-full max-w-5xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col md:flex-row h-[90vh] md:h-[85vh]">
             
-            {/* Close Button (Absolute Top Right) */}
+            {/* Close Button */}
             <button 
                 onClick={closeItem}
                 className="absolute top-4 right-4 z-50 p-2 bg-black/40 hover:bg-white/20 text-white rounded-full transition-colors border border-white/10 backdrop-blur-md"
@@ -296,19 +268,14 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
                 <X size={20} />
             </button>
 
-            {/* LEFT SIDE: Image & Title Overlay */}
-            <div className="w-full md:w-5/12 h-48 md:h-auto relative shrink-0 bg-gray-800">
-                {/* Background Image */}
+            {/* LEFT SIDE: Image (Fixed height on mobile, Full height on Desktop) */}
+            <div className="w-full md:w-5/12 h-56 md:h-full relative shrink-0 bg-gray-800">
                 <img 
                     src={getModalImage(selectedService)} 
                     alt={selectedService.title} 
                     className="w-full h-full object-cover"
                 />
-                
-                {/* Gradient Overlay for Text Readability */}
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent opacity-90" />
-                
-                {/* Bottom Overlay Content */}
                 <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full">
                     <div className={`inline-flex p-3 rounded-2xl bg-white/10 backdrop-blur-md text-white border border-white/20 mb-4 shadow-lg ${selectedService.color.replace('bg-', 'text-')}`}>
                         {selectedService.icon}
@@ -319,25 +286,23 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
                 </div>
             </div>
 
-            {/* RIGHT SIDE: Content & Fixed Footer */}
-            <div className="w-full md:w-7/12 flex flex-col h-full bg-gray-900/50 backdrop-blur-sm relative">
+            {/* RIGHT SIDE: Content (Flex-1 to fill remaining space) */}
+            <div className="w-full md:w-7/12 flex flex-col flex-1 min-h-0 bg-gray-900/50 backdrop-blur-sm relative">
                 
-                {/* 1. SCROLLABLE CONTENT (Flex-1 takes remaining space) */}
-                <div className="flex-1 overflow-y-auto p-6 md:p-8">
+                {/* 1. SCROLLABLE CONTENT AREA */}
+                {/* min-h-0 is crucial for nested flex scrolling */}
+                <div className="flex-1 overflow-y-auto p-6 md:p-8 min-h-0 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
                     
-                    {/* Subtitle */}
                     <p className="text-indigo-400 font-bold text-sm tracking-wider uppercase mb-6 font-khmer">
                         {t(selectedService.subtitle, selectedService.subtitleKm || selectedService.subtitle)}
                     </p>
                     
-                    {/* Description */}
                     <div className="prose prose-invert prose-p:text-gray-300 prose-p:font-khmer prose-p:leading-relaxed max-w-none mb-8">
                         <p>
                         {t(selectedService.description, selectedService.descriptionKm || selectedService.description)}
                         </p>
                     </div>
                     
-                    {/* Features List */}
                     <div className="space-y-3">
                         <h4 className="text-white font-bold font-khmer mb-2">{t('Key Features', 'លក្ខណៈពិសេស')}</h4>
                         <div className="grid grid-cols-1 gap-3">
@@ -351,8 +316,8 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
                     </div>
                 </div>
 
-                {/* 2. FIXED FOOTER (Shrink-0 ensures it stays at bottom) */}
-                <div className="p-6 md:p-8 border-t border-white/5 bg-gray-900/90 backdrop-blur-xl shrink-0 z-10">
+                {/* 2. FIXED FOOTER (Always Visible) */}
+                <div className="p-6 md:p-8 border-t border-white/5 bg-gray-900/95 backdrop-blur-xl shrink-0 z-10">
                     <button 
                         onClick={() => {
                             closeItem();
