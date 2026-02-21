@@ -1,9 +1,8 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { DataProvider, useData } from './contexts/DataContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Header from './components/Header'; // Folder import works automatically
+import Header from './components/Header';
 import Hero from './components/Hero';
 import Partners from './components/Partners';
 import Services from './components/Services';
@@ -16,9 +15,7 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import ScrollButton from './components/ScrollButton';
 import FloatingChat from './components/FloatingChat'; 
-import CostEstimator from './components/CostEstimator'; 
 import Preloader from './components/Preloader';
-import AdminDashboard from './components/AdminDashboard';
 import SplashScreen from './components/SplashScreen';
 import OfflinePage from './components/OfflinePage';
 import InstallPrompt from './components/InstallPrompt';
@@ -31,10 +28,24 @@ import About from './components/About';
 import Careers from './components/Careers';
 import PrivacyPolicy from './components/PrivacyPolicy';
 
+// Lazy Load Heavy Components
+const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
+const CostEstimator = React.lazy(() => import('./components/CostEstimator'));
+
+const ComponentFallback: React.FC = () => (
+  <div className="w-full h-screen flex items-center justify-center bg-gray-950">
+    <div className="flex flex-col items-center gap-4">
+      <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+      <p className="text-gray-400 text-sm font-khmer">Loading...</p>
+    </div>
+  </div>
+);
+
 function AppContent() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isViewingSite, setIsViewingSite] = useState(false);
   const [activePage, setActivePage] = useState<string | null>(null);
+  const [shouldShowPortfolioPopup, setShouldShowPortfolioPopup] = useState(false);
   
   const { currentUser, logout, login } = useAuth();
   const { isAdminOpen, closeAdmin } = useAdminRouter();
@@ -51,18 +62,38 @@ function AppContent() {
   }, []);
 
   useEffect(() => {
-    const handleHashChange = () => {
+    const handleRouteChange = () => {
+        const pathname = window.location.pathname;
         const hash = window.location.hash;
-        if (hash === '#about') setActivePage('about');
-        else if (hash === '#careers') setActivePage('careers');
-        else if (hash === '#privacy') setActivePage('privacy');
-        else {
+        
+        const isPortfolioPath = /\/(en|km|fr|ja|ko|de|zh-CN|es|ar)?\/portfolio/.test(pathname);
+        
+        if (isPortfolioPath) {
+            setShouldShowPortfolioPopup(true);
+            setActivePage(null);
+        } else if (hash === '#about') {
+            setActivePage('about');
+            setShouldShowPortfolioPopup(false);
+        } else if (hash === '#careers') {
+            setActivePage('careers');
+            setShouldShowPortfolioPopup(false);
+        } else if (hash === '#privacy') {
+            setActivePage('privacy');
+            setShouldShowPortfolioPopup(false);
+        } else {
             if (!['#about', '#careers', '#privacy'].includes(hash)) setActivePage(null);
+            setShouldShowPortfolioPopup(false);
         }
     };
-    handleHashChange();
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    
+    handleRouteChange();
+    window.addEventListener('hashchange', handleRouteChange);
+    window.addEventListener('popstate', handleRouteChange);
+    
+    return () => {
+        window.removeEventListener('hashchange', handleRouteChange);
+        window.removeEventListener('popstate', handleRouteChange);
+    };
   }, []);
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -83,7 +114,11 @@ function AppContent() {
   };
 
   if (currentUser && !isViewingSite) {
-      return <AdminDashboard currentUser={currentUser} onLogout={logout} onViewSite={() => setIsViewingSite(true)} />;
+      return (
+        <Suspense fallback={<ComponentFallback />}>
+          <AdminDashboard currentUser={currentUser} onLogout={logout} onViewSite={() => setIsViewingSite(true)} />
+        </Suspense>
+      );
   }
 
   return (
@@ -101,9 +136,11 @@ function AppContent() {
         <Hero />
         <Partners />
         <Services />
-        <CostEstimator />
+        <Suspense fallback={<div className="h-96 bg-gray-900/50" />}>
+          <CostEstimator />
+        </Suspense>
         <Process />
-        <Portfolio />
+        <Portfolio showPopupOnMount={shouldShowPortfolioPopup} onPopupClose={() => setShouldShowPortfolioPopup(false)} />
         <Testimonials />
         <Team />
         <Insights />
