@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowUpRight, X, CheckCircle2, RotateCcw } from 'lucide-react';
+import { ArrowUpRight, X, CheckCircle2, RotateCcw, ArrowRight } from 'lucide-react';
 import { Service } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useData } from '../contexts/DataContext';
@@ -108,11 +108,10 @@ const SortableServiceItem: React.FC<SortableServiceItemProps> = ({ service, inde
                 <div className="flex gap-2 relative z-20">
                     <button 
                       onClick={(e) => {
-                        // Prevent drag start when clicking the details button
                         e.stopPropagation(); 
                         onSelect(service);
                       }}
-                      onPointerDown={(e) => e.stopPropagation()} // Stop pointer down from starting drag
+                      onPointerDown={(e) => e.stopPropagation()} 
                       className="p-2 rounded-full border border-white/10 text-gray-400 hover:text-white hover:border-white hover:bg-white/10 transition-all cursor-pointer"
                       aria-label={`View details for ${service.title}`}
                     >
@@ -168,11 +167,10 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // Require slight movement before drag starts (prevents accidental clicks)
+        distance: 8, 
       },
     }),
     useSensor(TouchSensor, {
-      // For mobile: Press and hold for 250ms to start dragging, so scrolling still works
       activationConstraint: {
         delay: 250,
         tolerance: 5,
@@ -213,6 +211,12 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
     setHasReordered(false);
   };
 
+  // Helper to get modal image
+  const getModalImage = (service: Service | null) => {
+    if (!service) return '';
+    return service.image || SERVICE_IMAGES_FALLBACK[service.id] || '';
+  };
+
   return (
     <section id="services" className="py-24 bg-gray-950 relative overflow-hidden">
       {/* Background Text */}
@@ -225,7 +229,6 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
                   <span className="text-indigo-400 font-bold tracking-wider uppercase text-sm mb-4 block font-khmer">{t('Our Expertise', 'ជំនាញរបស់យើង')}</span>
                   <h2 className="text-4xl md:text-5xl font-bold text-white font-khmer leading-tight">
                       {t('Comprehensive solutions for', 'ដំណោះស្រាយពេញលេញសម្រាប់')}   
-
                       <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">{t('Digital Dominance.', 'ភាពលេចធ្លោលើឌីជីថល')}</span>
                   </h2>
               </div>
@@ -274,44 +277,91 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
         </div>
       </div>
 
-      {/* Service Detail Modal */}
-{selectedService && createPortal(
+      {/* --- REDESIGNED Service Detail Modal --- */}
+      {selectedService && createPortal(
         <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4 overflow-hidden">
           <div 
             className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
             onClick={closeItem}
           />
-          <div className="relative w-full max-w-2xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-[10003]">
-            <div className="p-8">
-              <div className="flex justify-between items-start mb-8">
-                <div className={`p-4 rounded-2xl bg-white/5 ${selectedService.color.replace('bg-', 'text-')} border border-white/10`}>
-                  {selectedService.icon}
+          
+          {/* Main Container - Split Layout */}
+          <div className="relative w-full max-w-5xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col md:flex-row max-h-[90vh]">
+            
+            {/* Close Button (Absolute Top Right) */}
+            <button 
+                onClick={closeItem}
+                className="absolute top-4 right-4 z-50 p-2 bg-black/40 hover:bg-white/20 text-white rounded-full transition-colors border border-white/10 backdrop-blur-md"
+            >
+                <X size={20} />
+            </button>
+
+            {/* LEFT SIDE: Image & Title Overlay */}
+            <div className="relative w-full md:w-5/12 h-64 md:h-auto shrink-0 bg-gray-800">
+                {/* Background Image */}
+                <img 
+                    src={getModalImage(selectedService)} 
+                    alt={selectedService.title} 
+                    className="w-full h-full object-cover"
+                />
+                
+                {/* Gradient Overlay for Text Readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent opacity-90" />
+                
+                {/* Bottom Overlay Content */}
+                <div className="absolute bottom-0 left-0 p-8 w-full">
+                    <div className={`inline-flex p-3 rounded-2xl bg-white/10 backdrop-blur-md text-white border border-white/20 mb-4 shadow-lg ${selectedService.color.replace('bg-', 'text-')}`}>
+                        {selectedService.icon}
+                    </div>
+                    <h3 className="text-3xl font-bold text-white font-khmer leading-tight">
+                        {t(selectedService.title, selectedService.titleKm)}
+                    </h3>
                 </div>
-                <button 
-                  onClick={closeItem}
-                  className="p-2 bg-white/5 hover:bg-white/10 text-white rounded-full transition-colors border border-white/5"
-                >
-                  <X size={24} />
-                </button>
-              </div>
-              
-              <h3 className="text-3xl font-bold text-white mb-4 font-khmer">{t(selectedService.title, selectedService.titleKm)}</h3>
-              <p className="text-indigo-400 font-medium mb-6 font-khmer">{t(selectedService.subtitle, selectedService.subtitleKm || selectedService.subtitle)}</p>
-              
-              <div className="prose prose-invert max-w-none mb-8">
-                <p className="text-gray-300 leading-relaxed font-khmer">
-                  {t(selectedService.description, selectedService.descriptionKm || selectedService.description)}
-                </p>
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(selectedService.features || []).map((feature, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-4 bg-white/5 rounded-xl border border-white/5">
-                    <CheckCircle2 size={18} className="text-green-400 shrink-0" />
-                    <span className="text-gray-300 text-sm font-khmer">{t(feature, feature)}</span>
-                  </div>
-                ))}
-              </div>
+            </div>
+
+            {/* RIGHT SIDE: Content & Description */}
+            <div className="w-full md:w-7/12 flex flex-col h-full bg-gray-900/50 backdrop-blur-sm">
+                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                    
+                    {/* Subtitle */}
+                    <p className="text-indigo-400 font-bold text-sm tracking-wider uppercase mb-6 font-khmer">
+                        {t(selectedService.subtitle, selectedService.subtitleKm || selectedService.subtitle)}
+                    </p>
+                    
+                    {/* Description */}
+                    <div className="prose prose-invert prose-p:text-gray-300 prose-p:font-khmer prose-p:leading-relaxed max-w-none mb-8">
+                        <p>
+                        {t(selectedService.description, selectedService.descriptionKm || selectedService.description)}
+                        </p>
+                    </div>
+                    
+                    {/* Features List */}
+                    <div className="space-y-3 mb-8">
+                        <h4 className="text-white font-bold font-khmer mb-2">{t('Key Features', 'លក្ខណៈពិសេស')}</h4>
+                        <div className="grid grid-cols-1 gap-3">
+                            {(selectedService.features || []).map((feature, idx) => (
+                            <div key={idx} className="flex items-start gap-3 p-3 bg-white/5 rounded-xl border border-white/5 hover:border-indigo-500/30 transition-colors">
+                                <CheckCircle2 size={18} className="text-indigo-400 shrink-0 mt-0.5" />
+                                <span className="text-gray-300 text-sm font-khmer">{t(feature, feature)}</span>
+                            </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Bottom CTA Button Area */}
+                <div className="p-8 border-t border-white/5 bg-gray-900/80 backdrop-blur-xl shrink-0">
+                    <button 
+                        onClick={() => {
+                            closeItem();
+                            window.location.hash = 'contact'; // Example action
+                        }}
+                        className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-lg font-khmer shadow-lg shadow-indigo-900/20 transition-all flex items-center justify-center gap-2 group"
+                    >
+                        {t('Get a Quote', 'ស្នើសុំតម្លៃ')}
+                        <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
+                </div>
             </div>
           </div>
         </div>,
