@@ -77,11 +77,12 @@ function AppContent() {
         const pathWithoutLang = pathname.replace(langRegex, '');
 
         // Check for path-based popups (deep-linking support)
-        setShouldShowPortfolioPopup(pathWithoutLang.startsWith('/portfolio'));
-        setShouldShowServicesPopup(pathWithoutLang.startsWith('/services'));
-        setShouldShowInsightsPopup(pathWithoutLang.startsWith('/insights'));
-        setShouldShowTeamPopup(pathWithoutLang.startsWith('/team'));
-        setShouldShowEstimatorPopup(pathWithoutLang.startsWith('/estimator'));
+        // We use .startsWith and check for exactly the section or a subpath
+        setShouldShowPortfolioPopup(pathWithoutLang === '/portfolio' || pathWithoutLang.startsWith('/portfolio/'));
+        setShouldShowServicesPopup(pathWithoutLang === '/services' || pathWithoutLang.startsWith('/services/'));
+        setShouldShowInsightsPopup(pathWithoutLang === '/insights' || pathWithoutLang.startsWith('/insights/'));
+        setShouldShowTeamPopup(pathWithoutLang === '/team' || pathWithoutLang.startsWith('/team/'));
+        setShouldShowEstimatorPopup(pathWithoutLang === '/estimator' || pathWithoutLang.startsWith('/estimator/'));
 
         // Check for hash-based pages
         if (hash === '#about') {
