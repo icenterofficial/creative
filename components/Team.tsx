@@ -97,9 +97,9 @@ const Team: React.FC = () => {
                   </div>
 
                   {/* Profile Section - Horizontal Layout */}
-                  <div className="flex gap-4 px-6 pt-4 pb-3 flex-1">
+                  <div className="flex gap-4 px-6 pt-2 pb-3 flex-1">
                     {/* Profile Image */}
-                    <div className="shrink-0 -mt-10">
+                    <div className="shrink-0 -mt-10 relative z-20">
                       <div className="w-24 h-24 rounded-full border-4 border-gray-900 overflow-hidden bg-gray-800 group-hover:border-indigo-500 transition-colors">
                         <img 
                           src={member.image} 
@@ -110,7 +110,7 @@ const Team: React.FC = () => {
                     </div>
 
                     {/* Member Info */}
-                    <div className="flex-1 flex flex-col justify-start pt-2">
+                    <div className="flex-1 flex flex-col justify-start -mt-2.5">
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h3 className="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors">{member.name}</h3>
                         {postCount > 0 && (
