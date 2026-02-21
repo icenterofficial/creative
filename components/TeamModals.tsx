@@ -42,15 +42,24 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
                 onClick={onClose}
             />
             <div className="relative w-full max-w-lg bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10 flex flex-col max-h-[90vh]">
-                {/* Header / Cover */}
-                <div className="h-32 bg-gradient-to-r from-indigo-600 to-purple-600 relative shrink-0">
-                    <button 
-                        onClick={onClose}
-                        className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-sm"
-                    >
-                        <X size={20} />
-                    </button>
-                </div>
+	                {/* Header / Cover */}
+	                <div className="h-32 bg-gray-800 relative shrink-0 overflow-hidden">
+	                    {member.coverImage ? (
+	                        <img 
+	                            src={member.coverImage} 
+	                            alt="Cover" 
+	                            className="w-full h-full object-cover"
+	                        />
+	                    ) : (
+	                        <div className="w-full h-full bg-gradient-to-r from-indigo-600 to-purple-600" />
+	                    )}
+	                    <button 
+	                        onClick={onClose}
+	                        className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-sm z-10"
+	                    >
+	                        <X size={20} />
+	                    </button>
+	                </div>
 
                 {/* Profile Image */}
                 <div className="px-8 -mt-16 flex justify-between items-end relative z-10 mb-6 shrink-0">
