@@ -131,13 +131,17 @@ const SortableServiceItem: React.FC<SortableServiceItemProps> = ({ service, inde
   );
 };
 
+interface ServicesProps {
+  showPopupOnMount?: boolean;
+  usePathRouting?: boolean;
+}
 
-const Services: React.FC = () => {
+const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRouting = false }) => {
   const { services = [] } = useData();
   const { t } = useLanguage();
   
-  // Use Router Hook: Section 'services', No prefix (Ids are strings)
-  const { activeId, openItem, closeItem } = useRouter('services');
+  // Use Router Hook: Section 'services'
+  const { activeId, openItem, closeItem } = useRouter('services', '', usePathRouting);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
 
   const [items, setItems] = useState<Service[]>(services || []);
@@ -266,113 +270,53 @@ const Services: React.FC = () => {
         
         {/* Helper text for mobile */}
         <div className="mt-6 text-center md:hidden">
-            <p className="text-gray-600 text-xs font-khmer">
-                {t('Tip: Press and hold a card to reorder services.', 'គន្លឹះ៖ ចុចឱ្យជាប់លើកាត ដើម្បីប្តូរទីតាំង។')}
-            </p>
+            <p className="text-gray-600 text-xs font-khmer italic">{t('Press and hold to reorder services', 'ចុចឱ្យជាប់ដើម្បីរៀបចំសេវាកម្មឡើងវិញ')}</p>
         </div>
       </div>
 
-      {/* Service Details Modal - Using Portal to render at document body level */}
+      {/* Service Detail Modal */}
       {selectedService && createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
-          {/* Backdrop with strong blur to focus attention */}
           <div 
-            className="absolute inset-0 bg-gray-950/90 backdrop-blur-2xl animate-fade-in"
+            className="absolute inset-0 bg-gray-950/90 backdrop-blur-md animate-fade-in"
             onClick={closeItem}
           />
-          
-          <div className="relative w-full max-w-4xl max-h-[90vh] bg-gray-900 border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-scale-up flex flex-col md:flex-row">
-            
-            {/* Left: Image Section */}
-            <div className="w-full md:w-1/2 h-64 md:h-auto relative">
-                <img 
-                    src={selectedService.image || SERVICE_IMAGES_FALLBACK[selectedService.id]} 
-                    alt={selectedService.title} 
-                    className="w-full h-full object-cover"
-                />
-                <div className={`absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent`} />
-                
-                <div className="absolute bottom-8 left-8">
-                     <div className={`p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white mb-4 inline-block ${selectedService.color.replace('bg-', 'text-')}`}>
-                        {selectedService.icon}
-                    </div>
-                    <h3 className="text-3xl font-bold text-white font-khmer">{t(selectedService.title, selectedService.titleKm)}</h3>
+          <div className="relative w-full max-w-2xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10">
+            <div className="p-8">
+              <div className="flex justify-between items-start mb-8">
+                <div className={`p-4 rounded-2xl bg-white/5 ${selectedService.color.replace('bg-', 'text-')} border border-white/10`}>
+                  {selectedService.icon}
                 </div>
-            </div>
-
-            {/* Right: Content Section */}
-            <div className="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto scrollbar-hide">
                 <button 
-                    onClick={closeItem}
-                    className="absolute top-6 right-6 p-3 bg-white/5 hover:bg-white/10 text-white rounded-full transition-all border border-white/10 z-20"
+                  onClick={closeItem}
+                  className="p-2 bg-white/5 hover:bg-white/10 text-white rounded-full transition-colors border border-white/5"
                 >
-                    <X size={20} />
+                  <X size={24} />
                 </button>
-
-                <div className="space-y-8">
-                    <div>
-                        <span className="text-indigo-400 font-bold tracking-widest uppercase text-xs mb-2 block">{t('Service Details', 'ព័ត៌មានលម្អិត')}</span>
-                        <p className="text-gray-300 leading-relaxed font-khmer text-lg">
-                            {t(selectedService.description, selectedService.descriptionKm || selectedService.description)}
-                        </p>
-                    </div>
-
-                    {selectedService.features && (
-                        <div className="space-y-4">
-                            <h4 className="text-white font-bold font-khmer flex items-center gap-2">
-                                <CheckCircle2 size={18} className="text-green-400" />
-                                {t('Key Features', 'ចំណុចពិសេសៗ')}
-                            </h4>
-                            <ul className="grid grid-cols-1 gap-3">
-                                {selectedService.features.map((feature, idx) => (
-                                    <li key={idx} className="flex items-center gap-3 text-gray-400 text-sm font-khmer bg-white/5 p-3 rounded-xl border border-white/5">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                                        {t(feature, feature)}
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    <div className="pt-4">
-                         <a 
-                            href="#contact" 
-                            onClick={(e) => {
-                                e.preventDefault();
-                                const element = document.getElementById('contact');
-                                if (element) {
-                                    element.scrollIntoView({ behavior: 'smooth' });
-                                    closeItem();
-                                }
-                            }}
-                            className="w-full py-4 rounded-2xl bg-white text-gray-950 font-bold text-center hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 font-khmer"
-                        >
-                            {t('Get Started', 'ចាប់ផ្តើមឥឡូវនេះ')} <ArrowUpRight size={18} />
-                        </a>
-                    </div>
-                </div>
+              </div>
+              
+              <h3 className="text-3xl font-bold text-white mb-4 font-khmer">{t(selectedService.title, selectedService.titleKm)}</h3>
+              <p className="text-indigo-400 font-medium mb-6 font-khmer">{t(selectedService.subtitle, selectedService.subtitleKm || selectedService.subtitle)}</p>
+              
+              <div className="prose prose-invert max-w-none mb-8">
+                <p className="text-gray-300 leading-relaxed font-khmer">
+                  {t(selectedService.description, selectedService.descriptionKm || selectedService.description)}
+                </p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(selectedService.features || []).map((feature, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-4 bg-white/5 rounded-xl border border-white/5">
+                    <CheckCircle2 size={18} className="text-green-400 shrink-0" />
+                    <span className="text-gray-300 text-sm font-khmer">{t(feature, feature)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>,
         document.body
       )}
-
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes scaleUp {
-          from { opacity: 0; transform: scale(0.95) translateY(20px); }
-          to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .animate-fade-in {
-          animation: fadeIn 0.3s ease-out forwards;
-        }
-        .animate-scale-up {
-          animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
-      `}</style>
     </section>
   );
 };
