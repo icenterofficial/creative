@@ -277,7 +277,7 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
         </div>
       </div>
 
-      {/* --- REDESIGNED Service Detail Modal --- */}
+      {/* --- REDESIGNED Service Detail Modal (FIXED BUTTON) --- */}
       {selectedService && createPortal(
         <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4 overflow-hidden">
           <div 
@@ -285,8 +285,8 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
             onClick={closeItem}
           />
           
-          {/* Main Container - Split Layout */}
-          <div className="relative w-full max-w-5xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col md:flex-row max-h-[90vh]">
+          {/* Main Container - Adjusted Height Logic */}
+          <div className="relative w-full max-w-5xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col md:flex-row h-[90vh] md:h-auto md:max-h-[85vh]">
             
             {/* Close Button (Absolute Top Right) */}
             <button 
@@ -297,7 +297,7 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
             </button>
 
             {/* LEFT SIDE: Image & Title Overlay */}
-            <div className="relative w-full md:w-5/12 h-64 md:h-auto shrink-0 bg-gray-800">
+            <div className="w-full md:w-5/12 h-48 md:h-auto relative shrink-0 bg-gray-800">
                 {/* Background Image */}
                 <img 
                     src={getModalImage(selectedService)} 
@@ -309,19 +309,21 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent opacity-90" />
                 
                 {/* Bottom Overlay Content */}
-                <div className="absolute bottom-0 left-0 p-8 w-full">
+                <div className="absolute bottom-0 left-0 p-6 md:p-8 w-full">
                     <div className={`inline-flex p-3 rounded-2xl bg-white/10 backdrop-blur-md text-white border border-white/20 mb-4 shadow-lg ${selectedService.color.replace('bg-', 'text-')}`}>
                         {selectedService.icon}
                     </div>
-                    <h3 className="text-3xl font-bold text-white font-khmer leading-tight">
+                    <h3 className="text-2xl md:text-3xl font-bold text-white font-khmer leading-tight">
                         {t(selectedService.title, selectedService.titleKm)}
                     </h3>
                 </div>
             </div>
 
-            {/* RIGHT SIDE: Content & Description */}
-            <div className="w-full md:w-7/12 flex flex-col h-full bg-gray-900/50 backdrop-blur-sm">
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+            {/* RIGHT SIDE: Content & Fixed Footer */}
+            <div className="w-full md:w-7/12 flex flex-col h-full bg-gray-900/50 backdrop-blur-sm relative">
+                
+                {/* 1. SCROLLABLE CONTENT (Flex-1 takes remaining space) */}
+                <div className="flex-1 overflow-y-auto p-6 md:p-8">
                     
                     {/* Subtitle */}
                     <p className="text-indigo-400 font-bold text-sm tracking-wider uppercase mb-6 font-khmer">
@@ -336,7 +338,7 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
                     </div>
                     
                     {/* Features List */}
-                    <div className="space-y-3 mb-8">
+                    <div className="space-y-3">
                         <h4 className="text-white font-bold font-khmer mb-2">{t('Key Features', 'លក្ខណៈពិសេស')}</h4>
                         <div className="grid grid-cols-1 gap-3">
                             {(selectedService.features || []).map((feature, idx) => (
@@ -349,14 +351,14 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
                     </div>
                 </div>
 
-                {/* Bottom CTA Button Area */}
-                <div className="p-8 border-t border-white/5 bg-gray-900/80 backdrop-blur-xl shrink-0">
+                {/* 2. FIXED FOOTER (Shrink-0 ensures it stays at bottom) */}
+                <div className="p-6 md:p-8 border-t border-white/5 bg-gray-900/90 backdrop-blur-xl shrink-0 z-10">
                     <button 
                         onClick={() => {
                             closeItem();
-                            window.location.hash = 'contact'; // Example action
+                            window.location.hash = 'contact'; 
                         }}
-                        className="w-full py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-lg font-khmer shadow-lg shadow-indigo-900/20 transition-all flex items-center justify-center gap-2 group"
+                        className="w-full py-3.5 md:py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold text-lg font-khmer shadow-lg shadow-indigo-900/20 transition-all flex items-center justify-center gap-2 group"
                     >
                         {t('Get a Quote', 'ស្នើសុំតម្លៃ')}
                         <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
