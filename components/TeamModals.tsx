@@ -25,7 +25,7 @@ interface MemberDetailModalProps {
 }
 
 export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, onClose, onShowArticles }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { insights = [] } = useData(); 
     
     if (!member) return null;
