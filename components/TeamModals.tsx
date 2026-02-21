@@ -196,8 +196,18 @@ export const AuthorArticlesModal: React.FC<AuthorArticlesModalProps> = ({ author
                                     </div>
                                 </div>
                                 <div className="p-4 flex-1 flex flex-col">
-                                    <h4 className="font-bold text-white line-clamp-2 group-hover:text-indigo-300 transition-colors">{post.title}</h4>
-                                    <p className="text-xs text-gray-500 mt-2">{post.date}</p>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2 text-gray-400 text-[10px] font-mono">
+                                            <Calendar size={10} />
+                                            <span>{post.date}</span>
+                                        </div>
+                                    </div>
+                                    <h4 className="text-white font-bold group-hover:text-indigo-400 transition-colors line-clamp-2 font-khmer text-sm mb-2">
+                                        {t(post.title, post.titleKm)}
+                                    </h4>
+                                    <p className="text-gray-400 text-[10px] leading-relaxed line-clamp-2 font-khmer">
+                                        {post.excerpt}
+                                    </p>
                                 </div>
                             </article>
                         ))}
@@ -220,304 +230,293 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
     const { t } = useLanguage();
     const { team = [] } = useData();
     const { currentUser } = useAuth();
-    
-    const [showShare, setShowShare] = useState(false);
-    const [copied, setCopied] = useState(false);
-    
-    // Comments State
-    const [comments, setComments] = useState<Comment[]>(post?.comments || []);
-    const [newCommentText, setNewCommentText] = useState('');
-    const [commentUser, setCommentUser] = useState('');
+    const [comments, setComments] = useState<Comment[]>([]);
+    const [newComment, setNewComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isLoadingComments, setIsLoadingComments] = useState(false);
+    const [replyTo, setReplyTo] = useState<{id: string, name: string} | null>(null);
+    const [copied, setCopied] = useState(false);
+    const [isLoadingComments, setIsLoadingComments] = useState(true);
+    
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const author = team.find(m => m.id === post.authorId);
 
-    // Ref for the scrollable container
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-    // Identify Author
-    const author = (team || []).find(t => t.id === post.authorId);
-
-    if (!post) return null;
-
-    // Auto-fill user if logged in
-    useEffect(() => {
-        if (currentUser) {
-            setCommentUser(currentUser.name || 'Admin');
-        }
-    }, [currentUser]);
-
-    // FETCH COMMENTS FROM DB
+    // Fetch comments from Supabase
     useEffect(() => {
         const fetchComments = async () => {
-            const supabase = getSupabaseClient();
-            if(!supabase) return;
-
             setIsLoadingComments(true);
             try {
+                const supabase = getSupabaseClient();
+                if (!supabase) {
+                    setIsLoadingComments(false);
+                    return;
+                }
+
                 const { data, error } = await supabase
                     .from('comments')
                     .select('*')
                     .eq('post_id', post.id)
-                    .order('created_at', { ascending: false });
+                    .order('created_at', { ascending: true });
 
-                if(error) throw error;
-                
-                if(data) {
-                    const dbComments: Comment[] = data.map((c:any) => ({
-                        id: c.id,
-                        user: c.user_name,
-                        avatar: c.user_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.user_name)}&background=random`,
-                        content: c.content,
-                        date: new Date(c.created_at).toLocaleDateString(),
-                        replies: []
-                    }));
-                    setComments(dbComments);
-                }
-            } catch(err) {
-                console.error("Error fetching comments:", err);
+                if (error) throw error;
+
+                // Build comment tree
+                const commentMap = new Map();
+                const roots: Comment[] = [];
+
+                data.forEach(c => {
+                    const comment = { ...c, replies: [] };
+                    commentMap.set(c.id, comment);
+                });
+
+                data.forEach(c => {
+                    const comment = commentMap.get(c.id);
+                    if (c.parent_id && commentMap.has(c.parent_id)) {
+                        commentMap.get(c.parent_id).replies.push(comment);
+                    } else {
+                        roots.push(comment);
+                    }
+                });
+
+                setComments(roots);
+            } catch (err) {
+                console.error('Error fetching comments:', err);
             } finally {
                 setIsLoadingComments(false);
             }
         };
 
-        fetchComments();
+        if (post.id) fetchComments();
     }, [post.id]);
 
-    const handleShare = (platform: 'facebook' | 'telegram' | 'copy') => {
+    const handleShare = () => {
         const url = window.location.href;
-        if (platform === 'facebook') window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
-        if (platform === 'telegram') window.open(`https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(post.title)}`, '_blank');
-        if (platform === 'copy') {
-            navigator.clipboard.writeText(url);
-            setCopied(true);
-            setTimeout(() => { setCopied(false); setShowShare(false); }, 1500);
-        }
+        navigator.clipboard.writeText(url);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleSendComment = async () => {
-        if (!newCommentText.trim()) return;
-        const supabase = getSupabaseClient();
+    const handleSubmitComment = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newComment.trim() || !currentUser) return;
 
         setIsSubmitting(true);
-        
-        const finalUserName = commentUser.trim() || "Guest User";
-        
-        let finalAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(finalUserName)}&background=random`;
-        if (currentUser && currentUser.role === 'member' && currentUser.id) {
-             const memberData = team.find(m => m.id === currentUser.id);
-             if (memberData) finalAvatar = memberData.image;
-        }
-
         try {
-            if (supabase) {
-                const { data, error } = await supabase.from('comments').insert({
-                    post_id: post.id,
-                    user_name: finalUserName,
-                    user_avatar: finalAvatar,
-                    content: newCommentText
-                }).select();
-                
-                if (error) throw error;
+            const supabase = getSupabaseClient();
+            if (!supabase) return;
 
-                if(data) {
-                    const newComment: Comment = {
-                        id: data[0].id,
-                        user: data[0].user_name,
-                        avatar: data[0].user_avatar,
-                        content: data[0].content,
-                        date: "Just now",
-                        replies: []
-                    };
-                    setComments(prev => [newComment, ...prev]);
-                }
-            } else {
-                 const newComment: Comment = {
-                    id: Date.now().toString(),
-                    user: finalUserName,
-                    avatar: finalAvatar,
-                    content: newCommentText,
-                    date: "Just now",
-                    replies: []
+            const commentData = {
+                post_id: post.id,
+                user_id: currentUser.id || 'anonymous',
+                user_name: currentUser.name || 'Guest',
+                content: newComment.trim(),
+                parent_id: replyTo?.id || null
+            };
+
+            const { data, error } = await supabase
+                .from('comments')
+                .insert([commentData])
+                .select()
+                .single();
+
+            if (error) throw error;
+
+            // Update local state
+            const newLocalComment: Comment = {
+                ...data,
+                replies: []
+            };
+
+            if (replyTo) {
+                const updateReplies = (list: Comment[]): Comment[] => {
+                    return list.map(c => {
+                        if (c.id === replyTo.id) {
+                            return { ...c, replies: [...(c.replies || []), newLocalComment] };
+                        }
+                        if (c.replies && c.replies.length > 0) {
+                            return { ...c, replies: updateReplies(c.replies) };
+                        }
+                        return c;
+                    });
                 };
-                setComments(prev => [newComment, ...prev]);
+                setComments(prev => updateReplies(prev));
+            } else {
+                setComments(prev => [...prev, newLocalComment]);
             }
 
-            setNewCommentText('');
+            setNewComment('');
+            setReplyTo(null);
         } catch (err) {
-            console.error(err);
-            alert("Failed to post comment.");
+            console.error('Error posting comment:', err);
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const totalComments = getTotalCommentCount(comments);
+    const CommentItem = ({ comment, isReply = false }: { comment: Comment, isReply?: boolean }) => (
+        <div className={`flex gap-3 ${isReply ? 'ml-8 mt-4' : 'mt-6'}`}>
+            <div className="shrink-0">
+                <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 text-xs font-bold">
+                    {comment.user_name.charAt(0)}
+                </div>
+            </div>
+            <div className="flex-1">
+                <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                    <div className="flex justify-between items-center mb-1">
+                        <span className="text-white font-bold text-sm">{comment.user_name}</span>
+                        <span className="text-gray-500 text-[10px]">{new Date(comment.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <p className="text-gray-300 text-sm font-khmer">{comment.content}</p>
+                </div>
+                <div className="flex gap-4 mt-2 ml-2">
+                    <button 
+                        onClick={() => setReplyTo({id: comment.id, name: comment.user_name})}
+                        className="text-[10px] font-bold text-gray-500 hover:text-indigo-400 transition-colors uppercase tracking-wider"
+                    >
+                        {t('Reply', 'ឆ្លើយតប')}
+                    </button>
+                </div>
+                {comment.replies && comment.replies.map(reply => (
+                    <CommentItem key={reply.id} comment={reply} isReply={true} />
+                ))}
+            </div>
+        </div>
+    );
 
     return createPortal(
-        <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[10001] flex items-center justify-center p-0 md:p-4">
             <div 
-                className="absolute inset-0 bg-gray-950/90 backdrop-blur-xl animate-fade-in" 
-                onClick={onClose} 
+                className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
+                onClick={onClose}
             />
-            <div className="relative w-full max-w-7xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10 flex flex-col">
-                
-                 {/* Mobile Header (Close, Comment, Share) */}
-                 <div className="absolute top-0 left-0 right-0 z-50 flex justify-between items-center p-4 md:hidden pointer-events-none">
-                    <button onClick={onClose} className="pointer-events-auto p-2 bg-black/40 text-white rounded-full backdrop-blur-md border border-white/10"><X size={20} /></button>
-                    <button onClick={() => setShowShare(true)} className="pointer-events-auto p-2 bg-black/40 text-white rounded-full backdrop-blur-md border border-white/10"><Share2 size={20} /></button>
-                </div>
+            <div className="relative w-full max-w-4xl h-full md:h-[95vh] bg-gray-900 md:border md:border-white/10 md:rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col z-10">
+                {/* Close Button Mobile */}
+                <button 
+                    onClick={onClose}
+                    className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-md z-50 md:hidden"
+                >
+                    <X size={20} />
+                </button>
 
-                <div ref={scrollContainerRef} className="overflow-y-auto scrollbar-hide h-full relative">
-                    <div className="relative h-64 md:h-80 w-full shrink-0">
-                        <img src={post.image} className="w-full h-full object-cover" alt={post.title} />
-                        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-80" />
-                        <button onClick={onClose} className="hidden md:block absolute top-6 right-6 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md border border-white/10 z-20"><X size={24} /></button>
-                    </div>
-
-                    <div className="px-4 pb-12 md:px-12 md:pb-12 relative -mt-16 md:-mt-20">
-                         <div className="bg-gray-900/95 backdrop-blur-xl p-6 md:p-10 rounded-2xl md:rounded-3xl border border-white/10 shadow-2xl min-h-[50vh]">
-                            <div className="max-w-4xl mx-auto">
-                                <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-                                    <div className="flex flex-wrap items-center gap-3 text-xs md:text-sm text-indigo-400 font-mono uppercase tracking-wider">
-                                        <span className="flex items-center gap-1.5 bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20"><Tag size={12} /> {post.category}</span>
-                                        <span className="flex items-center gap-1.5 text-gray-400"><Calendar size={12} /> {post.date}</span>
-                                    </div>
-
-                                    {/* Desktop Actions */}
-                                    <div className="hidden md:flex items-center gap-4">
-                                        {/* Social Icons (Left of Share) */}
-                                        {showShare && (
-                                            <div className="flex items-center gap-2 animate-fade-in origin-right">
-                                                <button onClick={() => handleShare('facebook')} className="p-2 rounded-full bg-white/5 hover:bg-[#1877F2] text-gray-400 hover:text-white border border-white/10 transition-colors shadow-sm"><Facebook size={18} /></button>
-                                                <button onClick={() => handleShare('telegram')} className="p-2 rounded-full bg-white/5 hover:bg-[#229ED9] text-gray-400 hover:text-white border border-white/10 transition-colors shadow-sm"><Send size={18} /></button>
-                                                <button onClick={() => handleShare('copy')} className="p-2 rounded-full bg-white/5 hover:bg-green-500 text-gray-400 hover:text-white border border-white/10 transition-colors shadow-sm"><Copy size={18} /></button>
-                                            </div>
-                                        )}
-
-                                        <button onClick={() => setShowShare(!showShare)} className={`flex items-center gap-2 text-sm text-gray-400 hover:text-white font-bold transition-colors ${showShare ? 'text-white' : ''}`}>
-                                            <Share2 size={16} /> {showShare ? t('Close', 'បិទ') : t('Share', 'ចែករំលែក')}
-                                        </button>
-
-                                        <div className="w-px h-4 bg-gray-700" />
-                                        
-                                        <button className="flex items-center gap-2 text-sm font-bold text-gray-400 hover:text-white transition-colors cursor-pointer">
-                                            <MessageCircle size={16} /> 
-                                            {totalComments > 0 && <span>{totalComments}</span>}
-                                            {t('Comments', 'មតិ')}
-                                        </button>
+                <div className="flex-1 overflow-y-auto scrollbar-hide relative" ref={scrollRef}>
+                    <LocalScrollButton scrollContainerRef={scrollRef} />
+                    
+                    {/* Hero Image */}
+                    <div className="relative h-[40vh] md:h-[50vh] shrink-0">
+                        <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/20 to-transparent" />
+                        
+                        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
+                            <div className="flex flex-wrap gap-3 mb-4">
+                                <span className="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                    <Tag size={12} /> {post.category}
+                                </span>
+                                <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white text-xs font-bold flex items-center gap-1.5 border border-white/10">
+                                    <Calendar size={12} /> {post.date}
+                                </span>
+                            </div>
+                            <h2 className="text-3xl md:text-5xl font-bold text-white font-khmer leading-tight mb-6">{t(post.title, post.titleKm)}</h2>
+                            
+                            {author && (
+                                <div 
+                                    className="flex items-center gap-4 cursor-pointer group"
+                                    onClick={() => onAuthorClick?.(author.id)}
+                                >
+                                    <img src={author.image} alt={author.name} className="w-12 h-12 rounded-full border-2 border-white/20 group-hover:border-indigo-400 transition-colors" />
+                                    <div>
+                                        <p className="text-white font-bold group-hover:text-indigo-400 transition-colors">{author.name}</p>
+                                        <p className="text-gray-400 text-xs font-khmer">{t(author.role, author.roleKm)}</p>
                                     </div>
                                 </div>
-                                
-                                {/* AUTHOR PROFILE CARD */}
-                                {author && (
-                                    <div 
-                                        onClick={() => onAuthorClick && onAuthorClick(author.id)}
-                                        className="flex items-center gap-4 mb-6 p-3 pr-6 rounded-2xl bg-gradient-to-r from-gray-800 to-gray-900 border border-white/5 hover:border-indigo-500/30 transition-all cursor-pointer group w-fit"
-                                    >
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Article Content */}
+                    <div className="px-6 md:px-10 py-10">
+                        <div className="max-w-3xl mx-auto">
+                            <div className="flex justify-between items-center mb-10 pb-6 border-b border-white/10">
+                                <div className="flex gap-4">
+                                    <button onClick={handleShare} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/5 text-sm font-bold">
+                                        {copied ? <Check size={16} className="text-green-400" /> : <Share2 size={16} />}
+                                        {copied ? t('Copied!', 'បានចម្លង!') : t('Share', 'ចែករំលែក')}
+                                    </button>
+                                </div>
+                                <button onClick={onClose} className="hidden md:flex items-center gap-2 text-gray-400 hover:text-white transition-colors font-bold text-sm uppercase tracking-widest">
+                                    {t('Close', 'បិទ')} <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="prose prose-invert prose-indigo max-w-none">
+                                <ContentRenderer content={t(post.content, post.contentKm || post.content)} />
+                            </div>
+
+                            {/* Comments Section */}
+                            <div className="mt-20 pt-10 border-t border-white/10">
+                                <div className="flex items-center justify-between mb-8">
+                                    <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+                                        <MessageCircle size={24} className="text-indigo-400" />
+                                        {t('Comments', 'មតិយោបល់')} 
+                                        <span className="text-sm bg-white/5 px-2 py-1 rounded-lg text-gray-500">{getTotalCommentCount(comments)}</span>
+                                    </h3>
+                                </div>
+
+                                {currentUser ? (
+                                    <form onSubmit={handleSubmitComment} className="mb-10">
+                                        {replyTo && (
+                                            <div className="flex items-center justify-between bg-indigo-500/10 border border-indigo-500/20 px-4 py-2 rounded-t-xl text-xs">
+                                                <span className="text-indigo-300">Replying to <strong>{replyTo.name}</strong></span>
+                                                <button type="button" onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-white"><X size={14} /></button>
+                                            </div>
+                                        )}
                                         <div className="relative">
-                                            <img 
-                                                src={author.image} 
-                                                alt={author.name} 
-                                                className="w-12 h-12 rounded-full object-cover border-2 border-gray-700 group-hover:border-indigo-500 transition-colors" 
+                                            <textarea 
+                                                value={newComment}
+                                                onChange={(e) => setNewComment(e.target.value)}
+                                                placeholder={t('Write a comment...', 'សរសេរមតិយោបល់...')}
+                                                className={`w-full bg-white/5 border border-white/10 ${replyTo ? 'rounded-b-2xl border-t-0' : 'rounded-2xl'} p-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 min-h-[120px] font-khmer transition-all`}
                                             />
+                                            <button 
+                                                type="submit"
+                                                disabled={isSubmitting || !newComment.trim()}
+                                                className="absolute bottom-4 right-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all flex items-center gap-2"
+                                            >
+                                                {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
+                                                {t('Post', 'បញ្ជូន')}
+                                            </button>
                                         </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-white leading-none group-hover:text-indigo-300 transition-colors flex items-center gap-1">
-                                                {author.name}
-                                                <ArrowRight size={12} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                                            </p>
-                                            <p className="text-xs text-gray-400 mt-1">{t('Author', 'អ្នកនិពន្ធ')} &middot; {author.role}</p>
-                                        </div>
+                                    </form>
+                                ) : (
+                                    <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center mb-10">
+                                        <p className="text-gray-400 font-khmer mb-4">{t('Please login to join the conversation.', 'សូមចូលប្រើប្រាស់ដើម្បីចូលរួមមតិយោបល់។')}</p>
+                                        <button 
+                                            onClick={() => window.location.hash = 'admin'}
+                                            className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-all border border-white/10"
+                                        >
+                                            {t('Login Now', 'ចូលប្រើប្រាស់')}
+                                        </button>
                                     </div>
                                 )}
 
-                                <h2 className="text-2xl md:text-5xl font-bold text-white mb-6 leading-tight font-khmer">{t(post.title, post.titleKm)}</h2>
-                                
-                                <div className="border-b border-white/10 pb-8 mb-8">
-                                    <ContentRenderer content={post.content || post.excerpt} />
-                                </div>
-                                
-                                {/* Comments Section */}
-                                <div>
-                                    <h3 className="text-xl font-bold text-white mb-4 font-khmer">{t('Comments', 'មតិយោបល់')} ({totalComments})</h3>
-                                    
-                                    {/* Comment Form */}
-                                    <div className="bg-white/5 rounded-2xl p-4 mb-8 border border-white/5">
-                                        <div className="mb-3">
-                                            <input 
-                                                value={commentUser}
-                                                onChange={e => setCommentUser(e.target.value)}
-                                                placeholder={t('Your Name (Optional)', 'ឈ្មោះរបស់អ្នក (មិនចាំបាច់)')}
-                                                className={`w-full bg-transparent text-sm text-white placeholder-gray-500 outline-none border-b border-white/10 pb-2 focus:border-indigo-500 transition-colors font-khmer ${currentUser ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                                readOnly={!!currentUser}
-                                            />
-                                            {currentUser && <span className="text-[10px] text-indigo-400 ml-1">Logged in as {currentUser.name}</span>}
+                                <div className="space-y-2">
+                                    {isLoadingComments ? (
+                                        <div className="flex flex-col items-center py-10 gap-3">
+                                            <Loader2 size={30} className="text-indigo-500 animate-spin" />
+                                            <p className="text-gray-500 text-sm font-khmer">Loading comments...</p>
                                         </div>
-                                        <div className="flex gap-3">
-                                            <textarea
-                                                value={newCommentText} 
-                                                onChange={e => setNewCommentText(e.target.value)}
-                                                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSendComment()}
-                                                placeholder={t('Write a comment...', 'សរសេរមតិយោបល់...')} 
-                                                rows={1}
-                                                className="flex-1 bg-transparent text-white outline-none resize-none pt-2 placeholder-gray-500 font-khmer min-h-[40px]"
-                                            />
-                                            <button 
-                                                onClick={handleSendComment} 
-                                                disabled={!newCommentText.trim() || isSubmitting} 
-                                                className="p-3 rounded-xl bg-indigo-600 text-white disabled:opacity-50 hover:bg-indigo-500 transition-colors"
-                                            >
-                                                {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
-                                            </button>
+                                    ) : comments.length > 0 ? (
+                                        comments.map(comment => (
+                                            <CommentItem key={comment.id} comment={comment} />
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-10">
+                                            <p className="text-gray-600 font-khmer italic">{t('No comments yet. Be the first to share your thoughts!', 'មិនទាន់មានមតិយោបល់នៅឡើយទេ។ ក្លាយជាអ្នកដំបូងដែលចែករំលែកគំនិតរបស់អ្នក!')}</p>
                                         </div>
-                                    </div>
-
-                                    {/* Comments List */}
-                                    <div className="space-y-4">
-                                        {isLoadingComments ? (
-                                             <div className="text-center py-4 text-gray-500"><Loader2 className="animate-spin inline mr-2"/> Loading comments...</div>
-                                        ) : comments.length > 0 ? (
-                                            comments.map(c => (
-                                                <div key={c.id} className="flex gap-4 group">
-                                                    <img src={c.avatar} className="w-10 h-10 rounded-full border border-white/10 bg-gray-800" alt="Avatar" />
-                                                    <div className="flex-1">
-                                                        <div className="bg-white/5 p-4 rounded-2xl rounded-tl-none border border-white/5 hover:bg-white/10 transition-colors">
-                                                            <div className="flex justify-between items-start mb-1">
-                                                                <p className="font-bold text-sm text-white">{c.user}</p>
-                                                                <span className="text-[10px] text-gray-500">{c.date}</span>
-                                                            </div>
-                                                            <p className="text-gray-300 text-sm whitespace-pre-wrap">{c.content}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="text-center py-8 text-gray-600 font-khmer text-sm border-2 border-dashed border-white/5 rounded-2xl">
-                                                {t('No comments yet. Be the first to share your thoughts!', 'មិនទាន់មានមតិយោបល់ទេ។ ចែករំលែកមតិរបស់អ្នកមុនគេ!')}
-                                            </div>
-                                        )}
-                                    </div>
+                                    )}
                                 </div>
-
                             </div>
-                         </div>
-                    </div>
-
-                </div>
-
-                {/* Use the LocalScrollButton component - Outside scrollable container */}
-                <LocalScrollButton containerRef={scrollContainerRef} />
-
-                {/* Share Overlay */}
-                {showShare && (
-                     <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-950/60 backdrop-blur-sm p-4 animate-fade-in md:hidden" onClick={(e) => { e.stopPropagation(); setShowShare(false); }}>
-                        <div className="flex gap-2 bg-gray-900 border border-white/10 rounded-2xl p-4 backdrop-blur-md">
-                            <button onClick={() => handleShare('facebook')} className="p-3 rounded-full bg-white/5 hover:bg-[#1877F2] text-gray-400 hover:text-white border border-white/10 transition-colors"><Facebook size={20} /></button>
-                            <button onClick={() => handleShare('telegram')} className="p-3 rounded-full bg-white/5 hover:bg-[#229ED9] text-gray-400 hover:text-white border border-white/10 transition-colors"><Send size={20} /></button>
-                            <button onClick={() => handleShare('copy')} className="p-3 rounded-full bg-white/5 hover:bg-green-500 text-gray-400 hover:text-white border border-white/10 transition-colors">{copied ? <Check size={20} /> : <Copy size={20} />}</button>
                         </div>
                     </div>
-                )}
+                </div>
             </div>
         </div>,
         document.body
