@@ -1,16 +1,16 @@
 import { useState, useEffect, useCallback } from 'react';
 
 /**
- * Custom Hook for managing Routing with support for both Hash and Path-based logic.
+ * Custom Hook សម្រាប់គ្រប់គ្រង Routing
  * 
- * @param section The section name in the URL (e.g., 'team', 'portfolio')
- * @param idPrefix The prefix to strip/add (optional)
- * @param usePathRouting Whether to use path-based routing instead of hash (e.g., for clean portfolio URLs)
+ * @param section ឈ្មោះ Section (ឧទាហរណ៍៖ 'portfolio')
+ * @param idPrefix បុព្វបទសម្រាប់ ID (ប្រសិនបើមាន)
+ * @param usePathRouting កំណត់ឱ្យប្រើ Path-based routing ជំនួសឱ្យ Hash
  */
 export const useRouter = (section: string, idPrefix: string = '', usePathRouting: boolean = false) => {
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  // Helper: Convert Data ID/Slug to URL ID
+  // Helper: បំប្លែង Data ID ទៅជា URL ID
   const toUrlId = useCallback((dataId: string) => {
     if (!idPrefix) return dataId;
     return dataId.startsWith(idPrefix) ? dataId.substring(idPrefix.length) : dataId;
@@ -19,9 +19,9 @@ export const useRouter = (section: string, idPrefix: string = '', usePathRouting
   useEffect(() => {
     const handleRouteChange = () => {
       if (usePathRouting && section === 'portfolio') {
-        // 1. Path-based routing for portfolio: /portfolio/slug
+        // ១. Path-based routing សម្រាប់ Portfolio: /portfolio/slug
         const pathname = window.location.pathname;
-        // Regex to match /portfolio/slug or /en/portfolio/slug
+        // Regex ស្វែងរក slug បន្ទាប់ពី /portfolio/
         const portfolioMatch = /\/portfolio\/([^/]+)/.exec(pathname);
         
         if (portfolioMatch && portfolioMatch[1]) {
@@ -30,17 +30,13 @@ export const useRouter = (section: string, idPrefix: string = '', usePathRouting
           setActiveId(null);
         }
       } else {
-        // 2. Hash-based routing for other sections: #section/id
+        // ២. Hash-based routing សម្រាប់ Section ផ្សេងៗ: #section/id
         const hash = window.location.hash;
         const prefix = `#${section}/`;
 
         if (hash.startsWith(prefix)) {
           const urlId = hash.replace(prefix, '');
-          if (urlId) {
-              setActiveId(urlId);
-          } else {
-              setActiveId(null);
-          }
+          setActiveId(urlId || null);
         } else if (hash === `#${section}` || !hash.includes('/')) {
           setActiveId((prev) => (prev ? null : prev));
         }
@@ -49,7 +45,7 @@ export const useRouter = (section: string, idPrefix: string = '', usePathRouting
 
     handleRouteChange();
     window.addEventListener('hashchange', handleRouteChange);
-    window.addEventListener('popstate', handleRouteChange);
+    window.addEventListener('popstate', handleRouteChange); // តាមដានការប្តូរ Path (Forward/Back)
     
     return () => {
       window.removeEventListener('hashchange', handleRouteChange);
@@ -61,7 +57,7 @@ export const useRouter = (section: string, idPrefix: string = '', usePathRouting
     const urlId = toUrlId(dataId);
     
     if (usePathRouting && section === 'portfolio') {
-      // Use path-based routing for clean URLs
+      // ប្តូរទៅជា Clean Path URL: /portfolio/slug
       const currentLang = window.location.pathname.split('/')[1];
       const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
       const newPath = currentLang && supportedLangs.includes(currentLang) 
@@ -71,7 +67,7 @@ export const useRouter = (section: string, idPrefix: string = '', usePathRouting
       window.history.pushState({ section, id: urlId }, '', newPath);
       window.dispatchEvent(new Event('popstate'));
     } else {
-      // Use standard hash-based routing
+      // ប្រើ Hash ធម្មតា: #section/id
       window.location.hash = `${section}/${urlId}`;
     }
   }, [section, toUrlId, usePathRouting]);
@@ -79,18 +75,18 @@ export const useRouter = (section: string, idPrefix: string = '', usePathRouting
   const closeItem = useCallback(() => {
     try {
         if (usePathRouting && section === 'portfolio') {
-          // For path-based routing, revert to /portfolio
+          // ពេលបិទ ឱ្យត្រឡប់មក /portfolio វិញ
           const currentLang = window.location.pathname.split('/')[1];
           const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
           const newPath = currentLang && supportedLangs.includes(currentLang) 
             ? `/${currentLang}/portfolio` 
             : `/portfolio`;
           
-          history.replaceState(null, '', newPath);
+          window.history.replaceState(null, '', newPath);
           window.dispatchEvent(new Event('popstate'));
         } else {
-          // For hash-based routing, revert to #section
-          history.replaceState(null, '', `#${section}`);
+          // សម្រាប់ Hash ឱ្យត្រឡប់មក #section វិញ
+          window.history.replaceState(null, '', `#${section}`);
           window.dispatchEvent(new Event('hashchange'));
         }
     } catch (e) {
@@ -109,6 +105,9 @@ export const useRouter = (section: string, idPrefix: string = '', usePathRouting
   };
 };
 
+/**
+ * Hook សម្រាប់គ្រប់គ្រងការបើក Admin Login តាមរយៈ Hash #admin
+ */
 export const useAdminRouter = () => {
     const [isAdminOpen, setIsAdminOpen] = useState(false);
 
@@ -123,7 +122,7 @@ export const useAdminRouter = () => {
 
     const closeAdmin = () => {
         try {
-            history.pushState("", document.title, window.location.pathname + window.location.search);
+            window.history.pushState("", document.title, window.location.pathname + window.location.search);
         } catch (e) {
             window.location.hash = '';
         }
@@ -131,4 +130,4 @@ export const useAdminRouter = () => {
     };
 
     return { isAdminOpen, closeAdmin };
-}
+};
