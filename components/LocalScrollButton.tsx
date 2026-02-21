@@ -17,9 +17,10 @@ const LocalScrollButton: React.FC<LocalScrollButtonProps> = ({ containerRef }) =
   const circumference = radius * 2 * Math.PI;
 
   const updateProgress = useCallback(() => {
+    // Safety check: ensure containerRef and containerRef.current exist
+    if (!containerRef || !containerRef.current) return;
+    
     const container = containerRef.current;
-    if (!container) return;
-
     const currentScrollTop = container.scrollTop;
     const scrollHeight = container.scrollHeight - container.clientHeight;
 
@@ -37,8 +38,10 @@ const LocalScrollButton: React.FC<LocalScrollButtonProps> = ({ containerRef }) =
   }, [containerRef, circumference]);
 
   useEffect(() => {
+    // Safety check: ensure containerRef and containerRef.current exist
+    if (!containerRef || !containerRef.current) return;
+    
     const container = containerRef.current;
-    if (!container) return;
 
     const onScroll = () => {
       // Cancel any pending RAF before scheduling a new one
@@ -54,7 +57,9 @@ const LocalScrollButton: React.FC<LocalScrollButtonProps> = ({ containerRef }) =
     updateProgress();
 
     return () => {
-      container.removeEventListener('scroll', onScroll);
+      if (container) {
+        container.removeEventListener('scroll', onScroll);
+      }
       if (rafRef.current !== null) {
         cancelAnimationFrame(rafRef.current);
       }
@@ -62,8 +67,10 @@ const LocalScrollButton: React.FC<LocalScrollButtonProps> = ({ containerRef }) =
   }, [containerRef, updateProgress]);
 
   const handleClick = () => {
+    // Safety check: ensure containerRef and containerRef.current exist
+    if (!containerRef || !containerRef.current) return;
+    
     const container = containerRef.current;
-    if (!container) return;
 
     if (isAtTop) {
       container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
