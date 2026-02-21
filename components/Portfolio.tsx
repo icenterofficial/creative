@@ -66,12 +66,10 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
     };
   }, [selectedProject, isViewAllOpen]);
 
-  // Handle filter change with loading state and haptic feedback
+  // Handle filter change
   const handleFilterChange = (newFilter: string) => {
-    hapticMedium(); // Haptic feedback on filter change
+    hapticMedium();
     setFilter(newFilter);
-    
-    // Simulate loading state for better UX
     setIsFilteringLoading(true);
     setTimeout(() => {
       setIsFilteringLoading(false);
@@ -90,7 +88,6 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
         : '/portfolio';
       window.history.pushState({ portfolioOpen: true }, '', newPath);
     } else {
-      // Keep hash-based routing
       window.location.hash = 'portfolio';
     }
   };
@@ -99,18 +96,25 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
     hapticTap();
     setIsViewAllOpen(false);
     onPopupClose?.();
+    
     if (usePathRouting) {
-      // Go back to home or previous page
-      window.history.back();
+      // កែសម្រួល៖ ឱ្យត្រឡប់មក /#portfolio វិញភ្លាមៗពេលបិទ Popup
+      const currentLang = window.location.pathname.split('/')[1];
+      const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
+      const newPath = currentLang && supportedLangs.includes(currentLang) 
+        ? `/${currentLang}/#portfolio` 
+        : '/#portfolio';
+      
+      window.history.replaceState(null, '', newPath);
+      // បញ្ឆេះ event ដើម្បីឱ្យ App.tsx ដឹងពីការផ្លាស់ប្តូរ
+      window.dispatchEvent(new Event('popstate'));
     } else {
-      // Clear hash
       window.location.hash = '';
     }
   };
 
   return (
     <section id="portfolio" className="py-24 bg-gray-900/50 relative overflow-hidden">
-      {/* Background Text */}
       <ScrollBackgroundText text="PROJECTS" className="top-20" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -145,23 +149,22 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
                     onClick={() => {
                       hapticTap();
                       openItem(project.slug || project.id);
-                      // Don't close the view all popup, just open the project detail
                     }}
               />
             ))
           )}
         </div>
         
-            <RevealOnScroll variant="fade-up" delay={400}>
-              <div className="text-center mt-20">
-                 <button 
-                    onClick={handleViewAllClick}
-                    className="px-10 py-4 rounded-full border border-white/20 text-white font-bold hover:bg-white hover:text-gray-950 transition-all duration-300 font-khmer flex items-center gap-2 mx-auto active:scale-95"
-                 >
-                   {t('View All Projects', 'មើលគម្រោងទាំងអស់')} <ArrowRight size={18} />
-                 </button>
-              </div>
-            </RevealOnScroll>
+        <RevealOnScroll variant="fade-up" delay={400}>
+          <div className="text-center mt-20">
+             <button 
+                onClick={handleViewAllClick}
+                className="px-10 py-4 rounded-full border border-white/20 text-white font-bold hover:bg-white hover:text-gray-950 transition-all duration-300 font-khmer flex items-center gap-2 mx-auto active:scale-95"
+             >
+               {t('View All Projects', 'មើលគម្រោងទាំងអស់')} <ArrowRight size={18} />
+             </button>
+          </div>
+        </RevealOnScroll>
       </div>
 
       {/* View All Projects Modal */}
@@ -223,20 +226,10 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
       )}
 
       <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes scaleUp {
-          from { opacity: 0; transform: scale(0.95) translateY(20px); }
-          to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .animate-fade-in {
-          animation: fadeIn 0.3s ease-out forwards;
-        }
-        .animate-scale-up {
-          animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleUp { from { opacity: 0; transform: scale(0.95) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+        .animate-scale-up { animation: scaleUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
       `}</style>
     </section>
   );
