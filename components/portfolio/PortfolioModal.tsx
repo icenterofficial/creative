@@ -80,7 +80,15 @@ const PortfolioModal: React.FC<PortfolioModalProps> = ({ project, onClose, usePa
                     </div>
                 </section>
 
-                {project.caseStudy && <CaseStudy study={project.caseStudy} />}
+                <CaseStudy 
+                  challenge={project.challenge}
+                  challengeKm={project.challengeKm}
+                  solution={project.solution}
+                  solutionKm={project.solutionKm}
+                  result={project.result}
+                  resultKm={project.resultKm}
+                  scrollContainerRef={textContainerRef}
+                />
                 {project.features && project.features.length > 0 && (
                     <section>
                         <h3 className="text-white font-bold mb-6">{t('Scope of Work', 'វិសាលភាពការងារ')}</h3>
