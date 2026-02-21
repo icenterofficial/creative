@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -16,18 +15,21 @@ import PortfolioCard from './portfolio/PortfolioCard';
 import PortfolioModal from './portfolio/PortfolioModal';
 import SkeletonCard from './SkeletonCard';
 
-const Portfolio: React.FC = () => {
+interface PortfolioProps {
+  showPopupOnMount?: boolean;
+  onPopupClose?: () => void;
+}
+
+const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopupClose }) => {
   const [filter, setFilter] = useState<string>('all');
   const [isFilteringLoading, setIsFilteringLoading] = useState(false);
   const { t } = useLanguage();
   const { projects = [] } = useData();
 
-  // Use Router Hook: Section 'portfolio'
   const { activeId, openItem, closeItem } = useRouter('portfolio');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [isViewAllOpen, setIsViewAllOpen] = useState(false);
+  const [isViewAllOpen, setIsViewAllOpen] = useState(showPopupOnMount || false);
 
-  // Create Categories List
   const uniqueCategories: string[] = Array.from(new Set((projects || []).map(p => p.category))).sort();
   const categories = [
       { id: 'all', label: t('All Work', 'ទាំងអស់') },
@@ -39,7 +41,6 @@ const Portfolio: React.FC = () => {
 
   const filteredProjects = (projects || []).filter(p => filter === 'all' || p.category === filter);
 
-  // Sync Router Active ID with Data
   useEffect(() => {
       if (activeId && projects) {
           const found = projects.find(p => p.slug === activeId || p.id === activeId);
@@ -49,7 +50,6 @@ const Portfolio: React.FC = () => {
       }
   }, [activeId, projects]);
 
-  // Lock body scroll when modal is open
   useEffect(() => {
     if (selectedProject || isViewAllOpen) {
       document.body.style.overflow = 'hidden';
@@ -61,21 +61,34 @@ const Portfolio: React.FC = () => {
     };
   }, [selectedProject, isViewAllOpen]);
 
-  // Handle filter change with loading state and haptic feedback
   const handleFilterChange = (newFilter: string) => {
-    hapticMedium(); // Haptic feedback on filter change
+    hapticMedium();
     setFilter(newFilter);
-    
-    // Simulate loading state for better UX
     setIsFilteringLoading(true);
     setTimeout(() => {
       setIsFilteringLoading(false);
     }, 300);
   };
 
+  const handleViewAllClick = () => {
+    hapticTap();
+    setIsViewAllOpen(true);
+    const currentLang = window.location.pathname.split('/')[1];
+    const newPath = currentLang && ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'].includes(currentLang) 
+      ? `/${currentLang}/portfolio` 
+      : '/portfolio';
+    window.history.pushState({ portfolioOpen: true }, '', newPath);
+  };
+
+  const handleViewAllClose = () => {
+    hapticTap();
+    setIsViewAllOpen(false);
+    onPopupClose?.();
+    window.history.back();
+  };
+
   return (
     <section id="portfolio" className="py-24 bg-gray-900/50 relative overflow-hidden">
-      {/* Background Text */}
       <ScrollBackgroundText text="PROJECTS" className="top-20" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -89,7 +102,6 @@ const Portfolio: React.FC = () => {
               </div>
              </RevealOnScroll>
             
-            {/* Filters */}
             <RevealOnScroll variant="slide-left" delay={200}>
               <PortfolioFilters 
                 categories={categories} 
@@ -99,13 +111,10 @@ const Portfolio: React.FC = () => {
             </RevealOnScroll>
         </div>
 
-        {/* Masonry Grid with Skeleton Loading */}
         <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
           {isFilteringLoading ? (
-            // Show skeleton cards while filtering
             <SkeletonCard count={6} className="break-inside-avoid" />
           ) : (
-            // Show actual portfolio cards
             filteredProjects.slice(0, 6).map((project, index) => (
               <PortfolioCard 
                   key={project.id} 
@@ -123,10 +132,7 @@ const Portfolio: React.FC = () => {
         <RevealOnScroll variant="fade-up" delay={400}>
           <div className="text-center mt-20">
              <button 
-                onClick={() => {
-                  hapticTap();
-                  setIsViewAllOpen(true);
-                }}
+                onClick={handleViewAllClick}
                 className="px-10 py-4 rounded-full border border-white/20 text-white font-bold hover:bg-white hover:text-gray-950 transition-all duration-300 font-khmer flex items-center gap-2 mx-auto active:scale-95"
              >
                {t('View All Projects', 'មើលគម្រោងទាំងអស់')} <ArrowRight size={18} />
@@ -135,15 +141,11 @@ const Portfolio: React.FC = () => {
         </RevealOnScroll>
       </div>
 
-      {/* View All Projects Modal (Keep this simple here or separate if needed) */}
       {isViewAllOpen && createPortal(
          <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4">
             <div 
                 className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
-                onClick={() => {
-                  hapticTap();
-                  setIsViewAllOpen(false);
-                }}
+                onClick={handleViewAllClose}
             />
              <div className="relative w-full max-w-7xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col">
                 <div className="flex justify-between items-center p-6 md:p-8 border-b border-white/10 bg-gray-900 z-10">
@@ -152,10 +154,7 @@ const Portfolio: React.FC = () => {
                         <p className="text-gray-400 text-sm font-khmer">{t('Browse our complete portfolio', 'មើលផលប័ត្រពេញលេញរបស់យើង')}</p>
                     </div>
                     <button 
-                        onClick={() => {
-                          hapticTap();
-                          setIsViewAllOpen(false);
-                        }}
+                        onClick={handleViewAllClose}
                         className="p-3 bg-white/5 hover:bg-white/10 text-white rounded-full transition-all border border-white/5 active:scale-95"
                     >
                         <X size={24} />
@@ -190,7 +189,6 @@ const Portfolio: React.FC = () => {
          document.body
       )}
 
-      {/* Main Project Detail Modal */}
       {selectedProject && (
           <PortfolioModal 
             project={selectedProject} 
