@@ -503,9 +503,10 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
                          </div>
                     </div>
 
-                    {/* Use the LocalScrollButton component */}
-                    <LocalScrollButton containerRef={scrollContainerRef} />
                 </div>
+
+                {/* Use the LocalScrollButton component - Outside scrollable container */}
+                <LocalScrollButton containerRef={scrollContainerRef} />
 
                 {/* Share Overlay */}
                 {showShare && (
