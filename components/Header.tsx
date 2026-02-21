@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, ArrowUpRight, ChevronDown, Check, Globe } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -65,8 +64,11 @@ const Header: React.FC = () => {
           const newSection = entry.target.id;
           setActiveSection(newSection);
           
+          // Only update URL hash on Desktop/Tablet (width > 768px) to prevent scroll lag on mobile
+          const isMobile = window.innerWidth <= 768;
           const currentHash = window.location.hash;
-          if (!currentHash.includes('/') && currentHash !== '#admin') {
+          
+          if (!isMobile && !currentHash.includes('/') && currentHash !== '#admin') {
               window.history.replaceState(null, '', `#${newSection}`);
           }
         }
