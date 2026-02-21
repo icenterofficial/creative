@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { SERVICES, PROJECTS, TEAM, INSIGHTS, JOBS, PARTNERS } from '../constants';
 import { Service, Project, TeamMember, Post, Job, Partner } from '../types';
@@ -120,11 +119,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  skills: t.skills || [],
                  experience: t.experience || [],
                  experienceKm: t.experience || [],
-                 socials: t.socials || {},
-                 slug: t.slug || slugify(t.name),
-                 orderIndex: t.order_index, // Ensure this maps correctly
-                 pinCode: t.pin_code
-             }));
+	                 socials: t.socials || {},
+	                 slug: t.slug || slugify(t.name),
+	                 orderIndex: t.order_index, // Ensure this maps correctly
+	                 pinCode: t.pin_code,
+	                 coverImage: t.coverImage // Map coverImage from DB
+	             }));
              // STRICT MODE: Use only DB data
              setTeam(formatted);
         }
