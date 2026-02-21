@@ -114,9 +114,13 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
     }
   };
 
-  // The translation function
+// The translation function (WITH FALLBACK PROTECTION)
   const t = (en: string, km: string) => {
-    return language === 'km' ? km : en;
+    // ប្រសិនបើ en ឬ km គឺជា null ឬ undefined វាបម្លែងទៅជា string ទទេ ('') 
+    const safeEn = en || '';
+    const safeKm = km || safeEn; // បើអត់មានខ្មែរ យកអង់គ្លេសជំនួស
+    
+    return language === 'km' ? safeKm : safeEn;
   };
 
   const languageNames: Record<Language, string> = {
