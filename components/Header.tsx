@@ -25,6 +25,7 @@ const Header: React.FC = () => {
   const navLinks = [
     { name: t('Home', 'ទំព័រដើម'), href: '#home' },
     { name: t('Services', 'សេវាកម្ម'), href: '#services' },
+    { name: t('Estimator', 'គណនាតម្លៃ'), href: '#estimator' },
     { name: t('Work', 'ស្នាដៃ'), href: '#portfolio' },
     { name: t('Team', 'ក្រុមការងារ'), href: '#team' },
     { name: t('Insights', 'ចំណេះដឹង'), href: '#insights' },
