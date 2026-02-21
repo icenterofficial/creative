@@ -9,6 +9,7 @@ import { useState, useEffect, useCallback } from 'react';
  */
 export const useRouter = (section: string, idPrefix: string = '', usePathRouting: boolean = false) => {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [previousPath, setPreviousPath] = useState<string | null>(null);
 
   // Helper: បំប្លែង Data ID ទៅជា URL ID
   const toUrlId = useCallback((dataId: string) => {
@@ -63,10 +64,13 @@ export const useRouter = (section: string, idPrefix: string = '', usePathRouting
     const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
     const langPrefix = currentLang && supportedLangs.includes(currentLang) ? `/${currentLang}` : '';
 
+    // រក្សាទុក current path មុនពេលបើក item detail
+    setPreviousPath(currentPath);
+
     if (usePathRouting) {
       // ប្តូរទៅជា Clean Path URL: /section/slug
       const newPath = `${langPrefix}/${section}/${urlId}`;
-      window.history.pushState({ section, id: urlId }, '', newPath);
+      window.history.pushState({ section, id: urlId, previousPath: currentPath }, '', newPath);
       window.dispatchEvent(new Event('popstate'));
     } else {
       // ប្រើ Hash ធម្មតា: #section/id
@@ -83,11 +87,21 @@ export const useRouter = (section: string, idPrefix: string = '', usePathRouting
 
     try {
         if (usePathRouting) {
-          // ពេលបិទ ឱ្យត្រឡប់មក /#section វិញភ្លាមៗ
-          const newUrl = `${langPrefix || '/'}/#${section}`;
-          window.history.pushState(null, '', newUrl);
+          // ពេលបិទ ឱ្យត្រឡប់មក path ដែលរក្សាទុក ឬ /#section ប្រសិនបើគ្មាន previous path
+          let targetUrl: string;
+          
+          if (previousPath && previousPath !== currentPath) {
+            // ត្រឡប់មក previous path ដែលរក្សាទុក
+            targetUrl = previousPath;
+          } else {
+            // ប្រសិនបើគ្មាន previous path ឬ same path ឱ្យត្រឡប់ទៅ hash anchor
+            targetUrl = `${langPrefix || '/'}/#${section}`;
+          }
+          
+          window.history.pushState(null, '', targetUrl);
           window.dispatchEvent(new Event('popstate'));
           window.dispatchEvent(new Event('hashchange'));
+          setPreviousPath(null); // សម្អាត previous path បន្ទាប់ពីប្រើប្រាស់
         } else {
           // សម្រាប់ Hash ឱ្យត្រឡប់មក #section វិញ
           window.history.pushState(null, '', `${langPrefix || '/'}/#${section}`);
@@ -96,12 +110,13 @@ export const useRouter = (section: string, idPrefix: string = '', usePathRouting
     } catch (e) {
         window.location.hash = section;
     }
-  }, [section, usePathRouting]);
+  }, [section, usePathRouting, previousPath]);
 
   return {
     activeId,
     openItem,
-    closeItem
+    closeItem,
+    setPreviousPath
   };
 };
 
