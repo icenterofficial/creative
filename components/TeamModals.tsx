@@ -37,9 +37,9 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
     const socials = member.socials || {};
 
     return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4">
             <div 
-                className="absolute inset-0 bg-gray-950/90 backdrop-blur-md animate-fade-in"
+                className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
                 onClick={onClose}
             />
             <div className="relative w-full max-w-lg bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10 flex flex-col max-h-[90vh]">
@@ -156,7 +156,7 @@ export const AuthorArticlesModal: React.FC<AuthorArticlesModalProps> = ({ author
     const { t } = useLanguage();
 
     return createPortal(
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[10003] flex items-center justify-center p-4">
             <div 
                 className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
                 onClick={onClose}
@@ -375,7 +375,7 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
     );
 
     return createPortal(
-        <div className="fixed inset-0 z-[10001] flex items-center justify-center p-0 md:p-4">
+        <div className="fixed inset-0 z-[10004] flex items-center justify-center p-0 md:p-4">
             <div 
                 className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
                 onClick={onClose}
