@@ -8,7 +8,7 @@ const SplashScreen: React.FC = () => {
   }, []);
   if (!isVisible) return null;
   return (
-    <div className="fixed inset-0 z-[9999] bg-gray-950 flex flex-col items-center justify-center">
+    <div className="fixed inset-0 z-[11000] bg-gray-950 flex flex-col items-center justify-center">
       <div className="w-24 h-24 rounded-full bg-indigo-600 flex items-center justify-center animate-pulse shadow-2xl shadow-indigo-500/50">
         <span className="text-white text-4xl font-bold">P</span>
       </div>
