@@ -36,6 +36,9 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
     const experienceKm = member.experienceKm || [];
     const socials = member.socials || {};
 
+    // Prevent rendering on server or before body is available
+    if (typeof window === 'undefined') return null;
+
     return createPortal(
         <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4 overflow-hidden">
             <div 
@@ -66,13 +69,14 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
                 <div className="px-8 pb-8 flex-1 overflow-y-auto scrollbar-hide">
                     <div className="relative -mt-12 mb-6">
                         <img 
-                            src={member.image} 
-                            alt={member.name} 
+                            src={member.image || ''} 
+                            alt={member.name || ''} 
                             className="w-24 h-24 rounded-2xl border-4 border-gray-900 object-cover shadow-xl"
                         />
                         <div className="mt-4">
-                            <h3 className="text-2xl font-bold text-white">{member.name}</h3>
-                            <p className="text-indigo-400 font-medium font-khmer">{t(member.role, member.roleKm)}</p>
+                            <h3 className="text-2xl font-bold text-white">{member.name || 'Unknown'}</h3>
+                            {/* Fallback protection for role */}
+                            <p className="text-indigo-400 font-medium font-khmer">{t(member.role || '', member.roleKm || member.role || '')}</p>
                         </div>
                     </div>
 
@@ -155,6 +159,8 @@ interface AuthorArticlesModalProps {
 export const AuthorArticlesModal: React.FC<AuthorArticlesModalProps> = ({ author, posts, onClose, onSelectPost }) => {
     const { t } = useLanguage();
 
+    if (typeof window === 'undefined') return null;
+
     return createPortal(
         <div className="fixed inset-0 z-[10004] flex items-center justify-center p-4 overflow-hidden">
             <div 
@@ -164,9 +170,9 @@ export const AuthorArticlesModal: React.FC<AuthorArticlesModalProps> = ({ author
             <div className="relative w-full max-w-2xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-[10005] flex flex-col max-h-[80vh]">
                 <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gray-900 z-10">
                     <div className="flex items-center gap-4">
-                        <img src={author.image} alt={author.name} className="w-10 h-10 rounded-full object-cover" />
+                        <img src={author.image || ''} alt={author.name || ''} className="w-10 h-10 rounded-full object-cover" />
                         <div>
-                            <h3 className="text-lg font-bold text-white">{author.name}</h3>
+                            <h3 className="text-lg font-bold text-white">{author.name || 'Unknown'}</h3>
                             <p className="text-xs text-gray-500 font-khmer">{t('All Articles', 'អត្ថបទទាំងអស់')}</p>
                         </div>
                     </div>
@@ -184,21 +190,22 @@ export const AuthorArticlesModal: React.FC<AuthorArticlesModalProps> = ({ author
                                 onClick={() => onSelectPost(post)}
                             >
                                 <div className="w-24 h-24 shrink-0 rounded-xl overflow-hidden">
-                                    <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                    <img src={post.image || ''} alt={post.title || ''} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                 </div>
                                 <div className="flex-1 min-w-0 py-1">
                                     <div className="flex items-center gap-3 mb-2">
-                                        <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{post.category}</span>
+                                        <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{post.category || 'Uncategorized'}</span>
                                         <div className="flex items-center gap-1 text-[10px] text-gray-500">
                                             <Calendar size={10} />
-                                            <span>{post.date}</span>
+                                            <span>{post.date || ''}</span>
                                         </div>
                                     </div>
+                                    {/* Fallback protection for title and excerpt */}
                                     <h4 className="text-white font-bold group-hover:text-indigo-400 transition-colors line-clamp-2 font-khmer text-sm mb-2">
-                                        {t(post.title, post.titleKm)}
+                                        {t(post.title || '', post.titleKm || post.title || '')}
                                     </h4>
                                     <p className="text-gray-400 text-[10px] leading-relaxed line-clamp-2 font-khmer">
-                                        {post.excerpt}
+                                        {post.excerpt || ''}
                                     </p>
                                 </div>
                             </article>
@@ -230,7 +237,7 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
     const [isLoadingComments, setIsLoadingComments] = useState(true);
     
     const scrollRef = useRef<HTMLDivElement>(null);
-    const author = team.find(m => m.id === post.authorId);
+    const author = team.find(m => m.id === post?.authorId);
 
     // Fetch comments from Supabase
     useEffect(() => {
@@ -238,7 +245,7 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
             setIsLoadingComments(true);
             try {
                 const supabase = getSupabaseClient();
-                if (!supabase) {
+                if (!supabase || !post?.id) {
                     setIsLoadingComments(false);
                     return;
                 }
@@ -277,8 +284,8 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
             }
         };
 
-        if (post.id) fetchComments();
-    }, [post.id]);
+        if (post?.id) fetchComments();
+    }, [post?.id]);
 
     const handleShare = () => {
         const url = window.location.href;
@@ -289,7 +296,7 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
 
     const handleSubmitComment = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newComment.trim() || !currentUser) return;
+        if (!newComment.trim() || !currentUser || !post?.id) return;
 
         setIsSubmitting(true);
         try {
@@ -374,6 +381,9 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
         </div>
     );
 
+    if (!post || typeof window === 'undefined') return null;
+
+    // --- 🔴 FIXED LAYOUT & STRUCTURE ---
     return createPortal(
         <div className="fixed inset-0 z-[10006] flex items-center justify-center p-0 md:p-4 overflow-hidden">
             <div 
@@ -381,6 +391,7 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
                 onClick={onClose}
             />
             <div className="relative w-full max-w-4xl h-full md:h-[95vh] bg-gray-900 md:border md:border-white/10 md:rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col z-[10007]">
+                
                 {/* Close Button Mobile */}
                 <button 
                     onClick={onClose}
@@ -389,34 +400,40 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
                     <X size={20} />
                 </button>
 
+                {/* Main Scrollable Content Area */}
                 <div className="flex-1 overflow-y-auto scrollbar-hide relative" ref={scrollRef}>
                     <LocalScrollButton containerRef={scrollRef} />
                     
                     {/* Hero Image */}
                     <div className="relative h-[40vh] md:h-[50vh] shrink-0">
-                        <img src={post.image} alt={post.title} className="w-full h-full object-cover" />
+                        <img src={post.image || ''} alt={post.title || ''} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/20 to-transparent" />
                         
                         <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10">
                             <div className="flex flex-wrap gap-3 mb-4">
                                 <span className="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                                    <Tag size={12} /> {post.category}
+                                    <Tag size={12} /> {post.category || 'Uncategorized'}
                                 </span>
                                 <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md text-white text-xs font-bold flex items-center gap-1.5 border border-white/10">
-                                    <Calendar size={12} /> {post.date}
+                                    <Calendar size={12} /> {post.date || ''}
                                 </span>
                             </div>
-                            <h2 className="text-3xl md:text-5xl font-bold text-white font-khmer leading-tight mb-6">{t(post.title, post.titleKm)}</h2>
                             
-                            {author && (
+                            {/* Fixed Fallback for Title */}
+                            <h2 className="text-3xl md:text-5xl font-bold text-white font-khmer leading-tight mb-6">
+                                {t(post.title || '', post.titleKm || post.title || '')}
+                            </h2>
+                            
+                            {/* Fixed Fallback for Author */}
+                            {author && author.image && (
                                 <div 
                                     className="flex items-center gap-4 cursor-pointer group"
-                                    onClick={() => onAuthorClick?.(author.id)}
+                                    onClick={() => onAuthorClick && onAuthorClick(author.id)}
                                 >
                                     <img src={author.image} alt={author.name} className="w-12 h-12 rounded-full border-2 border-white/20 group-hover:border-indigo-400 transition-colors" />
                                     <div>
-                                        <p className="text-white font-bold group-hover:text-indigo-400 transition-colors">{author.name}</p>
-                                        <p className="text-gray-400 text-xs font-khmer">{t(author.role, author.roleKm)}</p>
+                                        <p className="text-white font-bold group-hover:text-indigo-400 transition-colors">{author.name || 'Unknown'}</p>
+                                        <p className="text-gray-400 text-xs font-khmer">{t(author.role || '', author.roleKm || author.role || '')}</p>
                                     </div>
                                 </div>
                             )}
@@ -439,7 +456,8 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
                             </div>
 
                             <div className="prose prose-invert prose-indigo max-w-none">
-                                <ContentRenderer content={t(post.content, post.contentKm || post.content)} />
+                                {/* Fixed Fallback for Content Renderer */}
+                                <ContentRenderer content={t(post.content || '', post.contentKm || post.content || '')} />
                             </div>
 
                             {/* Comments Section */}
