@@ -118,7 +118,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                  bioKm: t.bio_km,
                  skills: t.skills || [],
                  experience: t.experience || [],
-                 experienceKm: t.experience || [],
+                 experienceKm: t.experience_km || t.experience || [], 
 	                 socials: t.socials || {},
 	                 slug: t.slug || slugify(t.name),
 	                 orderIndex: t.order_index, // Ensure this maps correctly
