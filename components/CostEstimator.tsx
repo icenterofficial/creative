@@ -4,12 +4,12 @@ import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
 import { 
   Calculator, Monitor, Palette, Home, Smartphone, Check, 
-  RefreshCcw, ArrowRight, ChevronLeft, ChevronRight, Zap 
+  RefreshCcw, ArrowRight, ChevronLeft, ChevronRight, Zap, Languages 
 } from 'lucide-react';
 import { hapticMedium, hapticSuccess } from '../utils/haptic';
 import { useRouter } from '../hooks/useRouter';
 
-type ServiceType = 'web' | 'app' | 'design' | 'architecture';
+type ServiceType = 'web' | 'app' | 'design' | 'architecture' | 'translation';
 type WizardStep = 'service' | 'features' | 'summary';
 
 interface AddOn {
@@ -90,21 +90,33 @@ const CostEstimator: React.FC<CostEstimatorProps> = ({ showPopupOnMount = false,
     },
     {
       id: 'architecture',
-      label: 'Architecture (3D)',
-      labelKm: 'ស្ថាបត្យកម្ម (3D Concept)',
+      label: 'Architecture',
+      labelKm: 'ស្ថាបត្យកម្ម',
       icon: <Home size={32} strokeWidth={1.5} />,
-      basePrice: 0, // Base price 0, sum depends on selection
+      basePrice: 0, 
       addOns: [
-        // Items from the image provided, priced competitively (30-40% cheaper than market)
         { id: 'fence_gate', label: 'Steel Fence/Gate Design', labelKm: 'រចនាទ្វាររបងដែកស្វិត', price: 40 },
         { id: 'association_house', label: 'Association House Design', labelKm: 'រចនាផ្ទះជំនួយពីសមាគម', price: 85 },
         { id: 'coffee_shop', label: 'Coffee Shop Design', labelKm: 'រចនាហាងកាហ្វេ', price: 120 },
         { id: 'restaurant', label: 'Restaurant Design', labelKm: 'រចនាភោជនីយដ្ឋាន', price: 150 },
         { id: 'villa', label: 'Villa House Design', labelKm: 'រចនាផ្ទះវីឡា', price: 220 },
         { id: 'school', label: 'School Design', labelKm: 'រចនាសាលារៀន', price: 350 },
-        // Add-on for details
         { id: '2d_layout', label: '2D Layout Plan', labelKm: 'ប្លង់រៀបចំសង្ហារឹម (2D Layout)', price: 50 },
       ]
+    },
+    {
+        id: 'translation',
+        label: 'Translation',
+        labelKm: 'បកប្រែភាសា',
+        icon: <Languages size={32} strokeWidth={1.5} />,
+        basePrice: 0,
+        addOns: [
+            // Start from $0.5/page
+            { id: 'arabic_kh', label: 'Arabic <-> Khmer (Per Page)', labelKm: 'អារ៉ាប់ <-> ខ្មែរ (១ ទំព័រ)', price: 0.5 },
+            { id: 'malay_kh', label: 'Malay <-> Khmer (Per Page)', labelKm: 'ម៉ាឡេ <-> ខ្មែរ (១ ទំព័រ)', price: 0.5 },
+            { id: 'indo_kh', label: 'Indonesian <-> Khmer (Per Page)', labelKm: 'ឥណ្ឌូនេស៊ី <-> ខ្មែរ (១ ទំព័រ)', price: 0.5 },
+            { id: 'urgent', label: 'Urgent Service (+Charge)', labelKm: 'សេវាកម្មបន្ទាន់ (+តម្លៃបន្ថែម)', price: 5 },
+        ]
     }
   ];
 
@@ -229,7 +241,7 @@ const CostEstimator: React.FC<CostEstimatorProps> = ({ showPopupOnMount = false,
                     <p className="text-gray-400 font-khmer">{t("Choose the service that best fits your needs", "ជ្រើសរើសសេវាកម្មដែលសមស្របបំផុតសម្រាប់អ្នក")}</p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-5"> {/* UPDATED GRID TO 5 COLUMNS */}
                     {SERVICES_DATA.map((service) => {
                       const isSelected = selectedService === service.id;
                       return (
@@ -247,11 +259,11 @@ const CostEstimator: React.FC<CostEstimatorProps> = ({ showPopupOnMount = false,
                           </div>
                           
                           <div className="text-center">
-                              <span className={`block font-bold text-lg font-khmer mb-1 ${isSelected ? 'text-white' : 'text-gray-300'}`}>
+                              <span className={`block font-bold text-sm md:text-lg font-khmer mb-1 ${isSelected ? 'text-white' : 'text-gray-300'}`}>
                                 {t(service.label, service.labelKm)}
                               </span>
                               {/* Only show base price if it's not 0 */}
-                              <span className={`text-sm font-mono font-bold ${isSelected ? 'text-indigo-300' : 'text-gray-500'}`}>
+                              <span className={`text-xs md:text-sm font-mono font-bold ${isSelected ? 'text-indigo-300' : 'text-gray-500'}`}>
                                 {service.basePrice > 0 ? `$${service.basePrice}` : t('Select items', 'ជ្រើសរើសមុខងារ')}
                               </span>
                           </div>
