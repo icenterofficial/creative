@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Facebook, Send, FileText, User, Code, Briefcase, Calendar, Tag, MessageCircle, Share2, Check, Copy, Loader2, ArrowRight } from 'lucide-react';
 import { TeamMember, Post, Comment } from '../types';
@@ -7,6 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import { getSupabaseClient } from '../lib/supabase';
 import ContentRenderer from './ContentRenderer';
+import LocalScrollButton from './LocalScrollButton';
 
 // Helper to count comments recursively
 const getTotalCommentCount = (comments: Comment[]): number => {
@@ -42,24 +43,24 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
                 onClick={onClose}
             />
             <div className="relative w-full max-w-lg bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10 flex flex-col max-h-[90vh]">
-	                {/* Header / Cover */}
-	                <div className="h-32 bg-gray-800 relative shrink-0 overflow-hidden">
-	                    {member.coverImage ? (
-	                        <img 
-	                            src={member.coverImage} 
-	                            alt="Cover" 
-	                            className="w-full h-full object-cover"
-	                        />
-	                    ) : (
-	                        <div className="w-full h-full bg-gradient-to-r from-indigo-600 to-purple-600" />
-	                    )}
-	                    <button 
-	                        onClick={onClose}
-	                        className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-sm z-10"
-	                    >
-	                        <X size={20} />
-	                    </button>
-	                </div>
+                {/* Header / Cover */}
+                <div className="h-32 bg-gray-800 relative shrink-0 overflow-hidden">
+                    {member.coverImage ? (
+                        <img 
+                            src={member.coverImage} 
+                            alt="Cover" 
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <div className="w-full h-full bg-gradient-to-r from-indigo-600 to-purple-600" />
+                    )}
+                    <button 
+                        onClick={onClose}
+                        className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-sm z-10"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
 
                 {/* Profile Image */}
                 <div className="px-8 -mt-16 flex justify-between items-end relative z-10 mb-6 shrink-0">
@@ -195,16 +196,8 @@ export const AuthorArticlesModal: React.FC<AuthorArticlesModalProps> = ({ author
                                     </div>
                                 </div>
                                 <div className="p-4 flex-1 flex flex-col">
-                                    <div className="flex items-center gap-2 text-gray-400 text-xs mb-2 font-mono">
-                                        <Calendar size={12} />
-                                        <span>{post.date}</span>
-                                    </div>
-                                    <h3 className="text-lg font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors line-clamp-2 font-khmer">
-                                        {t(post.title, post.titleKm)}
-                                    </h3>
-                                    <p className="text-gray-400 text-xs leading-relaxed line-clamp-2 flex-1 font-khmer">
-                                        {post.excerpt}
-                                    </p>
+                                    <h4 className="font-bold text-white line-clamp-2 group-hover:text-indigo-300 transition-colors">{post.title}</h4>
+                                    <p className="text-xs text-gray-500 mt-2">{post.date}</p>
                                 </div>
                             </article>
                         ))}
@@ -225,7 +218,7 @@ interface ArticleDetailModalProps {
 
 export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, onClose, onAuthorClick }) => {
     const { t } = useLanguage();
-    const { team = [] } = useData(); // Default array
+    const { team = [] } = useData();
     const { currentUser } = useAuth();
     
     const [showShare, setShowShare] = useState(false);
@@ -237,6 +230,9 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
     const [commentUser, setCommentUser] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingComments, setIsLoadingComments] = useState(false);
+
+    // Ref for the scrollable container
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
 
     // Identify Author
     const author = (team || []).find(t => t.id === post.authorId);
@@ -254,7 +250,7 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
     useEffect(() => {
         const fetchComments = async () => {
             const supabase = getSupabaseClient();
-            if(!supabase) return; // Fallback to local 'post.comments' if no DB
+            if(!supabase) return;
 
             setIsLoadingComments(true);
             try {
@@ -267,14 +263,13 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
                 if(error) throw error;
                 
                 if(data) {
-                    // Transform DB structure to UI structure
                     const dbComments: Comment[] = data.map((c:any) => ({
                         id: c.id,
                         user: c.user_name,
                         avatar: c.user_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(c.user_name)}&background=random`,
                         content: c.content,
                         date: new Date(c.created_at).toLocaleDateString(),
-                        replies: [] // Flat structure for simplicity in this update
+                        replies: []
                     }));
                     setComments(dbComments);
                 }
@@ -287,7 +282,6 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
 
         fetchComments();
     }, [post.id]);
-
 
     const handleShare = (platform: 'facebook' | 'telegram' | 'copy') => {
         const url = window.location.href;
@@ -308,7 +302,6 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
         
         const finalUserName = commentUser.trim() || "Guest User";
         
-        // Find avatar: If logged in team member, use their photo, else use UI Avatar
         let finalAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(finalUserName)}&background=random`;
         if (currentUser && currentUser.role === 'member' && currentUser.id) {
              const memberData = team.find(m => m.id === currentUser.id);
@@ -317,7 +310,6 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
 
         try {
             if (supabase) {
-                // Insert to DB
                 const { data, error } = await supabase.from('comments').insert({
                     post_id: post.id,
                     user_name: finalUserName,
@@ -327,7 +319,6 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
                 
                 if (error) throw error;
 
-                // Add to local state immediately
                 if(data) {
                     const newComment: Comment = {
                         id: data[0].id,
@@ -340,7 +331,6 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
                     setComments(prev => [newComment, ...prev]);
                 }
             } else {
-                 // Fallback Local
                  const newComment: Comment = {
                     id: Date.now().toString(),
                     user: finalUserName,
@@ -353,7 +343,6 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
             }
 
             setNewCommentText('');
-            // setCommentUser(''); // Keep user name for convenience if they want to comment again
         } catch (err) {
             console.error(err);
             alert("Failed to post comment.");
@@ -378,7 +367,7 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
                     <button onClick={() => setShowShare(true)} className="pointer-events-auto p-2 bg-black/40 text-white rounded-full backdrop-blur-md border border-white/10"><Share2 size={20} /></button>
                 </div>
 
-                <div className="overflow-y-auto scrollbar-hide h-full">
+                <div ref={scrollContainerRef} className="overflow-y-auto scrollbar-hide h-full relative">
                     <div className="relative h-64 md:h-80 w-full shrink-0">
                         <img src={post.image} className="w-full h-full object-cover" alt={post.title} />
                         <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent opacity-80" />
@@ -513,21 +502,18 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
                             </div>
                          </div>
                     </div>
+
+                    {/* Use the LocalScrollButton component */}
+                    <LocalScrollButton containerRef={scrollContainerRef} />
                 </div>
 
                 {/* Share Overlay */}
                 {showShare && (
                      <div className="absolute inset-0 z-50 flex items-center justify-center bg-gray-950/60 backdrop-blur-sm p-4 animate-fade-in md:hidden" onClick={(e) => { e.stopPropagation(); setShowShare(false); }}>
-                        <div className="bg-gray-900 border border-white/10 p-6 rounded-2xl shadow-2xl w-full max-w-sm animate-scale-up" onClick={(e) => e.stopPropagation()}>
-                            <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-bold text-white font-khmer">{t('Share this article', 'ចែករំលែកអត្ថបទនេះ')}</h3>
-                                <button onClick={() => setShowShare(false)} className="text-gray-400 hover:text-white"><X size={20} /></button>
-                            </div>
-                            <div className="grid grid-cols-3 gap-4">
-                                <button onClick={() => handleShare('facebook')} className="flex flex-col items-center gap-3 p-4 rounded-xl bg-white/5 hover:bg-[#1877F2]/20 border border-white/5 transition-all"><Facebook size={24} className="text-[#1877F2]"/> <span className="text-xs">Facebook</span></button>
-                                <button onClick={() => handleShare('telegram')} className="flex flex-col items-center gap-3 p-4 rounded-xl bg-white/5 hover:bg-[#229ED9]/20 border border-white/5 transition-all"><Send size={24} className="text-[#229ED9]"/> <span className="text-xs">Telegram</span></button>
-                                <button onClick={() => handleShare('copy')} className="flex flex-col items-center gap-3 p-4 rounded-xl bg-white/5 hover:bg-green-500/20 border border-white/5 transition-all"><Copy size={24} className={copied ? "text-green-500" : "text-white"}/> <span className="text-xs">{copied ? 'Copied' : 'Copy'}</span></button>
-                            </div>
+                        <div className="flex gap-2 bg-gray-900 border border-white/10 rounded-2xl p-4 backdrop-blur-md">
+                            <button onClick={() => handleShare('facebook')} className="p-3 rounded-full bg-white/5 hover:bg-[#1877F2] text-gray-400 hover:text-white border border-white/10 transition-colors"><Facebook size={20} /></button>
+                            <button onClick={() => handleShare('telegram')} className="p-3 rounded-full bg-white/5 hover:bg-[#229ED9] text-gray-400 hover:text-white border border-white/10 transition-colors"><Send size={20} /></button>
+                            <button onClick={() => handleShare('copy')} className="p-3 rounded-full bg-white/5 hover:bg-green-500 text-gray-400 hover:text-white border border-white/10 transition-colors">{copied ? <Check size={20} /> : <Copy size={20} />}</button>
                         </div>
                     </div>
                 )}
