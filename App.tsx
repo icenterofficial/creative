@@ -44,7 +44,13 @@ function AppContent() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isViewingSite, setIsViewingSite] = useState(false);
   const [activePage, setActivePage] = useState<string | null>(null);
+  
+  // Popups state
   const [shouldShowPortfolioPopup, setShouldShowPortfolioPopup] = useState(false);
+  const [shouldShowServicesPopup, setShouldShowServicesPopup] = useState(false);
+  const [shouldShowInsightsPopup, setShouldShowInsightsPopup] = useState(false);
+  const [shouldShowTeamPopup, setShouldShowTeamPopup] = useState(false);
+  const [shouldShowEstimatorPopup, setShouldShowEstimatorPopup] = useState(false);
   
   const { currentUser, logout, login } = useAuth();
   const { isAdminOpen, closeAdmin } = useAdminRouter();
@@ -66,26 +72,25 @@ function AppContent() {
         const pathname = window.location.pathname;
         const hash = window.location.hash;
         
-        // Regex to match /portfolio or /en/portfolio or /km/portfolio (including nested /portfolio/slug)
-        const portfolioMatch = /\/(en|km|fr|ja|ko|de|zh-CN|es|ar)?\/portfolio(?:\/([^/]+))?/.exec(pathname);
-        
-        if (portfolioMatch) {
-            // If path contains /portfolio, show the portfolio popup
-            setShouldShowPortfolioPopup(true);
-            setActivePage(null);
-        } else if (hash === '#about') {
+        // Language prefix regex
+        const langRegex = /^\/(en|km|fr|ja|ko|de|zh-CN|es|ar)?/;
+        const pathWithoutLang = pathname.replace(langRegex, '');
+
+        // Check for popups
+        setShouldShowPortfolioPopup(pathWithoutLang.startsWith('/portfolio'));
+        setShouldShowServicesPopup(pathWithoutLang.startsWith('/services'));
+        setShouldShowInsightsPopup(pathWithoutLang.startsWith('/insights'));
+        setShouldShowTeamPopup(pathWithoutLang.startsWith('/team'));
+        setShouldShowEstimatorPopup(pathWithoutLang.startsWith('/estimator'));
+
+        if (hash === '#about') {
             setActivePage('about');
-            setShouldShowPortfolioPopup(false);
         } else if (hash === '#careers') {
             setActivePage('careers');
-            setShouldShowPortfolioPopup(false);
         } else if (hash === '#privacy') {
             setActivePage('privacy');
-            setShouldShowPortfolioPopup(false);
         } else {
-            // Default home state
-            if (!['#about', '#careers', '#privacy'].includes(hash)) setActivePage(null);
-            setShouldShowPortfolioPopup(false);
+            setActivePage(null);
         }
     };
     
@@ -141,22 +146,38 @@ function AppContent() {
       <main className="relative z-10">
         <Hero />
         <Partners />
-        <Services />
+        
+        <Services 
+            showPopupOnMount={shouldShowServicesPopup}
+            usePathRouting={true}
+        />
+
         <Suspense fallback={<div className="h-96 bg-gray-900/50" />}>
-          <CostEstimator />
+          <CostEstimator 
+            showPopupOnMount={shouldShowEstimatorPopup}
+            usePathRouting={true}
+          />
         </Suspense>
+
         <Process />
         
-        {/* Portfolio Component with Path Routing Enabled */}
         <Portfolio 
             showPopupOnMount={shouldShowPortfolioPopup} 
-            onPopupClose={() => setShouldShowPortfolioPopup(false)} 
             usePathRouting={true} 
         />
         
         <Testimonials />
-        <Team />
-        <Insights />
+
+        <Team 
+            showPopupOnMount={shouldShowTeamPopup}
+            usePathRouting={true}
+        />
+
+        <Insights 
+            showPopupOnMount={shouldShowInsightsPopup}
+            usePathRouting={true}
+        />
+
         <Contact />
       </main>
       
