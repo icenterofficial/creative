@@ -48,93 +48,93 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
                     {member.coverImage ? (
                         <img 
                             src={member.coverImage} 
-                            alt="Cover" 
-                            className="w-full h-full object-cover"
+                            alt="" 
+                            className="w-full h-full object-cover opacity-50"
                         />
                     ) : (
-                        <div className="w-full h-full bg-gradient-to-r from-indigo-600 to-purple-600" />
+                        <div className="w-full h-full bg-gradient-to-r from-indigo-600/20 to-purple-600/20" />
                     )}
                     <button 
                         onClick={onClose}
-                        className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-sm z-10"
+                        className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full transition-colors backdrop-blur-md z-10"
                     >
                         <X size={20} />
                     </button>
                 </div>
 
-                {/* Profile Image */}
-                <div className="px-8 -mt-16 flex justify-between items-end relative z-10 mb-6 shrink-0">
-                    <div className="h-32 w-32 rounded-full border-4 border-gray-900 overflow-hidden bg-gray-800">
-                        <img src={member.image} alt={member.name} className="w-full h-full object-cover" />
+                {/* Profile Info */}
+                <div className="px-8 pb-8 flex-1 overflow-y-auto scrollbar-hide">
+                    <div className="relative -mt-12 mb-6">
+                        <img 
+                            src={member.image} 
+                            alt={member.name} 
+                            className="w-24 h-24 rounded-2xl border-4 border-gray-900 object-cover shadow-xl"
+                        />
+                        <div className="mt-4">
+                            <h3 className="text-2xl font-bold text-white">{member.name}</h3>
+                            <p className="text-indigo-400 font-medium font-khmer">{t(member.role, member.roleKm)}</p>
+                        </div>
                     </div>
-                    <div className="mb-4 flex gap-3">
+
+                    {/* Social Links */}
+                    <div className="flex gap-3 mb-8">
                         {socials.facebook && (
-                            <a href={socials.facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 border border-white/10 text-gray-400 rounded-lg hover:bg-[#1877F2] hover:text-white hover:border-[#1877F2] transition-all">
+                            <a href={socials.facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/5">
                                 <Facebook size={18} />
                             </a>
                         )}
                         {socials.telegram && (
-                            <a href={socials.telegram} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 border border-white/10 text-gray-400 rounded-lg hover:bg-[#229ED9] hover:text-white hover:border-[#229ED9] transition-all">
+                            <a href={socials.telegram} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/5">
                                 <Send size={18} />
                             </a>
                         )}
                     </div>
-                </div>
 
-                {/* Content */}
-                <div className="px-8 pb-8 overflow-y-auto scrollbar-hide">
-                    <div className="flex items-center gap-4 mb-1">
-                        <h3 className="text-3xl font-bold text-white">{member.name}</h3>
-                        {postCount > 0 && (
-                            <button 
-                                onClick={() => onShowArticles(member)}
-                                className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-wide border border-indigo-500/20 whitespace-nowrap flex items-center gap-1.5 hover:bg-indigo-500/30 transition-colors cursor-pointer"
-                            >
-                                <FileText size={12} />
-                                {postCount} {t('Articles', 'អត្ថបទ')}
-                            </button>
-                        )}
-                    </div>
-                    <p className="text-indigo-400 font-medium font-khmer mb-6">{t(member.role, member.roleKm)}</p>
-
-                    <div className="space-y-6">
-                        {/* Bio */}
-                        <div className="bg-white/5 rounded-xl p-4 border border-white/5">
-                            <div className="flex items-center gap-2 mb-2 text-gray-400 text-sm uppercase font-bold tracking-wider font-khmer">
-                                <User size={14} /> {t('About', 'អំពីខ្ញុំ')}
-                            </div>
-                            <p className="text-gray-300 leading-relaxed font-khmer">
-                                {t(member.bio, member.bioKm || member.bio)}
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-4 mb-8">
+                        <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
+                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{t('Projects', 'គម្រោង')}</p>
+                            <p className="text-xl font-bold text-white">12+</p>
+                        </div>
+                        <button 
+                            onClick={() => onShowArticles(member)}
+                            className="bg-white/5 rounded-2xl p-4 border border-white/5 text-left hover:bg-white/10 transition-all group"
+                        >
+                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{t('Articles', 'អត្ថបទ')}</p>
+                            <p className="text-xl font-bold text-white flex items-center justify-between">
+                                {postCount}
+                                <ArrowRight size={18} className="text-indigo-400 group-hover:translate-x-1 transition-transform" />
                             </p>
-                        </div>
+                        </button>
+                    </div>
 
-                        {/* Skills */}
-                        <div>
-                            <div className="flex items-center gap-2 mb-3 text-gray-400 text-sm uppercase font-bold tracking-wider font-khmer">
-                                <Code size={14} /> {t('Skills', 'ជំនាញ')}
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                                {skills.map(skill => (
-                                    <span key={skill} className="px-3 py-1 bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 rounded-full text-xs font-bold">
-                                        {skill}
-                                    </span>
-                                ))}
-                            </div>
+                    {/* Skills */}
+                    <div className="mb-8">
+                        <h4 className="text-white font-bold mb-4 flex items-center gap-2">
+                            <Code size={18} className="text-indigo-400" />
+                            {t('Expertise', 'ជំនាញ')}
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                            {skills.map((skill, i) => (
+                                <span key={i} className="px-3 py-1 bg-indigo-500/10 text-indigo-300 text-xs rounded-lg border border-indigo-500/20">
+                                    {skill}
+                                </span>
+                            ))}
                         </div>
+                    </div>
 
-                        {/* Experience */}
-                        <div>
-                            <div className="flex items-center gap-2 mb-3 text-gray-400 text-sm uppercase font-bold tracking-wider font-khmer">
-                                <Briefcase size={14} /> {t('Experience', 'បទពិសោធន៍')}
-                            </div>
-                            <ul className="space-y-3">
-                                {(t(experience.join('|'), experienceKm.join('|'))).split('|').map((exp, idx) => (
-                                    <li key={idx} className="flex items-start gap-3 text-gray-300 text-sm font-khmer">
-                                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
-                                        {exp}
-                                    </li>
-                                ))}
-                            </ul>
+                    {/* Experience */}
+                    <div>
+                        <h4 className="text-white font-bold mb-4 flex items-center gap-2">
+                            <Briefcase size={18} className="text-indigo-400" />
+                            {t('Experience', 'បទពិសោធន៍')}
+                        </h4>
+                        <div className="space-y-4">
+                            {(language === 'km' ? experienceKm : experience).map((exp, i) => (
+                                <div key={i} className="relative pl-6 before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:bg-indigo-500 before:rounded-full">
+                                    <p className="text-gray-300 text-sm font-khmer leading-relaxed">{exp}</p>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -144,7 +144,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
     );
 };
 
-// --- Author Articles List Modal ---
+// --- Author Articles Modal ---
 interface AuthorArticlesModalProps {
     author: TeamMember;
     posts: Post[];
@@ -154,50 +154,42 @@ interface AuthorArticlesModalProps {
 
 export const AuthorArticlesModal: React.FC<AuthorArticlesModalProps> = ({ author, posts, onClose, onSelectPost }) => {
     const { t } = useLanguage();
-    
+
     return createPortal(
         <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
             <div 
                 className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
                 onClick={onClose}
             />
-            <div className="relative w-full max-w-7xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col">
-                <div className="flex justify-between items-center p-6 border-b border-white/10 bg-gray-900 z-10">
-                    <div>
-                        <h3 className="text-xl font-bold text-white font-khmer">
-                            {t('Articles by', 'អត្ថបទដោយ')} {author.name}
-                        </h3>
+            <div className="relative w-full max-w-2xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10 flex flex-col max-h-[80vh]">
+                <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gray-900 z-10">
+                    <div className="flex items-center gap-4">
+                        <img src={author.image} alt={author.name} className="w-10 h-10 rounded-full object-cover" />
+                        <div>
+                            <h3 className="text-lg font-bold text-white">{author.name}</h3>
+                            <p className="text-xs text-gray-500 font-khmer">{t('All Articles', 'អត្ថបទទាំងអស់')}</p>
+                        </div>
                     </div>
-                    <button 
-                        onClick={onClose}
-                        className="p-2 bg-white/5 hover:bg-white/10 text-white rounded-full transition-all border border-white/5"
-                    >
+                    <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full text-gray-500 hover:text-white transition-colors">
                         <X size={20} />
                     </button>
                 </div>
+                
                 <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div className="space-y-4">
                         {posts.map((post) => (
                             <article 
                                 key={post.id} 
-                                className="group flex flex-col bg-white/5 border border-white/5 rounded-xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+                                className="group flex gap-4 p-3 rounded-2xl bg-white/5 border border-white/5 hover:border-indigo-500/30 transition-all cursor-pointer"
                                 onClick={() => onSelectPost(post)}
                             >
-                                <div className="relative h-40 overflow-hidden">
-                                    <img 
-                                        src={post.image} 
-                                        alt={post.title} 
-                                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                    />
-                                    <div className="absolute top-3 left-3">
-                                        <span className="px-2 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-white/10">
-                                            <Tag size={10} /> {post.category}
-                                        </span>
-                                    </div>
+                                <div className="w-24 h-24 shrink-0 rounded-xl overflow-hidden">
+                                    <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                 </div>
-                                <div className="p-4 flex-1 flex flex-col">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="flex items-center gap-2 text-gray-400 text-[10px] font-mono">
+                                <div className="flex-1 min-w-0 py-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{post.category}</span>
+                                        <div className="flex items-center gap-1 text-[10px] text-gray-500">
                                             <Calendar size={10} />
                                             <span>{post.date}</span>
                                         </div>
@@ -227,7 +219,7 @@ interface ArticleDetailModalProps {
 }
 
 export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, onClose, onAuthorClick }) => {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { team = [] } = useData();
     const { currentUser } = useAuth();
     const [comments, setComments] = useState<Comment[]>([]);
@@ -460,56 +452,61 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
                                     </h3>
                                 </div>
 
-                                {currentUser ? (
-                                    <form onSubmit={handleSubmitComment} className="mb-10">
-                                        {replyTo && (
-                                            <div className="flex items-center justify-between bg-indigo-500/10 border border-indigo-500/20 px-4 py-2 rounded-t-xl text-xs">
-                                                <span className="text-indigo-300">Replying to <strong>{replyTo.name}</strong></span>
-                                                <button type="button" onClick={() => setReplyTo(null)} className="text-gray-400 hover:text-white"><X size={14} /></button>
+                                {isLoadingComments ? (
+                                    <div className="flex items-center gap-2 text-gray-500 py-10">
+                                        <Loader2 className="animate-spin" size={20} />
+                                        <span className="text-sm">Loading comments...</span>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {comments.length > 0 ? (
+                                            comments.map(comment => (
+                                                <CommentItem key={comment.id} comment={comment} />
+                                            ))
+                                        ) : (
+                                            <div className="bg-white/5 rounded-2xl p-10 text-center border border-white/5 border-dashed">
+                                                <p className="text-gray-500 text-sm font-khmer">{t('No comments yet. Be the first to share your thoughts!', 'មិនទាន់មានមតិយោបល់នៅឡើយទេ។ ក្លាយជាអ្នកដំបូងដែលចែករំលែកគំនិតរបស់អ្នក!')}</p>
                                             </div>
                                         )}
-                                        <div className="relative">
-                                            <textarea 
-                                                value={newComment}
-                                                onChange={(e) => setNewComment(e.target.value)}
-                                                placeholder={t('Write a comment...', 'សរសេរមតិយោបល់...')}
-                                                className={`w-full bg-white/5 border border-white/10 ${replyTo ? 'rounded-b-2xl border-t-0' : 'rounded-2xl'} p-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 min-h-[120px] font-khmer transition-all`}
-                                            />
-                                            <button 
-                                                type="submit"
-                                                disabled={isSubmitting || !newComment.trim()}
-                                                className="absolute bottom-4 right-4 px-6 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all flex items-center gap-2"
-                                            >
-                                                {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                                                {t('Post', 'បញ្ជូន')}
-                                            </button>
-                                        </div>
-                                    </form>
-                                ) : (
-                                    <div className="bg-white/5 border border-white/10 rounded-2xl p-8 text-center mb-10">
-                                        <p className="text-gray-400 font-khmer mb-4">{t('Please login to join the conversation.', 'សូមចូលប្រើប្រាស់ដើម្បីចូលរួមមតិយោបល់។')}</p>
-                                        <button 
-                                            onClick={() => window.location.hash = 'admin'}
-                                            className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-all border border-white/10"
-                                        >
-                                            {t('Login Now', 'ចូលប្រើប្រាស់')}
-                                        </button>
                                     </div>
                                 )}
 
-                                <div className="space-y-2">
-                                    {isLoadingComments ? (
-                                        <div className="flex flex-col items-center py-10 gap-3">
-                                            <Loader2 size={30} className="text-indigo-500 animate-spin" />
-                                            <p className="text-gray-500 text-sm font-khmer">Loading comments...</p>
-                                        </div>
-                                    ) : comments.length > 0 ? (
-                                        comments.map(comment => (
-                                            <CommentItem key={comment.id} comment={comment} />
-                                        ))
+                                {/* Comment Form */}
+                                <div className="mt-12 bg-white/5 rounded-3xl p-6 border border-white/5">
+                                    {currentUser ? (
+                                        <form onSubmit={handleSubmitComment}>
+                                            {replyTo && (
+                                                <div className="flex items-center justify-between bg-indigo-500/10 px-4 py-2 rounded-xl mb-4 border border-indigo-500/20">
+                                                    <p className="text-xs text-indigo-300">Replying to <span className="font-bold">{replyTo.name}</span></p>
+                                                    <button type="button" onClick={() => setReplyTo(null)} className="text-gray-500 hover:text-white"><X size={14} /></button>
+                                                </div>
+                                            )}
+                                            <textarea 
+                                                value={newComment}
+                                                onChange={(e) => setNewComment(e.target.value)}
+                                                placeholder={t('Write your comment...', 'សរសេរមតិយោបល់របស់អ្នក...')}
+                                                className="w-full bg-transparent border-none focus:ring-0 text-white font-khmer resize-none min-h-[100px]"
+                                            />
+                                            <div className="flex justify-end mt-4">
+                                                <button 
+                                                    type="submit" 
+                                                    disabled={isSubmitting || !newComment.trim()}
+                                                    className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 text-white font-bold rounded-xl transition-all flex items-center gap-2 text-sm"
+                                                >
+                                                    {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Send size={16} />}
+                                                    {t('Post Comment', 'ផ្ញើមតិ')}
+                                                </button>
+                                            </div>
+                                        </form>
                                     ) : (
-                                        <div className="text-center py-10">
-                                            <p className="text-gray-600 font-khmer italic">{t('No comments yet. Be the first to share your thoughts!', 'មិនទាន់មានមតិយោបល់នៅឡើយទេ។ ក្លាយជាអ្នកដំបូងដែលចែករំលែកគំនិតរបស់អ្នក!')}</p>
+                                        <div className="text-center py-4">
+                                            <p className="text-gray-400 text-sm font-khmer mb-4">{t('Please log in to join the discussion.', 'សូមចូលគណនីដើម្បីចូលរួមការពិភាក្សា។')}</p>
+                                            <button 
+                                                onClick={() => window.location.hash = 'admin'}
+                                                className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all text-sm font-bold"
+                                            >
+                                                {t('Login Now', 'ចូលគណនីឥឡូវនេះ')}
+                                            </button>
                                         </div>
                                     )}
                                 </div>
