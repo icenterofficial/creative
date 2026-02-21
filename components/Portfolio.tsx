@@ -18,18 +18,21 @@ import SkeletonCard from './SkeletonCard';
 interface PortfolioProps {
   showPopupOnMount?: boolean;
   onPopupClose?: () => void;
+  usePathRouting?: boolean;
 }
 
-const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopupClose }) => {
+const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopupClose, usePathRouting = false }) => {
   const [filter, setFilter] = useState<string>('all');
   const [isFilteringLoading, setIsFilteringLoading] = useState(false);
   const { t } = useLanguage();
   const { projects = [] } = useData();
 
-  const { activeId, openItem, closeItem } = useRouter('portfolio');
+  // Use Router Hook: Section 'portfolio' with path-based routing
+  const { activeId, openItem, closeItem } = useRouter('portfolio', '', usePathRouting);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isViewAllOpen, setIsViewAllOpen] = useState(showPopupOnMount || false);
 
+  // Create Categories List
   const uniqueCategories: string[] = Array.from(new Set((projects || []).map(p => p.category))).sort();
   const categories = [
       { id: 'all', label: t('All Work', 'ទាំងអស់') },
@@ -41,6 +44,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
 
   const filteredProjects = (projects || []).filter(p => filter === 'all' || p.category === filter);
 
+  // Sync Router Active ID with Data
   useEffect(() => {
       if (activeId && projects) {
           const found = projects.find(p => p.slug === activeId || p.id === activeId);
@@ -50,6 +54,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
       }
   }, [activeId, projects]);
 
+  // Handle Body Scroll Lock
   useEffect(() => {
     if (selectedProject || isViewAllOpen) {
       document.body.style.overflow = 'hidden';
@@ -61,9 +66,12 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
     };
   }, [selectedProject, isViewAllOpen]);
 
+  // Handle filter change with loading state and haptic feedback
   const handleFilterChange = (newFilter: string) => {
-    hapticMedium();
+    hapticMedium(); // Haptic feedback on filter change
     setFilter(newFilter);
+    
+    // Simulate loading state for better UX
     setIsFilteringLoading(true);
     setTimeout(() => {
       setIsFilteringLoading(false);
@@ -73,22 +81,36 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
   const handleViewAllClick = () => {
     hapticTap();
     setIsViewAllOpen(true);
-    const currentLang = window.location.pathname.split('/')[1];
-    const newPath = currentLang && ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'].includes(currentLang) 
-      ? `/${currentLang}/portfolio` 
-      : '/portfolio';
-    window.history.pushState({ portfolioOpen: true }, '', newPath);
+    if (usePathRouting) {
+      // Update URL to /portfolio (clean path)
+      const currentLang = window.location.pathname.split('/')[1];
+      const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
+      const newPath = currentLang && supportedLangs.includes(currentLang) 
+        ? `/${currentLang}/portfolio` 
+        : '/portfolio';
+      window.history.pushState({ portfolioOpen: true }, '', newPath);
+    } else {
+      // Keep hash-based routing
+      window.location.hash = 'portfolio';
+    }
   };
 
   const handleViewAllClose = () => {
     hapticTap();
     setIsViewAllOpen(false);
     onPopupClose?.();
-    window.history.back();
+    if (usePathRouting) {
+      // Go back to home or previous page
+      window.history.back();
+    } else {
+      // Clear hash
+      window.location.hash = '';
+    }
   };
 
   return (
     <section id="portfolio" className="py-24 bg-gray-900/50 relative overflow-hidden">
+      {/* Background Text */}
       <ScrollBackgroundText text="PROJECTS" className="top-20" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -120,27 +142,29 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
                   key={project.id} 
                   project={project} 
                   index={index} 
-                  onClick={() => {
-                    hapticTap();
-                    openItem(project.slug || project.id);
-                  }}
+                    onClick={() => {
+                      hapticTap();
+                      openItem(project.slug || project.id);
+                      // Don't close the view all popup, just open the project detail
+                    }}
               />
             ))
           )}
         </div>
         
-        <RevealOnScroll variant="fade-up" delay={400}>
-          <div className="text-center mt-20">
-             <button 
-                onClick={handleViewAllClick}
-                className="px-10 py-4 rounded-full border border-white/20 text-white font-bold hover:bg-white hover:text-gray-950 transition-all duration-300 font-khmer flex items-center gap-2 mx-auto active:scale-95"
-             >
-               {t('View All Projects', 'មើលគម្រោងទាំងអស់')} <ArrowRight size={18} />
-             </button>
-          </div>
-        </RevealOnScroll>
+            <RevealOnScroll variant="fade-up" delay={400}>
+              <div className="text-center mt-20">
+                 <button 
+                    onClick={handleViewAllClick}
+                    className="px-10 py-4 rounded-full border border-white/20 text-white font-bold hover:bg-white hover:text-gray-950 transition-all duration-300 font-khmer flex items-center gap-2 mx-auto active:scale-95"
+                 >
+                   {t('View All Projects', 'មើលគម្រោងទាំងអស់')} <ArrowRight size={18} />
+                 </button>
+              </div>
+            </RevealOnScroll>
       </div>
 
+      {/* View All Projects Modal */}
       {isViewAllOpen && createPortal(
          <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4">
             <div 
@@ -189,10 +213,12 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
          document.body
       )}
 
+      {/* Main Project Detail Modal */}
       {selectedProject && (
           <PortfolioModal 
             project={selectedProject} 
-            onClose={closeItem} 
+            onClose={closeItem}
+            usePathRouting={usePathRouting}
           />
       )}
 
