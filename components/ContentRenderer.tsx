@@ -67,10 +67,12 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ code, language = 'text' }) => {
 };
 
 const ContentRenderer: React.FC<{ content: string }> = ({ content }) => {
-    if (typeof content !== 'string') return null;
+    // 1. បន្ថែមការការពារ: ប្រសិនបើ content មិនមែនជា string ឫគ្មានទិន្នន័យ ឲ្យវាក្លាយជា string ទទេ
+    const safeContent = content || '';
+    if (typeof safeContent !== 'string' || safeContent.trim() === '') return null;
 
-    // Regex to split by code blocks
-    const parts = content.split(/(```[\s\S]*?```)/g);
+    // 2. ប្រើ safeContent ជំនួសវិញ
+    const parts = safeContent.split(/(```[\s\S]*?```)/g);
 
     return (
         <div className="text-gray-300 leading-relaxed font-khmer text-lg">
