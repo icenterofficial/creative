@@ -23,42 +23,35 @@ const PortfolioModal: React.FC<PortfolioModalProps> = ({ project, onClose, usePa
   // Determine images
   const allImages = [project.image, ...(project.gallery || [])].filter(Boolean);
 
+  // Handle Close Logic
+  const handleClose = () => {
+    if (usePathRouting) {
+      // ពេលបិទ Project Detail ឱ្យត្រឡប់មកកាន់ /portfolio វិញ (បញ្ជីគម្រោងទាំងអស់)
+      const currentLang = window.location.pathname.split('/')[1];
+      const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
+      const newPath = currentLang && supportedLangs.includes(currentLang) 
+        ? `/${currentLang}/portfolio` 
+        : '/portfolio';
+      
+      // ប្រើ replaceState ដើម្បីដូរ URL ដោយមិនបាច់ថយក្រោយទៅទំព័រមុនៗ
+      window.history.replaceState(null, '', newPath);
+      window.dispatchEvent(new Event('popstate'));
+    }
+    onClose();
+  };
+
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
        {/* Backdrop */}
        <div 
          className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
-         onClick={() => {
-           if (usePathRouting) {
-             // For path routing, go back to /portfolio
-             const currentLang = window.location.pathname.split('/')[1];
-             const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
-             const newPath = currentLang && supportedLangs.includes(currentLang) 
-               ? `/${currentLang}/portfolio` 
-               : '/portfolio';
-             window.history.replaceState(null, '', newPath);
-             window.dispatchEvent(new Event('popstate'));
-           }
-           onClose();
-         }}
+         onClick={handleClose}
        />
 
        {/* Close Button */}
        <button 
-          onClick={() => {
-            if (usePathRouting) {
-              // For path routing, go back to /portfolio
-              const currentLang = window.location.pathname.split('/')[1];
-              const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
-              const newPath = currentLang && supportedLangs.includes(currentLang) 
-                ? `/${currentLang}/portfolio` 
-                : '/portfolio';
-              window.history.replaceState(null, '', newPath);
-              window.dispatchEvent(new Event('popstate'));
-            }
-            onClose();
-          }}
-          className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all z-50 border border-white/10"
+          onClick={handleClose}
+          className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all z-50 border border-white/10 active:scale-95"
        >
           <X size={24} />
        </button>
@@ -106,16 +99,18 @@ const PortfolioModal: React.FC<PortfolioModalProps> = ({ project, onClose, usePa
                 ref={textContainerRef}
                 className="flex-1 overflow-y-auto p-8 md:p-12 pt-6 scrollbar-hide space-y-12"
             >
-                {/* Overview */}
-                <section>
-                    <h3 className="text-white font-bold mb-4 flex items-center gap-3">
-                        <div className="w-8 h-[2px] bg-indigo-500" />
-                        {t('Overview', 'ទិដ្ឋភាពទូទៅ')}
-                    </h3>
-                    <div className="text-gray-400 leading-relaxed font-khmer">
-                        <ContentRenderer content={project.description} />
-                    </div>
-                </section>
+                {/* Overview - បង្ហាញតែពេលមាន Content ប៉ុណ្ណោះ */}
+                {project.description && (
+                    <section>
+                        <h3 className="text-white font-bold mb-4 flex items-center gap-3">
+                            <div className="w-8 h-[2px] bg-indigo-500" />
+                            {t('Overview', 'ទិដ្ឋភាពទូទៅ')}
+                        </h3>
+                        <div className="text-gray-400 leading-relaxed font-khmer">
+                            <ContentRenderer content={project.description} />
+                        </div>
+                    </section>
+                )}
 
                 {/* Case Study (Challenges & Solutions) */}
                 {project.caseStudy && (
@@ -123,7 +118,7 @@ const PortfolioModal: React.FC<PortfolioModalProps> = ({ project, onClose, usePa
                 )}
 
                 {/* Features / Services Provided */}
-                {project.features && (
+                {project.features && project.features.length > 0 && (
                     <section>
                         <h3 className="text-white font-bold mb-6">{t('Scope of Work', 'វិសាលភាពការងារ')}</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
