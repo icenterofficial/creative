@@ -275,10 +275,10 @@ const Services: React.FC<ServicesProps> = ({ showPopupOnMount = false, usePathRo
       </div>
 
       {/* Service Detail Modal */}
-      {selectedService && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+{selectedService && createPortal(
+        <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4">
           <div 
-            className="absolute inset-0 bg-gray-950/90 backdrop-blur-md animate-fade-in"
+            className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
             onClick={closeItem}
           />
           <div className="relative w-full max-w-2xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10">
