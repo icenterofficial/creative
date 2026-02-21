@@ -12,6 +12,7 @@ import Testimonials from './components/Testimonials';
 import Team from './components/Team';
 import Insights from './components/Insights';
 import Contact from './components/Contact';
+import Footer from './components/Footer';
 import ScrollButton from './components/ScrollButton';
 import FloatingChat from './components/FloatingChat'; 
 import Preloader from './components/Preloader';
