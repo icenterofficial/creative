@@ -66,17 +66,17 @@ const Team: React.FC = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {team.map((member) => {
               const postCount = getPostCount(member.id);
               return (
                 <div 
                   key={member.id} 
-                  className="group relative bg-gray-900 rounded-3xl overflow-hidden border border-white/10 hover:border-indigo-500/50 transition-all duration-500 hover:-translate-y-1 cursor-pointer"
+                  className="group relative bg-gray-900 rounded-3xl overflow-hidden border border-white/10 hover:border-indigo-500/50 transition-all duration-500 hover:-translate-y-1 cursor-pointer flex flex-col"
                   onClick={() => openItem(member.slug || member.id)}
                 >
                   {/* Cover Image Section */}
-                  <div className="relative h-40 overflow-hidden bg-gradient-to-br from-indigo-600/20 to-purple-600/20">
+                  <div className="relative h-40 overflow-hidden bg-gradient-to-br from-indigo-600/20 to-purple-600/20 shrink-0">
                     {member.coverImage ? (
                       <img 
                         src={member.coverImage} 
@@ -96,11 +96,11 @@ const Team: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Content Section - Horizontal Layout */}
-                  <div className="relative px-6 py-6 flex gap-6">
+                  {/* Profile Section - Horizontal Layout */}
+                  <div className="flex gap-4 px-6 py-6 flex-1">
                     {/* Profile Image */}
-                    <div className="flex-shrink-0 -mt-20">
-                      <div className="w-28 h-28 rounded-full border-4 border-gray-900 overflow-hidden bg-gray-800 group-hover:border-indigo-500 transition-colors shadow-lg">
+                    <div className="shrink-0">
+                      <div className="w-24 h-24 rounded-full border-4 border-gray-900 overflow-hidden bg-gray-800 group-hover:border-indigo-500 transition-colors">
                         <img 
                           src={member.image} 
                           alt={member.name}
@@ -109,21 +109,22 @@ const Team: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Member Info - Right Side */}
-                    <div className="flex-1 flex flex-col justify-start pt-2">
-                      <h3 className="text-xl font-bold text-white group-hover:text-indigo-400 transition-colors leading-tight">{member.name}</h3>
-                      <p className="text-indigo-400 text-sm font-khmer mb-3 line-clamp-2">{t(member.role, member.roleKm)}</p>
-                      
-                      {postCount > 0 && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-indigo-900/50 border border-indigo-500/30 text-indigo-200 text-[11px] font-bold uppercase tracking-wider shadow-sm w-fit">
-                          <FileText size={11} /> {postCount} {t('Articles', 'អត្ថបទ')}
-                        </span>
-                      )}
+                    {/* Member Info */}
+                    <div className="flex-1 flex flex-col justify-start">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <h3 className="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors">{member.name}</h3>
+                        {postCount > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-900/50 border border-indigo-500/30 text-indigo-200 text-[9px] font-bold uppercase tracking-wider shadow-sm shrink-0">
+                            <FileText size={9} /> {postCount}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-indigo-400 text-xs font-khmer">{t(member.role, member.roleKm)}</p>
                     </div>
                   </div>
 
-                  {/* Social Links - Bottom */}
-                  <div className="px-6 pb-6 flex gap-3 pt-4 border-t border-white/10" onClick={(e) => e.stopPropagation()}>
+                  {/* Social Links */}
+                  <div className="px-6 pb-6 border-t border-white/10 flex gap-3" onClick={(e) => e.stopPropagation()}>
                     {member.socials.facebook && (
                       <a href={member.socials.facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 text-gray-400 rounded-lg hover:bg-[#1877F2] hover:text-white transition-all">
                         <Facebook size={18} />
