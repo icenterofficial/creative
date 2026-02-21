@@ -36,7 +36,6 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
     const experienceKm = member.experienceKm || [];
     const socials = member.socials || {};
 
-    // Prevent rendering on server or before body is available
     if (typeof window === 'undefined') return null;
 
     return createPortal(
@@ -46,16 +45,17 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
                 onClick={onClose}
             />
             <div className="relative w-full max-w-lg bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-[10003] flex flex-col max-h-[90vh]">
-                {/* Header / Cover */}
-                <div className="h-32 bg-gray-800 relative shrink-0 overflow-hidden z-0">
+                
+                {/* 🔴 FIXED: Cover Area with correct layout */}
+                <div className="h-32 bg-gray-800 relative shrink-0">
                     {member.coverImage ? (
                         <img 
                             src={member.coverImage} 
                             alt="" 
-                            className="w-full h-full object-cover opacity-50"
+                            className="w-full h-full object-cover opacity-50 rounded-t-3xl"
                         />
                     ) : (
-                        <div className="w-full h-full bg-gradient-to-r from-indigo-600/20 to-purple-600/20" />
+                        <div className="w-full h-full bg-gradient-to-r from-indigo-600/20 to-purple-600/20 rounded-t-3xl" />
                     )}
                     <button 
                         onClick={onClose}
@@ -65,35 +65,35 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
                     </button>
                 </div>
 
-                {/* Profile Info & Content Area */}
-                <div className="px-8 pb-8 flex-1 overflow-y-auto scrollbar-hide relative z-10">
-                    
-                    {/* Top Section: Profile Image & Socials */}
-                    <div className="flex justify-between items-end -mt-12 mb-4">
-                        {/* Profile Image - Fixed Z-index so it doesn't get cut */}
-                        <div className="relative z-20">
-                            <img 
-                                src={member.image || ''} 
-                                alt={member.name || ''} 
-                                className="w-24 h-24 rounded-2xl border-4 border-gray-900 object-cover shadow-xl bg-gray-900"
-                            />
-                        </div>
-
-                        {/* Social Links on the Right */}
-                        <div className="flex gap-2 mb-2">
-                            {socials.facebook && (
-                                <a href={socials.facebook} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/5 group">
-                                    <Facebook size={18} className="group-hover:text-blue-400 transition-colors" />
-                                </a>
-                            )}
-                            {socials.telegram && (
-                                <a href={socials.telegram} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/5 group">
-                                    <Send size={18} className="group-hover:text-blue-400 transition-colors" />
-                                </a>
-                            )}
-                        </div>
+                {/* 🔴 FIXED: Header info (Profile + Socials) Moved OUTSIDE of the scrollable area */}
+                <div className="px-8 flex justify-between items-end relative shrink-0 z-20">
+                    {/* Profile Image overlapping the cover */}
+                    <div className="relative -mt-12 rounded-2xl bg-gray-900 p-1">
+                        <img 
+                            src={member.image || ''} 
+                            alt={member.name || ''} 
+                            className="w-24 h-24 rounded-xl object-cover shadow-xl border-2 border-white/5"
+                        />
                     </div>
 
+                    {/* Social Links on the Right */}
+                    <div className="flex gap-2 mb-2">
+                        {socials.facebook && (
+                            <a href={socials.facebook} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/5 group">
+                                <Facebook size={18} className="group-hover:text-blue-400 transition-colors" />
+                            </a>
+                        )}
+                        {socials.telegram && (
+                            <a href={socials.telegram} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/5 group">
+                                <Send size={18} className="group-hover:text-blue-400 transition-colors" />
+                            </a>
+                        )}
+                    </div>
+                </div>
+
+                {/* Main Content Area (Scrollable) */}
+                <div className="px-8 pb-8 pt-4 flex-1 overflow-y-auto scrollbar-hide relative z-10">
+                    
                     {/* Name & Role */}
                     <div className="mb-8">
                         <h3 className="text-2xl font-bold text-white">{member.name || 'Unknown'}</h3>
