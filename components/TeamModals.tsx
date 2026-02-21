@@ -47,7 +47,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
             />
             <div className="relative w-full max-w-lg bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-[10003] flex flex-col max-h-[90vh]">
                 {/* Header / Cover */}
-                <div className="h-32 bg-gray-800 relative shrink-0 overflow-hidden">
+                <div className="h-32 bg-gray-800 relative shrink-0 overflow-hidden z-0">
                     {member.coverImage ? (
                         <img 
                             src={member.coverImage} 
@@ -65,46 +65,54 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
                     </button>
                 </div>
 
-                {/* Profile Info */}
-                <div className="px-8 pb-8 flex-1 overflow-y-auto scrollbar-hide">
-                    <div className="relative -mt-12 mb-6">
-                        <img 
-                            src={member.image || ''} 
-                            alt={member.name || ''} 
-                            className="w-24 h-24 rounded-2xl border-4 border-gray-900 object-cover shadow-xl"
-                        />
-                        <div className="mt-4">
-                            <h3 className="text-2xl font-bold text-white">{member.name || 'Unknown'}</h3>
-                            {/* Fallback protection for role */}
-                            <p className="text-indigo-400 font-medium font-khmer">{t(member.role || '', member.roleKm || member.role || '')}</p>
+                {/* Profile Info & Content Area */}
+                <div className="px-8 pb-8 flex-1 overflow-y-auto scrollbar-hide relative z-10">
+                    
+                    {/* Top Section: Profile Image & Socials */}
+                    <div className="flex justify-between items-end -mt-12 mb-4">
+                        {/* Profile Image - Fixed Z-index so it doesn't get cut */}
+                        <div className="relative z-20">
+                            <img 
+                                src={member.image || ''} 
+                                alt={member.name || ''} 
+                                className="w-24 h-24 rounded-2xl border-4 border-gray-900 object-cover shadow-xl bg-gray-900"
+                            />
+                        </div>
+
+                        {/* Social Links on the Right */}
+                        <div className="flex gap-2 mb-2">
+                            {socials.facebook && (
+                                <a href={socials.facebook} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/5 group">
+                                    <Facebook size={18} className="group-hover:text-blue-400 transition-colors" />
+                                </a>
+                            )}
+                            {socials.telegram && (
+                                <a href={socials.telegram} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/5 group">
+                                    <Send size={18} className="group-hover:text-blue-400 transition-colors" />
+                                </a>
+                            )}
                         </div>
                     </div>
 
-                    {/* Social Links */}
-                    <div className="flex gap-3 mb-8">
-                        {socials.facebook && (
-                            <a href={socials.facebook} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/5">
-                                <Facebook size={18} />
-                            </a>
-                        )}
-                        {socials.telegram && (
-                            <a href={socials.telegram} target="_blank" rel="noopener noreferrer" className="p-2 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all border border-white/5">
-                                <Send size={18} />
-                            </a>
-                        )}
+                    {/* Name & Role */}
+                    <div className="mb-8">
+                        <h3 className="text-2xl font-bold text-white">{member.name || 'Unknown'}</h3>
+                        <p className="text-indigo-400 font-medium font-khmer mt-1">
+                            {t(member.role || '', member.roleKm || member.role || '')}
+                        </p>
                     </div>
 
-                    {/* Stats */}
+                    {/* Stats Box */}
                     <div className="grid grid-cols-2 gap-4 mb-8">
                         <div className="bg-white/5 rounded-2xl p-4 border border-white/5">
-                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{t('Projects', 'គម្រោង')}</p>
+                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1 font-khmer">{t('Projects', 'គម្រោង')}</p>
                             <p className="text-xl font-bold text-white">12+</p>
                         </div>
                         <button 
                             onClick={() => onShowArticles(member)}
                             className="bg-white/5 rounded-2xl p-4 border border-white/5 text-left hover:bg-white/10 transition-all group"
                         >
-                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1">{t('Articles', 'អត្ថបទ')}</p>
+                            <p className="text-gray-500 text-xs uppercase tracking-wider mb-1 font-khmer">{t('Articles', 'អត្ថបទ')}</p>
                             <p className="text-xl font-bold text-white flex items-center justify-between">
                                 {postCount}
                                 <ArrowRight size={18} className="text-indigo-400 group-hover:translate-x-1 transition-transform" />
@@ -112,35 +120,52 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
                         </button>
                     </div>
 
-                    {/* Skills */}
-                    <div className="mb-8">
-                        <h4 className="text-white font-bold mb-4 flex items-center gap-2">
-                            <Code size={18} className="text-indigo-400" />
-                            {t('Expertise', 'ជំនាញ')}
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                            {skills.map((skill, i) => (
-                                <span key={i} className="px-3 py-1 bg-indigo-500/10 text-indigo-300 text-xs rounded-lg border border-indigo-500/20">
-                                    {skill}
-                                </span>
-                            ))}
+                    {/* About Me Section (អំពីខ្ញុំ) - Check if Bio exists */}
+                    {(member.bio || member.bioKm) && (
+                        <div className="mb-8 bg-white/5 p-5 rounded-2xl border border-white/5">
+                            <h4 className="text-white font-bold mb-3 flex items-center gap-2 font-khmer">
+                                <User size={18} className="text-indigo-400" />
+                                {t('About Me', 'អំពីខ្ញុំ')}
+                            </h4>
+                            <p className="text-gray-300 text-sm leading-relaxed font-khmer">
+                                {t(member.bio || '', member.bioKm || member.bio || '')}
+                            </p>
                         </div>
-                    </div>
+                    )}
 
-                    {/* Experience */}
-                    <div>
-                        <h4 className="text-white font-bold mb-4 flex items-center gap-2">
-                            <Briefcase size={18} className="text-indigo-400" />
-                            {t('Experience', 'បទពិសោធន៍')}
-                        </h4>
-                        <div className="space-y-4">
-                            {(language === 'km' ? experienceKm : experience).map((exp, i) => (
-                                <div key={i} className="relative pl-6 before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:bg-indigo-500 before:rounded-full">
-                                    <p className="text-gray-300 text-sm font-khmer leading-relaxed">{exp}</p>
-                                </div>
-                            ))}
+                    {/* Skills Section */}
+                    {skills.length > 0 && (
+                        <div className="mb-8">
+                            <h4 className="text-white font-bold mb-4 flex items-center gap-2 font-khmer">
+                                <Code size={18} className="text-indigo-400" />
+                                {t('Expertise', 'ជំនាញ')}
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                                {skills.map((skill, i) => (
+                                    <span key={i} className="px-3 py-1 bg-indigo-500/10 text-indigo-300 text-xs rounded-lg border border-indigo-500/20 shadow-sm">
+                                        {skill}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
+
+                    {/* Experience Section */}
+                    {experience.length > 0 && (
+                        <div>
+                            <h4 className="text-white font-bold mb-4 flex items-center gap-2 font-khmer">
+                                <Briefcase size={18} className="text-indigo-400" />
+                                {t('Experience', 'បទពិសោធន៍')}
+                            </h4>
+                            <div className="space-y-4">
+                                {(language === 'km' ? experienceKm : experience).map((exp, i) => (
+                                    <div key={i} className="relative pl-6 before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:bg-indigo-500 before:rounded-full">
+                                        <p className="text-gray-300 text-sm font-khmer leading-relaxed">{exp}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>,
