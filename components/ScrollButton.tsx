@@ -1,45 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 import { smoothScrollTo } from '../utils/scroll';
 
 const ScrollButton: React.FC = () => {
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [isAtTop, setIsAtTop] = useState(true);
+  const progressCircleRef = useRef<SVGCircleElement>(null);
+  const rafRef = useRef<number | null>(null);
+
+  // Visual Configuration
+  const size = 46;
+  const strokeWidth = 3;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+
+  const updateProgress = useCallback(() => {
+    const currentScrollY = window.scrollY;
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+
+    // Calculate progress (0 to 100)
+    const progress = scrollHeight > 0 ? (currentScrollY / scrollHeight) * 100 : 0;
+
+    // Directly update SVG strokeDashoffset via DOM ref — no React re-render needed
+    if (progressCircleRef.current) {
+      const offset = circumference - (progress / 100) * circumference;
+      progressCircleRef.current.style.strokeDashoffset = String(offset);
+    }
+
+    // Update isAtTop state (only triggers re-render when value actually changes)
+    setIsAtTop(currentScrollY < 100);
+  }, [circumference]);
 
   useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-      
-      // Calculate progress (0 to 100)
-      const progress = scrollHeight > 0 ? (currentScrollY / scrollHeight) * 100 : 0;
-      setScrollProgress(progress);
-
-      // Determine direction: consider "at top" if scrolled less than 100px
-      setIsAtTop(currentScrollY < 100);
+    const onScroll = () => {
+      // Cancel any pending RAF before scheduling a new one
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      rafRef.current = requestAnimationFrame(updateProgress);
     };
 
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
-    
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // Run once on mount to set initial state
+    updateProgress();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [updateProgress]);
 
   const handleClick = () => {
-    // Reduced duration to 1200ms for faster response
     if (isAtTop) {
       smoothScrollTo(document.documentElement.scrollHeight, 1200);
     } else {
       smoothScrollTo(0, 1200);
     }
   };
-
-  // Visual Configuration
-  const size = 46; 
-  const strokeWidth = 3;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (scrollProgress / 100) * circumference;
 
   return (
     <div className="fixed bottom-6 right-6 md:bottom-10 md:right-10 z-50 flex items-center justify-center">
@@ -65,9 +84,10 @@ const ScrollButton: React.FC = () => {
             strokeWidth={strokeWidth}
             className="text-white/10"
           />
-          
-          {/* Progress Circle with Gradient */}
+
+          {/* Progress Circle with Gradient — updated directly via ref, no CSS transition */}
           <circle
+            ref={progressCircleRef}
             cx={size / 2}
             cy={size / 2}
             r={radius}
@@ -75,11 +95,10 @@ const ScrollButton: React.FC = () => {
             stroke="url(#scrollGradient)"
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
+            strokeDashoffset={circumference}
             strokeLinecap="round"
-            className="transition-all duration-75 ease-linear" 
           />
-          
+
           {/* Define Gradient */}
           <defs>
             <linearGradient id="scrollGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -92,13 +111,13 @@ const ScrollButton: React.FC = () => {
 
         {/* Icons */}
         <div className="relative w-5 h-5 text-white group-hover:text-indigo-300 transition-colors duration-300 z-10">
-          <ArrowDown 
-            size={20} 
-            className={`absolute inset-0 transition-all duration-500 transform ${isAtTop ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-180 scale-50'}`} 
+          <ArrowDown
+            size={20}
+            className={`absolute inset-0 transition-all duration-500 transform ${isAtTop ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-180 scale-50'}`}
           />
-          <ArrowUp 
-            size={20} 
-            className={`absolute inset-0 transition-all duration-500 transform ${!isAtTop ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-180 scale-50'}`} 
+          <ArrowUp
+            size={20}
+            className={`absolute inset-0 transition-all duration-500 transform ${!isAtTop ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-180 scale-50'}`}
           />
         </div>
       </button>
