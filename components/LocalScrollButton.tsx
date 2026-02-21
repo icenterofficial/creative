@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
 
 interface LocalScrollButtonProps {
@@ -6,30 +6,60 @@ interface LocalScrollButtonProps {
 }
 
 const LocalScrollButton: React.FC<LocalScrollButtonProps> = ({ containerRef }) => {
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [isAtTop, setIsAtTop] = useState(true);
+  const progressCircleRef = useRef<SVGCircleElement>(null);
+  const rafRef = useRef<number | null>(null);
+
+  // Visual Configuration (Same as ScrollButton.tsx)
+  const size = 46;
+  const strokeWidth = 3;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+
+  const updateProgress = useCallback(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const currentScrollTop = container.scrollTop;
+    const scrollHeight = container.scrollHeight - container.clientHeight;
+
+    // Calculate progress (0 to 100)
+    const progress = scrollHeight > 0 ? (currentScrollTop / scrollHeight) * 100 : 0;
+
+    // Directly update SVG strokeDashoffset via DOM ref — no React re-render needed
+    if (progressCircleRef.current) {
+      const offset = circumference - (progress / 100) * circumference;
+      progressCircleRef.current.style.strokeDashoffset = String(offset);
+    }
+
+    // Update isAtTop state (only triggers re-render when value actually changes)
+    setIsAtTop(currentScrollTop < 100);
+  }, [containerRef, circumference]);
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const handleScroll = () => {
-      const currentScrollTop = container.scrollTop;
-      const scrollHeight = container.scrollHeight - container.clientHeight;
-      
-      // Calculate progress (0 to 100)
-      const progress = scrollHeight > 0 ? (currentScrollTop / scrollHeight) * 100 : 0;
-      setScrollProgress(progress);
-
-      // Determine direction: consider "at top" if scrolled less than 100px
-      setIsAtTop(currentScrollTop < 100);
+    const onScroll = () => {
+      // Cancel any pending RAF before scheduling a new one
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      rafRef.current = requestAnimationFrame(updateProgress);
     };
 
-    container.addEventListener('scroll', handleScroll);
-    handleScroll(); // Initial check
-    
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [containerRef]);
+    container.addEventListener('scroll', onScroll, { passive: true });
+
+    // Run once on mount to set initial state
+    updateProgress();
+
+    return () => {
+      container.removeEventListener('scroll', onScroll);
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+      }
+    };
+  }, [containerRef, updateProgress]);
 
   const handleClick = () => {
     const container = containerRef.current;
@@ -41,13 +71,6 @@ const LocalScrollButton: React.FC<LocalScrollButtonProps> = ({ containerRef }) =
       container.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
-
-  // Visual Configuration (Same as ScrollButton.tsx)
-  const size = 46; 
-  const strokeWidth = 3;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (scrollProgress / 100) * circumference;
 
   return (
     <div className="fixed bottom-8 right-8 z-50 flex items-center justify-center pointer-events-none">
@@ -73,9 +96,10 @@ const LocalScrollButton: React.FC<LocalScrollButtonProps> = ({ containerRef }) =
             strokeWidth={strokeWidth}
             className="text-white/10"
           />
-          
-          {/* Progress Circle with Gradient */}
+
+          {/* Progress Circle with Gradient — updated directly via ref, no CSS transition */}
           <circle
+            ref={progressCircleRef}
             cx={size / 2}
             cy={size / 2}
             r={radius}
@@ -83,11 +107,10 @@ const LocalScrollButton: React.FC<LocalScrollButtonProps> = ({ containerRef }) =
             stroke="url(#localScrollGradient)"
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
-            strokeDashoffset={strokeDashoffset}
+            strokeDashoffset={circumference}
             strokeLinecap="round"
-            className="transition-all duration-75 ease-linear" 
           />
-          
+
           {/* Define Gradient */}
           <defs>
             <linearGradient id="localScrollGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -100,13 +123,13 @@ const LocalScrollButton: React.FC<LocalScrollButtonProps> = ({ containerRef }) =
 
         {/* Icons */}
         <div className="relative w-5 h-5 text-white group-hover:text-indigo-300 transition-colors duration-300 z-10">
-          <ArrowDown 
-            size={20} 
-            className={`absolute inset-0 transition-all duration-500 transform ${isAtTop ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-180 scale-50'}`} 
+          <ArrowDown
+            size={20}
+            className={`absolute inset-0 transition-all duration-500 transform ${isAtTop ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-180 scale-50'}`}
           />
-          <ArrowUp 
-            size={20} 
-            className={`absolute inset-0 transition-all duration-500 transform ${!isAtTop ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-180 scale-50'}`} 
+          <ArrowUp
+            size={20}
+            className={`absolute inset-0 transition-all duration-500 transform ${!isAtTop ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-180 scale-50'}`}
           />
         </div>
       </button>
