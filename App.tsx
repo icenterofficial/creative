@@ -28,10 +28,11 @@ import About from './components/About';
 import Careers from './components/Careers';
 import PrivacyPolicy from './components/PrivacyPolicy';
 
-// Lazy Load Heavy Components
+// Lazy Load Heavy Components (Code Splitting for better initial load)
 const AdminDashboard = React.lazy(() => import('./components/AdminDashboard'));
 const CostEstimator = React.lazy(() => import('./components/CostEstimator'));
 
+// Fallback Loading Component
 const ComponentFallback: React.FC = () => (
   <div className="w-full h-screen flex items-center justify-center bg-gray-950">
     <div className="flex flex-col items-center gap-4">
@@ -61,14 +62,17 @@ function AppContent() {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
+  // Handle pathname and hash changes for routing
   useEffect(() => {
     const handleRouteChange = () => {
         const pathname = window.location.pathname;
         const hash = window.location.hash;
         
-        const isPortfolioPath = /\/(en|km|fr|ja|ko|de|zh-CN|es|ar)?\/portfolio/.test(pathname);
+        // Check if pathname is /portfolio or /en/portfolio or /km/portfolio etc (including nested)
+        const portfolioMatch = /\/(en|km|fr|ja|ko|de|zh-CN|es|ar)?\/portfolio(?:\/([^/]+))?/.exec(pathname);
         
-        if (isPortfolioPath) {
+        if (portfolioMatch) {
+            // Direct access to /portfolio or /portfolio/slug - show popup
             setShouldShowPortfolioPopup(true);
             setActivePage(null);
         } else if (hash === '#about') {
@@ -140,7 +144,7 @@ function AppContent() {
           <CostEstimator />
         </Suspense>
         <Process />
-        <Portfolio showPopupOnMount={shouldShowPortfolioPopup} onPopupClose={() => setShouldShowPortfolioPopup(false)} />
+        <Portfolio showPopupOnMount={shouldShowPortfolioPopup} onPopupClose={() => setShouldShowPortfolioPopup(false)} usePathRouting={true} />
         <Testimonials />
         <Team />
         <Insights />
