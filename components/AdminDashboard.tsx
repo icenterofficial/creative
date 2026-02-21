@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Plus, Settings, Database, ExternalLink, LogOut, Users, FileText, Briefcase, LayoutGrid, Menu, Star, Handshake } from 'lucide-react';
 import { getSupabaseClient, DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_KEY } from '../lib/supabase';
@@ -304,10 +303,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout, currentUser, 
                   bio_km: item.bioKm, 
                   skills: item.skills, 
                   experience: item.experience, 
-                  socials: item.socials,
-                  slug: generatedSlug,
-                  pin_code: item.pinCode 
-              };
+	                  socials: item.socials,
+	                  slug: generatedSlug,
+	                  pin_code: item.pinCode,
+	                  coverImage: item.coverImage // Include coverImage in payload
+	              };
           } else if (activeTab === 'insights') {
               table = 'insights';
               payload = { 
