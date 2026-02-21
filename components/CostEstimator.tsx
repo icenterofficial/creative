@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
 import { Calculator, Monitor, Palette, Home, Smartphone, Check, RefreshCcw, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { hapticMedium, hapticSuccess } from '../utils/haptic';
+import { useRouter } from '../hooks/useRouter';
 
 type ServiceType = 'web' | 'app' | 'design' | 'architecture';
 type WizardStep = 'service' | 'features' | 'summary';
@@ -25,12 +25,20 @@ interface ServiceOption {
   addOns: AddOn[];
 }
 
-const CostEstimator: React.FC = () => {
+interface CostEstimatorProps {
+  showPopupOnMount?: boolean;
+  usePathRouting?: boolean;
+}
+
+const CostEstimator: React.FC<CostEstimatorProps> = ({ showPopupOnMount = false, usePathRouting = false }) => {
   const { t } = useLanguage();
   const [selectedService, setSelectedService] = useState<ServiceType>('web');
   const [selectedAddOns, setSelectedAddOns] = useState<string[]>([]);
   const [totalCost, setTotalCost] = useState(0);
   const [currentStep, setCurrentStep] = useState<WizardStep>('service');
+
+  // Use Router Hook: Section 'estimator'
+  const { activeId, openItem, closeItem } = useRouter('estimator', '', usePathRouting);
 
   const SERVICES_DATA: ServiceOption[] = [
     {
@@ -256,16 +264,9 @@ const CostEstimator: React.FC = () => {
                         </span>
                       </div>
                     </div>
-                    <span className="text-sm font-mono text-gray-500">+${addon.price}</span>
+                    <span className="text-sm font-mono text-indigo-400 font-bold">+${addon.price}</span>
                   </div>
                 ))}
-              </div>
-
-              <div className="bg-gray-800/50 border border-white/5 rounded-xl p-4">
-                <div className="text-sm text-gray-400 font-khmer mb-2">{t("Features Selected:", "មុខងារបានជ្រើសរើស:")}</div>
-                <div className="text-lg text-white font-bold font-khmer">
-                  {selectedAddOns.length === 0 ? t("None", "គ្មាន") : selectedAddOns.length}
-                </div>
               </div>
             </div>
           )}
@@ -273,111 +274,92 @@ const CostEstimator: React.FC = () => {
           {/* STEP 3: Summary */}
           {currentStep === 'summary' && (
             <div className="animate-fade-in space-y-8 flex-1">
-              <div>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check size={32} />
+                </div>
                 <h3 className="text-2xl font-bold text-white font-khmer mb-2">
-                  {t("Step 3: Review Your Estimate", "ជំហាន ៣៖ ពិនិត្យលម្អិតតម្លៃ")}
+                  {t("Investment Summary", "សង្ខេបតម្លៃវិនិយោគ")}
                 </h3>
-                <p className="text-gray-400 font-khmer">{t("Here's your project summary and estimated cost", "នេះគឺជាសង្ខេបគម្រោងរបស់អ្នក និងតម្លៃប៉ាន់ស្មាន")}</p>
+                <p className="text-gray-400 font-khmer">{t("Here is your estimated project cost", "នេះគឺជាតម្លៃប៉ាន់ស្មានសម្រាប់គម្រោងរបស់អ្នក")}</p>
               </div>
 
-              <div className="space-y-6">
-                {/* Service Summary */}
-                <div className="bg-gray-800/50 border border-white/5 rounded-xl p-6">
-                  <h4 className="text-sm text-gray-400 uppercase tracking-wider font-khmer mb-4">{t("Selected Service", "សេវាកម្មដែលបានជ្រើសរើស")}</h4>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      {currentService.icon}
-                      <div>
-                        <div className="text-white font-bold font-khmer">{t(currentService.label, currentService.labelKm)}</div>
-                        <div className="text-xs text-gray-500">{t("Base Price", "តម្លៃគោល")}</div>
-                      </div>
-                    </div>
-                    <div className="text-2xl font-bold text-white font-mono">${currentService.basePrice}</div>
-                  </div>
+              <div className="bg-gray-800/50 rounded-2xl p-6 space-y-4 border border-white/5">
+                <div className="flex justify-between items-center pb-4 border-b border-white/10">
+                  <span className="text-gray-400 font-khmer">{t("Base Service:", "សេវាកម្មមូលដ្ឋាន:")}</span>
+                  <span className="text-white font-bold font-khmer">{t(currentService.label, currentService.labelKm)} (${currentService.basePrice})</span>
                 </div>
-
-                {/* Features Summary */}
+                
                 {selectedAddOns.length > 0 && (
-                  <div className="bg-gray-800/50 border border-white/5 rounded-xl p-6">
-                    <h4 className="text-sm text-gray-400 uppercase tracking-wider font-khmer mb-4">{t("Added Features", "មុខងារបន្ថែម")}</h4>
-                    <div className="space-y-3">
-                      {selectedAddOns.map(id => {
-                        const item = currentService.addOns.find(a => a.id === id);
-                        if (!item) return null;
-                        return (
-                          <div key={id} className="flex justify-between items-center">
-                            <span className="text-gray-300 font-khmer">{t(item.label, item.labelKm)}</span>
-                            <span className="text-green-400 font-mono font-bold">+${item.price}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                  <div className="space-y-2">
+                    <span className="text-xs text-gray-500 uppercase tracking-wider font-bold">{t("Added Features:", "មុខងារបន្ថែម:")}</span>
+                    {selectedAddOns.map(id => {
+                      const addon = currentService.addOns.find(a => a.id === id)!;
+                      return (
+                        <div key={id} className="flex justify-between items-center text-sm">
+                          <span className="text-gray-400 font-khmer">{t(addon.label, addon.labelKm)}</span>
+                          <span className="text-gray-300 font-mono">+${addon.price}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
-                {/* Total Cost */}
-                <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl p-8 text-center">
-                  <div className="text-gray-200 text-sm uppercase tracking-wider font-khmer mb-2">{t("Total Estimated Cost", "តម្លៃសរុបប៉ាន់ស្មាន")}</div>
-                  <div className="text-5xl font-black text-white font-mono mb-2">${totalCost}</div>
-                  <div className="text-xs text-indigo-200 font-khmer">{t("*Final price may vary based on requirements", "*តម្លៃចុងក្រោយអាចផ្លាស់ប្តូរដោយផ្អែកលើតម្រូវការ")}</div>
+                <div className="pt-4 border-t border-white/10 flex justify-between items-center">
+                  <span className="text-xl font-bold text-white font-khmer">{t("Total Estimate:", "តម្លៃសរុប:")}</span>
+                  <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 font-mono">
+                    ${totalCost}
+                  </span>
                 </div>
               </div>
             </div>
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex gap-4 mt-12 pt-8 border-t border-white/10">
-            <button
-              onClick={goToPrevStep}
-              disabled={currentStep === 'service'}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all font-khmer ${
-                currentStep === 'service'
-                  ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                  : 'bg-gray-800 text-white hover:bg-gray-700'
-              }`}
-            >
-              <ChevronLeft size={18} /> {t("Back", "ថយក្រោយ")}
-            </button>
-
-            {currentStep !== 'summary' ? (
+          <div className="mt-12 flex items-center justify-between gap-4">
+            {currentStep !== 'service' ? (
               <button
-                onClick={goToNextStep}
-                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold bg-indigo-600 text-white hover:bg-indigo-500 transition-all font-khmer"
+                onClick={goToPrevStep}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gray-800 text-white font-bold hover:bg-gray-700 transition-all font-khmer active:scale-95"
               >
-                {t("Next", "បន្ទាប់")} <ChevronRight size={18} />
+                <ChevronLeft size={20} /> {t("Back", "ថយក្រោយ")}
               </button>
             ) : (
-              <>
-                <a 
-                  href={`mailto:creative.ponloe.org@gmail.com?subject=Quote Request for ${currentService.label}&body=I am interested in a ${currentService.label} project with the following features: ${selectedAddOns.join(', ')}. Estimated budget: $${totalCost}.`}
-                  className="flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold bg-white text-gray-950 hover:bg-gray-200 transition-all font-khmer"
-                >
-                  {t("Get Official Quote", "ស្នើសុំតម្លៃផ្លូវការ")} <ArrowRight size={18} />
-                </a>
-                <button 
-                  onClick={resetEstimator}
-                  className="px-6 py-3 rounded-xl font-bold bg-white/5 text-gray-400 hover:bg-white/10 transition-all font-khmer flex items-center gap-2"
-                >
-                  <RefreshCcw size={18} /> {t("Reset", "ឡើងវិញ")}
-                </button>
-              </>
+              <div />
+            )}
+
+            {currentStep === 'summary' ? (
+              <button
+                onClick={resetEstimator}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500 transition-all font-khmer active:scale-95"
+              >
+                <RefreshCcw size={20} /> {t("Start Over", "គណនាម្ដងទៀត")}
+              </button>
+            ) : (
+              <button
+                onClick={goToNextStep}
+                className="flex items-center gap-2 px-8 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-500 transition-all font-khmer ml-auto active:scale-95"
+              >
+                {t("Continue", "បន្ត")} <ChevronRight size={20} />
+              </button>
             )}
           </div>
         </div>
-      </div>
 
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-          animation: fadeIn 0.3s ease-out forwards;
-        }
-        .scale-102 {
-          transform: scale(1.02);
-        }
-      `}</style>
+        <RevealOnScroll delay={200}>
+          <div className="mt-12 text-center">
+            <p className="text-gray-500 text-sm font-khmer mb-6">
+              {t(
+                "*This is an approximate estimation. Actual pricing may vary based on specific requirements.",
+                "*នេះគ្រាន់តែជាតម្លៃប៉ាន់ស្មានប៉ុណ្ណោះ។ តម្លៃជាក់ស្តែងអាចប្រែប្រួលទៅតាមតម្រូវការជាក់លាក់។"
+              )}
+            </p>
+            <button className="inline-flex items-center gap-2 px-8 py-4 rounded-full bg-white text-gray-950 font-bold hover:bg-indigo-50 transition-all transform hover:-translate-y-1 font-khmer">
+              {t("Get Official Quote", "ទទួលបានការដកស្រង់តម្លៃផ្លូវការ")} <ArrowRight size={20} />
+            </button>
+          </div>
+        </RevealOnScroll>
+      </div>
     </section>
   );
 };
