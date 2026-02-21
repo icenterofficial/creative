@@ -69,8 +69,14 @@ const Header: React.FC = () => {
           // Only update URL hash on Desktop/Tablet (width > 768px) to prevent scroll lag on mobile
           const isMobile = window.innerWidth <= 768;
           const currentHash = window.location.hash;
+          const currentPath = window.location.pathname;
           
-          if (!isMobile && !currentHash.includes('/') && currentHash !== '#admin') {
+          // CRITICAL FIX: Only update hash if we are on the homepage (not a deep link path like /portfolio/...)
+          const isDeepLink = currentPath.split('/').filter(Boolean).some(part => 
+              ['portfolio', 'services', 'insights', 'team', 'estimator'].includes(part)
+          );
+
+          if (!isMobile && !isDeepLink && currentHash !== '#admin') {
               window.history.replaceState(null, '', `#${newSection}`);
           }
         }
