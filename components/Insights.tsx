@@ -91,16 +91,17 @@ const Insights: React.FC<InsightsProps> = ({ showPopupOnMount = false, usePathRo
   // Helper component to render Author Info on Card
   const AuthorBadge = ({ authorId }: { authorId: string }) => {
       const author = (team || []).find(t => t.id === authorId);
-      if (!author) return null;
+      // Fallback protection: If author is null, don't break the app
+      if (!author || !author.image) return null;
       return (
           <div className="flex items-center gap-2 group/author z-10 relative">
              <img 
                 src={author.image} 
-                alt={author.name} 
+                alt={author.name || 'Author'} 
                 className="w-6 h-6 rounded-full object-cover border border-white/20 group-hover/author:border-indigo-400 transition-colors" 
              />
              <span className="text-xs text-gray-400 font-bold group-hover/author:text-indigo-300 transition-colors truncate max-w-[100px]">
-                 {author.name}
+                 {author.name || 'Unknown'}
              </span>
           </div>
       );
@@ -146,8 +147,8 @@ const Insights: React.FC<InsightsProps> = ({ showPopupOnMount = false, usePathRo
                 {/* Image Container */}
                 <div className="relative h-60 overflow-hidden">
                   <img 
-                    src={post.image} 
-                    alt={post.title} 
+                    src={post.image || ''} 
+                    alt={post.title || ''} 
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent opacity-60" />
@@ -155,7 +156,7 @@ const Insights: React.FC<InsightsProps> = ({ showPopupOnMount = false, usePathRo
                   {/* Category Badge */}
                   <div className="absolute top-4 left-4">
                     <span className="px-3 py-1 rounded-full bg-indigo-600/80 backdrop-blur-sm text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1 border border-white/10">
-                      <Tag size={12} /> {post.category}
+                      <Tag size={12} /> {post.category || 'Uncategorized'}
                     </span>
                   </div>
                 </div>
@@ -166,17 +167,19 @@ const Insights: React.FC<InsightsProps> = ({ showPopupOnMount = false, usePathRo
                   <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-3">
                       <div className="flex items-center gap-2 text-gray-400 text-xs font-mono">
                         <Calendar size={12} />
-                        <span>{post.date}</span>
+                        <span>{post.date || ''}</span>
                       </div>
                       <AuthorBadge authorId={post.authorId} />
                   </div>
                   
+                  {/* Fixed Fallback for Title */}
                   <h3 className="text-xl font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors line-clamp-2 font-khmer">
-                    {t(post.title, post.titleKm)}
+                    {t(post.title || '', post.titleKm || post.title || '')}
                   </h3>
                   
+                  {/* Fixed Fallback for Excerpt */}
                   <p className="text-gray-400 text-sm leading-relaxed mb-6 line-clamp-3 flex-1 font-khmer">
-                    {post.excerpt}
+                    {post.excerpt || ''}
                   </p>
 
                   <div className="pt-4 border-t border-white/5 mt-auto">
@@ -204,7 +207,8 @@ const Insights: React.FC<InsightsProps> = ({ showPopupOnMount = false, usePathRo
       </div>
 
       {/* "View All Posts" Modal */}
-      {isViewAllOpen && createPortal(
+      {/* Fallback protection for createPortal to ensure window is available */}
+      {isViewAllOpen && typeof window !== 'undefined' && createPortal(
          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 overflow-hidden">
             <div 
                 className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
@@ -231,17 +235,17 @@ const Insights: React.FC<InsightsProps> = ({ showPopupOnMount = false, usePathRo
                              <article 
                                 key={post.id} 
                                 className="group flex flex-col bg-white/5 border border-white/5 rounded-xl overflow-hidden hover:border-white/20 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
-                                onClick={() => openItem(post.slug || post.id)}
+                                onClick={() => { handleViewAllClose(); openItem(post.slug || post.id); }}
                             >
                                 <div className="relative h-48 overflow-hidden">
                                     <img 
-                                        src={post.image} 
-                                        alt={post.title} 
+                                        src={post.image || ''} 
+                                        alt={post.title || ''} 
                                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                     />
                                     <div className="absolute top-3 left-3">
                                         <span className="px-2 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 border border-white/10">
-                                            <Tag size={10} /> {post.category}
+                                            <Tag size={10} /> {post.category || 'Uncategorized'}
                                         </span>
                                     </div>
                                 </div>
@@ -249,16 +253,19 @@ const Insights: React.FC<InsightsProps> = ({ showPopupOnMount = false, usePathRo
                                      <div className="flex items-center justify-between mb-2">
                                         <div className="flex items-center gap-2 text-gray-400 text-xs font-mono">
                                             <Calendar size={12} />
-                                            <span>{post.date}</span>
+                                            <span>{post.date || ''}</span>
                                         </div>
                                         <AuthorBadge authorId={post.authorId} />
                                      </div>
                                     
+                                    {/* Fixed Fallback for Title */}
                                     <h3 className="text-lg font-bold text-white mb-2 group-hover:text-indigo-400 transition-colors line-clamp-2 font-khmer">
-                                        {t(post.title, post.titleKm)}
+                                        {t(post.title || '', post.titleKm || post.title || '')}
                                     </h3>
+                                    
+                                    {/* Fixed Fallback for Excerpt */}
                                     <p className="text-gray-400 text-xs leading-relaxed line-clamp-2 flex-1 font-khmer">
-                                        {post.excerpt}
+                                        {post.excerpt || ''}
                                     </p>
                                 </div>
                             </article>
