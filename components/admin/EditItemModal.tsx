@@ -1,6 +1,5 @@
-
 import React, { useState, useRef } from 'react';
-import { X, Save, Loader2, Upload, Image as ImageIcon, ExternalLink, Lock, Facebook, Send, Link as LinkIcon, Tag, FileText, Target, Zap, TrendingUp, Images } from 'lucide-react';
+import { X, Save, Loader2, Upload, Image as ImageIcon, ExternalLink, Lock, Facebook, Send, Link as LinkIcon, Tag, FileText, Target, Zap, TrendingUp, Images, Plus as PlusIcon } from 'lucide-react';
 import { getSupabaseClient } from '../../lib/supabase';
 import { useData } from '../../contexts/DataContext';
 import RichTextEditor from './editor/RichTextEditor';
@@ -28,6 +27,10 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
   // Gallery specific upload ref
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const [isGalleryUploading, setIsGalleryUploading] = useState(false);
+
+  // Cover Image upload ref (NEW)
+  const coverImageInputRef = useRef<HTMLInputElement>(null);
+  const [isCoverImageUploading, setIsCoverImageUploading] = useState(false);
 
   if (!isOpen || !editingItem) return null;
 
@@ -78,6 +81,36 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
       }
   };
 
+  // Cover Image Upload Handler (NEW)
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Validation
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      
+      if (file.size > maxSize) {
+          alert('រូបភាពធំពេក! សូមជ្រើសរើសរូបភាពតូចជាង 5MB');
+          return;
+      }
+      
+      if (!allowedTypes.includes(file.type)) {
+          alert('ប្រភេទឯកសារមិនត្រឹមត្រូវ! សូមប្រើ JPG, PNG ឬ WEBP');
+          return;
+      }
+
+      setIsCoverImageUploading(true);
+      try {
+          const url = await uploadImage(file);
+          if (url) {
+              setEditingItem({ ...editingItem, coverImage: url });
+          }
+      } finally {
+          setIsCoverImageUploading(false);
+      }
+  };
+
   const handleSocialChange = (platform: 'facebook' | 'telegram', value: string) => {
       const currentSocials = editingItem.socials || {};
       setEditingItem({
@@ -105,7 +138,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
         <form onSubmit={onSave} className="space-y-4 flex-1">
           {Object.keys(editingItem).map((key) => {
             // Skip fields handled specially or internal fields
-            if (['id', 'comments', 'replies', 'created_at', '_iconString', 'slug', 'orderIndex', 'order_index', 'challenge', 'challengeKm', 'solution', 'solutionKm', 'result', 'resultKm', 'createdBy', 'gallery'].includes(key)) return null;
+            if (['id', 'comments', 'replies', 'created_at', '_iconString', 'slug', 'orderIndex', 'order_index', 'challenge', 'challengeKm', 'solution', 'solutionKm', 'result', 'resultKm', 'createdBy', 'gallery', 'coverImage'].includes(key)) return null;
             
             const value = editingItem[key];
             let label = key.charAt(0).toUpperCase() + key.slice(1);
@@ -213,6 +246,77 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
             );
           })}
 
+          {/* --- COVER IMAGE SECTION FOR TEAM MEMBERS (NEW) --- */}
+          {activeTab === 'team' && (
+              <div className="mt-6 pt-6 border-t border-white/10">
+                  <label className="block text-xs font-bold text-indigo-400 mb-3 flex items-center gap-2 uppercase tracking-wider">
+                      <ImageIcon size={14} /> Cover Image (ផ្ទៃខាងក្រោយ)
+                  </label>
+                  
+                  {/* Cover Image Preview */}
+                  {editingItem.coverImage && (
+                      <div className="relative w-full h-40 rounded-xl overflow-hidden border border-white/10 mb-3 group">
+                          <img 
+                              src={editingItem.coverImage} 
+                              alt="Cover Preview" 
+                              className="w-full h-full object-cover"
+                          />
+                          <button
+                              type="button"
+                              onClick={() => setEditingItem({ ...editingItem, coverImage: '' })}
+                              className="absolute top-2 right-2 p-2 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                              <X size={16} />
+                          </button>
+                      </div>
+                  )}
+                  
+                  {/* Upload Controls */}
+                  <div className="space-y-2">
+                      <input 
+                          type="text" 
+                          placeholder="ឬ Paste Cover Image URL នៅទីនេះ" 
+                          className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white text-sm" 
+                          value={editingItem.coverImage || ''} 
+                          onChange={(e) => setEditingItem({ ...editingItem, coverImage: e.target.value })} 
+                      />
+                      <div className="flex gap-2">
+                          <input 
+                              type="file" 
+                              ref={coverImageInputRef} 
+                              className="hidden" 
+                              accept="image/jpeg,image/png,image/webp"
+                              onChange={handleCoverImageUpload}
+                          />
+                          <button 
+                              type="button" 
+                              onClick={() => coverImageInputRef.current?.click()} 
+                              disabled={isCoverImageUploading}
+                              className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-600 border border-indigo-500/50 rounded-lg text-xs text-white font-bold flex items-center justify-center gap-2 transition-colors"
+                          >
+                              {isCoverImageUploading ? (
+                                  <>
+                                      <Loader2 size={14} className="animate-spin" />
+                                      កំពុងផ្ទុក...
+                                  </>
+                              ) : (
+                                  <>
+                                      <Upload size={14} />
+                                      Upload Cover Image
+                                  </>
+                              )}
+                          </button>
+                      </div>
+                      <p className="text-xs text-gray-500 font-khmer">
+                          ✓ ទំហំ: ឯកសារ JPG, PNG ឬ WEBP (អតិបរមា 5MB)
+                      </p>
+                      <p className="text-xs text-gray-500 font-khmer">
+                          ✓ ផ្ទៃលក្ខណៈ: 16:9 ឬ 21:9 ផ្តល់លទ្ធផលល្អបំផុត
+                      </p>
+                  </div>
+              </div>
+          )}
+
           {/* --- GALLERY SECTION FOR PROJECTS --- */}
           {activeTab === 'projects' && (
               <div className="mb-4">
@@ -305,7 +409,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                                   className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white h-32 focus:ring-2 focus:ring-blue-500/50 outline-none text-sm resize-none font-khmer"
                                   value={editingItem.solutionKm || ''}
                                   onChange={(e) => setEditingItem({ ...editingItem, solutionKm: e.target.value })}
-                                  placeholder="តើយើងដោះស្រាយដោយរបៀបណា?"
+                                  placeholder="តើយើងដោះស្រាយវាដោយរបៀបណា?"
                               />
                           </div>
                       </div>
@@ -318,7 +422,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                                   className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white h-32 focus:ring-2 focus:ring-green-500/50 outline-none text-sm resize-none"
                                   value={editingItem.result || ''}
                                   onChange={(e) => setEditingItem({ ...editingItem, result: e.target.value })}
-                                  placeholder="What was the impact?"
+                                  placeholder="What was the outcome?"
                               />
                           </div>
                           <div className="space-y-2">
@@ -327,7 +431,7 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
                                   className="w-full bg-gray-800 border border-white/10 rounded-lg p-3 text-white h-32 focus:ring-2 focus:ring-green-500/50 outline-none text-sm resize-none font-khmer"
                                   value={editingItem.resultKm || ''}
                                   onChange={(e) => setEditingItem({ ...editingItem, resultKm: e.target.value })}
-                                  placeholder="តើលទ្ធផលទទួលបានអ្វីខ្លះ?"
+                                  placeholder="តើលទ្ធផលគឺជាអ្វី?"
                               />
                           </div>
                       </div>
@@ -335,17 +439,17 @@ const EditItemModal: React.FC<EditItemModalProps> = ({
               </div>
           )}
 
-          <button type="submit" disabled={isSaving || isUploading || isGalleryUploading} className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-colors flex justify-center items-center gap-2 mt-6">
-            {isSaving ? <><Loader2 size={18} className="animate-spin" /> Saving...</> : <><Save size={18} /> Save & Publish</>}
-          </button>
+          <div className="flex gap-3 justify-end mt-8 pt-6 border-t border-white/10">
+            <button type="button" onClick={onCancel} className="px-4 py-2 bg-gray-800 border border-white/10 rounded-lg text-white text-sm font-bold hover:bg-gray-700 transition-colors">Cancel</button>
+            <button type="submit" disabled={isSaving} className="px-4 py-2 bg-indigo-600 border border-indigo-500 rounded-lg text-white text-sm font-bold hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2 transition-colors">
+              {isSaving && <Loader2 size={14} className="animate-spin" />}
+              {isSaving ? 'Saving...' : 'Save Changes'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
   );
 };
-
-const PlusIcon = ({ size }: { size: number }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-);
 
 export default EditItemModal;
