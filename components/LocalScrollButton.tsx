@@ -50,10 +50,10 @@ const LocalScrollButton: React.FC<LocalScrollButtonProps> = ({ containerRef }) =
   const strokeDashoffset = circumference - (scrollProgress / 100) * circumference;
 
   return (
-    <div className="absolute bottom-8 right-8 z-50 flex items-center justify-center">
+    <div className="fixed bottom-8 right-8 z-50 flex items-center justify-center pointer-events-none">
       <button
         onClick={handleClick}
-        className="relative flex items-center justify-center w-[46px] h-[46px] rounded-full bg-gray-900/80 backdrop-blur-md shadow-2xl group transition-transform hover:scale-105 border border-white/10 active:scale-95"
+        className="relative flex items-center justify-center w-[46px] h-[46px] rounded-full bg-gray-900/80 backdrop-blur-md shadow-2xl group transition-transform hover:scale-105 border border-white/10 active:scale-95 pointer-events-auto"
         aria-label={isAtTop ? "Scroll to Bottom" : "Scroll to Top"}
       >
         {/* SVG Circular Progress */}
