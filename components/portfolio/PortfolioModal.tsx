@@ -34,7 +34,7 @@ const PortfolioModal: React.FC<PortfolioModalProps> = ({ project, onClose, usePa
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4">
        <div className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in" onClick={handleClose} />
        <button onClick={handleClose} className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all z-50 border border-white/10 active:scale-95">
           <X size={24} />
