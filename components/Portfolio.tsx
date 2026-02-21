@@ -28,7 +28,7 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
   const { projects = [] } = useData();
 
   // Use Router Hook: Section 'portfolio' with path-based routing
-  const { activeId, openItem, closeItem } = useRouter('portfolio', '', usePathRouting);
+  const { activeId, openItem, closeItem, setPreviousPath } = useRouter('portfolio', '', usePathRouting);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [isViewAllOpen, setIsViewAllOpen] = useState(showPopupOnMount || false);
 
@@ -75,7 +75,10 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
       const currentLang = window.location.pathname.split('/')[1];
       const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
       const langPrefix = currentLang && supportedLangs.includes(currentLang) ? `/${currentLang}` : '';
-      window.history.pushState({ portfolioOpen: true }, '', `${langPrefix}/portfolio`);
+      const viewAllPath = `${langPrefix}/portfolio`;
+      window.history.pushState({ portfolioOpen: true }, '', viewAllPath);
+      // ផ្ទុក view all path សម្រាប់ប្រើក្រោយ
+      setPreviousPath(viewAllPath);
       window.dispatchEvent(new Event('popstate'));
     } else {
       window.location.hash = 'portfolio';
@@ -87,6 +90,17 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
     setIsViewAllOpen(false);
     onPopupClose?.();
     closeItem(); // Use the hook's closeItem to handle URL restoration
+  };
+
+  const handleProjectClickFromViewAll = (projectSlug: string) => {
+    hapticTap();
+    // ពេលចុចលើ project ក្នុង View All Popup ឱ្យរក្សាទុក View All path
+    const currentLang = window.location.pathname.split('/')[1];
+    const supportedLangs = ['en', 'km', 'fr', 'ja', 'ko', 'de', 'zh-CN', 'es', 'ar'];
+    const langPrefix = currentLang && supportedLangs.includes(currentLang) ? `/${currentLang}` : '';
+    const viewAllPath = `${langPrefix}/portfolio`;
+    setPreviousPath(viewAllPath);
+    openItem(projectSlug);
   };
 
   const filteredProjects = (projects || []).filter(p => filter === 'all' || p.category === filter);
@@ -114,7 +128,17 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
         <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
           {isFilteringLoading ? <SkeletonCard count={6} className="break-inside-avoid" /> : (
             filteredProjects.slice(0, 6).map((project, index) => (
-              <PortfolioCard key={project.id} project={project} index={index} onClick={() => { hapticTap(); openItem(project.slug || project.id); }} />
+              <PortfolioCard 
+                key={project.id} 
+                project={project} 
+                index={index} 
+                onClick={() => { 
+                  hapticTap(); 
+                  // ពេលចុចលើ project ពីផ្នែក featured ឱ្យលុបចោល previous path
+                  setPreviousPath(null);
+                  openItem(project.slug || project.id); 
+                }} 
+              />
             ))
           )}
         </div>
@@ -145,7 +169,11 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
                 <div className="flex-1 overflow-y-auto p-6 md:p-8 scrollbar-hide">
                     <div className="columns-1 md:columns-2 lg:columns-3 gap-6 space-y-6">
                         {(projects || []).map((project) => (
-                             <div key={project.id} onClick={() => { hapticTap(); openItem(project.slug || project.id); }} className="group relative rounded-xl overflow-hidden break-inside-avoid bg-gray-800 border border-white/5 hover:border-indigo-500/30 transition-all duration-300 cursor-pointer active:scale-95">
+                             <div 
+                               key={project.id} 
+                               onClick={() => handleProjectClickFromViewAll(project.slug || project.id)} 
+                               className="group relative rounded-xl overflow-hidden break-inside-avoid bg-gray-800 border border-white/5 hover:border-indigo-500/30 transition-all duration-300 cursor-pointer active:scale-95"
+                             >
                                 <img src={project.image} alt={project.title} className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
                                 <div className="absolute inset-0 bg-gray-950/80 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-center items-center text-center p-4">
                                     <h4 className="text-white text-lg font-bold font-khmer">{project.title}</h4>
