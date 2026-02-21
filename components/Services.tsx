@@ -30,7 +30,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 // Map service IDs to Unsplash Images (Fallback if no dynamic image is provided)
 const SERVICE_IMAGES_FALLBACK: Record<string, string> = {
-  graphic: 'https://raw.githubusercontent.com/icenterofficial/creative/refs/heads/main/public/images/projects/graphic/iStock-1191609321%20(1).jpg',
+  graphic: 'https://raw.githubusercontent.com/icenterofficial/creative/refs/heads/main/public/images/projects/graphic/iStock-1191609321%20(1 ).jpg',
   architecture: 'https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&q=80&w=600',
   calligraphy: 'https://raw.githubusercontent.com/icenterofficial/creative/refs/heads/main/public/images/projects/calligraphy/1.jpg',
   translation: 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&q=80&w=600',
@@ -44,7 +44,7 @@ const SERVICE_IMAGES_FALLBACK: Record<string, string> = {
 interface SortableServiceItemProps {
   service: Service;
   index: number;
-  onSelect: (service: Service) => void;
+  onSelect: (service: Service ) => void;
   t: (en: string, km?: string) => string;
 }
 
@@ -85,13 +85,16 @@ const SortableServiceItem: React.FC<SortableServiceItemProps> = ({ service, inde
       {/* Inner Card Content */}
       <div className={`relative h-full bg-gray-900/90 backdrop-blur-xl rounded-[23px] p-8 border border-white/10 transition-all duration-300 overflow-hidden ${isDragging ? 'bg-gray-800 scale-[1.02] shadow-2xl' : 'hover:bg-gray-900/80'}`}>
           
-          {/* Background Image on Hover (Subtle) */}
+          {/* Background Image Always Visible with Hover Darkening */}
           {bgImage && (
             <div 
-                className="absolute inset-0 bg-cover bg-center opacity-0 group-hover:opacity-20 transition-opacity duration-700 ease-out grayscale group-hover:grayscale-0 pointer-events-none"
+                className="absolute inset-0 bg-cover bg-center opacity-40 group-hover:opacity-60 transition-opacity duration-500 ease-out grayscale-[0.3] group-hover:grayscale-0 pointer-events-none"
                 style={{ backgroundImage: `url('${bgImage}')` }}
             />
           )}
+          
+          {/* Dark Overlay for Better Text Readability - Always Visible */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-gray-900/40 to-gray-950/80 group-hover:from-transparent group-hover:via-gray-900/50 group-hover:to-gray-950/90 transition-all duration-500 pointer-events-none" />
 
           {/* Hover Internal Glow (Existing) - Placed AFTER image to overlay color tint */}
           <div className={`absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity duration-500 bg-gradient-to-br ${service.color.replace('bg-', 'from-')} to-transparent rounded-[23px] pointer-events-none`} />
@@ -217,7 +220,8 @@ const Services: React.FC = () => {
               <div className="max-w-3xl">
                   <span className="text-indigo-400 font-bold tracking-wider uppercase text-sm mb-4 block font-khmer">{t('Our Expertise', 'ជំនាញរបស់យើង')}</span>
                   <h2 className="text-4xl md:text-5xl font-bold text-white font-khmer leading-tight">
-                      {t('Comprehensive solutions for', 'ដំណោះស្រាយពេញលេញសម្រាប់')} <br/>
+                      {t('Comprehensive solutions for', 'ដំណោះស្រាយពេញលេញសម្រាប់')}   
+
                       <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">{t('Digital Dominance.', 'ភាពលេចធ្លោលើឌីជីថល')}</span>
                   </h2>
               </div>
@@ -273,79 +277,93 @@ const Services: React.FC = () => {
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           {/* Backdrop with strong blur to focus attention */}
           <div 
-            className="absolute inset-0 bg-gray-950/80 backdrop-blur-lg animate-fade-in" 
+            className="absolute inset-0 bg-gray-950/90 backdrop-blur-2xl animate-fade-in"
             onClick={closeItem}
           />
           
-          {/* Modal Content */}
-          <div className="relative w-full max-w-2xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10">
-            {/* Top Gradient Line */}
-            <div className={`h-1 w-full bg-gradient-to-r ${selectedService.color.replace('bg-', 'from-')} to-purple-500`} />
+          <div className="relative w-full max-w-4xl max-h-[90vh] bg-gray-900 border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden animate-scale-up flex flex-col md:flex-row">
             
-            <div className="p-8 md:p-10 relative overflow-y-auto max-h-[85vh] md:max-h-auto scrollbar-hide">
-               {/* Close Button */}
-               <button 
-                onClick={closeItem}
-                className="absolute top-6 right-6 p-2 rounded-full bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all z-20"
-               >
-                 <X size={24} />
-               </button>
+            {/* Left: Image Section */}
+            <div className="w-full md:w-1/2 h-64 md:h-auto relative">
+                <img 
+                    src={selectedService.image || SERVICE_IMAGES_FALLBACK[selectedService.id]} 
+                    alt={selectedService.title} 
+                    className="w-full h-full object-cover"
+                />
+                <div className={`absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent`} />
+                
+                <div className="absolute bottom-8 left-8">
+                     <div className={`p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-white mb-4 inline-block ${selectedService.color.replace('bg-', 'text-')}`}>
+                        {selectedService.icon}
+                    </div>
+                    <h3 className="text-3xl font-bold text-white font-khmer">{t(selectedService.title, selectedService.titleKm)}</h3>
+                </div>
+            </div>
 
-               <div className="flex items-center gap-6 mb-8">
-                  <div className={`p-4 rounded-2xl ${selectedService.color} text-white shadow-lg shadow-${selectedService.color.replace('bg-', '')}/20`}>
-                    {React.cloneElement(selectedService.icon as React.ReactElement<any>, { size: 32 })}
-                  </div>
-                  <div>
-                    <h3 className="text-3xl font-bold text-white mb-1 font-khmer">{t(selectedService.title, selectedService.titleKm)}</h3>
-                    <p className="text-gray-400 font-khmer">{t(selectedService.subtitle, selectedService.subtitleKm || selectedService.subtitle)}</p>
-                  </div>
-               </div>
+            {/* Right: Content Section */}
+            <div className="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto scrollbar-hide">
+                <button 
+                    onClick={closeItem}
+                    className="absolute top-6 right-6 p-3 bg-white/5 hover:bg-white/10 text-white rounded-full transition-all border border-white/10 z-20"
+                >
+                    <X size={20} />
+                </button>
 
-               <div className="space-y-8">
-                 <div>
-                   <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 font-khmer">{t('Overview', 'សេចក្តីសង្ខេប')}</h4>
-                   <p className="text-lg text-gray-200 leading-relaxed font-khmer">
-                     {t(selectedService.description, selectedService.descriptionKm || selectedService.description)}
-                   </p>
-                 </div>
+                <div className="space-y-8">
+                    <div>
+                        <span className="text-indigo-400 font-bold tracking-widest uppercase text-xs mb-2 block">{t('Service Details', 'ព័ត៌មានលម្អិត')}</span>
+                        <p className="text-gray-300 leading-relaxed font-khmer text-lg">
+                            {t(selectedService.description, selectedService.descriptionKm || selectedService.description)}
+                        </p>
+                    </div>
 
-                 <div>
-                   <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4 font-khmer">{t("What's Included", "អ្វីដែលរួមបញ្ចូល")}</h4>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     {(t(selectedService.features.join('|'), (selectedService.featuresKm || selectedService.features).join('|'))).split('|').map((feature, idx) => (
-                       <div key={idx} className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5">
-                         <CheckCircle2 size={18} className="text-green-400 shrink-0" />
-                         <span className="text-gray-200 text-sm font-medium font-khmer">{feature}</span>
-                       </div>
-                     ))}
-                   </div>
-                 </div>
+                    {selectedService.features && (
+                        <div className="space-y-4">
+                            <h4 className="text-white font-bold font-khmer flex items-center gap-2">
+                                <CheckCircle2 size={18} className="text-green-400" />
+                                {t('Key Features', 'ចំណុចពិសេសៗ')}
+                            </h4>
+                            <ul className="grid grid-cols-1 gap-3">
+                                {selectedService.features.map((feature, idx) => (
+                                    <li key={idx} className="flex items-center gap-3 text-gray-400 text-sm font-khmer bg-white/5 p-3 rounded-xl border border-white/5">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                                        {t(feature, feature)}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
 
-                 <div className="pt-6 border-t border-white/10 flex justify-end">
-                    <a 
-                      href="#contact" 
-                      onClick={closeItem}
-                      className="px-6 py-3 rounded-full bg-white text-gray-950 font-bold hover:scale-105 transition-transform flex items-center gap-2 font-khmer"
-                    >
-                      {t('Get Started', 'ចាប់ផ្តើម')}
-                      <ArrowUpRight size={18} />
-                    </a>
-                 </div>
-               </div>
+                    <div className="pt-4">
+                         <a 
+                            href="#contact" 
+                            onClick={(e) => {
+                                e.preventDefault();
+                                const element = document.getElementById('contact');
+                                if (element) {
+                                    element.scrollIntoView({ behavior: 'smooth' });
+                                    closeItem();
+                                }
+                            }}
+                            className="w-full py-4 rounded-2xl bg-white text-gray-950 font-bold text-center hover:bg-indigo-50 transition-all flex items-center justify-center gap-2 font-khmer"
+                        >
+                            {t('Get Started', 'ចាប់ផ្តើមឥឡូវនេះ')} <ArrowUpRight size={18} />
+                        </a>
+                    </div>
+                </div>
             </div>
           </div>
         </div>,
         document.body
       )}
-      
-      {/* Inline Styles for Animation */}
+
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; }
           to { opacity: 1; }
         }
         @keyframes scaleUp {
-          from { opacity: 0; transform: scale(0.95) translateY(10px); }
+          from { opacity: 0; transform: scale(0.95) translateY(20px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
         }
         .animate-fade-in {
