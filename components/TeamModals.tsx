@@ -39,7 +39,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
     return createPortal(
         <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4 overflow-hidden">
             <div 
-                className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
                 onClick={onClose}
             />
             <div className="relative w-full max-w-lg bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-[10003] flex flex-col max-h-[90vh]">
@@ -158,7 +158,7 @@ export const AuthorArticlesModal: React.FC<AuthorArticlesModalProps> = ({ author
     return createPortal(
         <div className="fixed inset-0 z-[10004] flex items-center justify-center p-4 overflow-hidden">
             <div 
-                className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
                 onClick={onClose}
             />
             <div className="relative w-full max-w-2xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-[10005] flex flex-col max-h-[80vh]">
@@ -377,7 +377,7 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
     return createPortal(
         <div className="fixed inset-0 z-[10006] flex items-center justify-center p-0 md:p-4 overflow-hidden">
             <div 
-                className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
                 onClick={onClose}
             />
             <div className="relative w-full max-w-4xl h-full md:h-[95vh] bg-gray-900 md:border md:border-white/10 md:rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col z-[10007]">
@@ -390,7 +390,7 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
                 </button>
 
                 <div className="flex-1 overflow-y-auto scrollbar-hide relative" ref={scrollRef}>
-                    <LocalScrollButton scrollContainerRef={scrollRef} />
+                    <LocalScrollButton containerRef={scrollRef} />
                     
                     {/* Hero Image */}
                     <div className="relative h-[40vh] md:h-[50vh] shrink-0">
