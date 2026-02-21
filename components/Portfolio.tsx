@@ -137,9 +137,9 @@ const Portfolio: React.FC<PortfolioProps> = ({ showPopupOnMount = false, onPopup
 
       {/* View All Projects Modal */}
       {isViewAllOpen && createPortal(
-         <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4">
+         <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 overflow-hidden">
             <div className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in" onClick={handleViewAllClose} />
-             <div className="relative w-full max-w-7xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col">
+             <div className="relative w-full max-w-7xl h-full md:h-[90vh] bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col z-[10002]">
                 <div className="flex justify-between items-center p-6 md:p-8 border-b border-white/10 bg-gray-900 z-10">
                     <div>
                         <h3 className="text-2xl font-bold text-white font-khmer">{t('All Projects', 'គម្រោងទាំងអស់')}</h3>
