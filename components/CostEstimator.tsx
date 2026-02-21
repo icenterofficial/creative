@@ -17,6 +17,7 @@ interface AddOn {
   label: string;
   labelKm: string;
   price: number;
+  unit?: string; // Added unit support (e.g., /pc)
 }
 
 interface ServiceOption {
@@ -75,12 +76,24 @@ const CostEstimator: React.FC<CostEstimatorProps> = ({ showPopupOnMount = false,
       label: 'Graphic Design',
       labelKm: 'រចនាក្រាហ្វិក',
       icon: <Palette size={32} strokeWidth={1.5} />,
-      basePrice: 50,
+      basePrice: 0, // UPDATED: Base price is now 0 as per request
       addOns: [
-        { id: 'logo', label: 'Logo Design', labelKm: 'រចនាឡូហ្គោ', price: 100 },
-        { id: 'branding', label: 'Full Branding Kit', labelKm: 'កញ្ចប់ម៉ាកយីហោពេញលេញ', price: 250 },
-        { id: 'social', label: 'Social Media Pack (5 Posts)', labelKm: 'រូបភាពផុស Facebook (៥ រូប)', price: 80 },
-        { id: 'print', label: 'Print Materials', labelKm: 'សម្ភារៈបោះពុម្ព', price: 120 },
+        // Section: Poster Design (រចនាផ្ទាំងរូបភាព)
+        { id: 'poster_1pc', label: 'Poster Design (1pc)', labelKm: 'រចនាផ្ទាំងរូបភាព (1pc)', price: 10 },
+        { id: 'poster_10pc', label: 'Poster Package (10pcs)', labelKm: 'កញ្ចប់រចនាផ្ទាំងរូបភាព (10pcs)', price: 95 },
+        { id: 'poster_15pc', label: 'Monthly Package (15pcs)', labelKm: 'កញ្ចប់រចនាផ្ទាំងរូបភាពប្រចាំខែ (15pcs)', price: 130 },
+        { id: 'poster_event', label: 'Event Poster (1pc)', labelKm: 'កញ្ចប់រចនាផ្ទាំងរូបភាពបុណ្យជាតិ (1pc)', price: 10 },
+
+        // Section: Logo Design (រចនាសញ្ញាសម្គាល់)
+        { id: 'logo_new', label: 'Logo Design (New)', labelKm: 'រចនាផ្លាកសញ្ញាថ្មី (1pc)', price: 69 },
+        { id: 'logo_redesign', label: 'Logo Redesign', labelKm: 'រចនាផ្លាកសញ្ញាឡើងវិញ (Redesign)', price: 22 },
+        { id: 'logo_branding', label: 'Logo + Branding Guideline', labelKm: 'រចនាផ្លាកសញ្ញា + Branding Guideline', price: 99 },
+
+        // Section: Others (រចនាផ្សេងៗ)
+        { id: 'fb_cover', label: 'Facebook Cover', labelKm: 'រចនា Facebook Cover (1pc)', price: 11 },
+        { id: 'menu_design', label: 'Menu Design', labelKm: 'រចនារចនាសម្ព័ន្ធផ្សេងៗ (Menu)', price: 13 },
+        { id: 'envelope', label: 'Envelope Design', labelKm: 'រចនាក្របសៀវភៅ (Envelope)', price: 15 },
+        // Note: "Custom Design" based on negotiation cannot be calculated here, so omitted or handled via contact form.
       ]
     },
     {
@@ -240,8 +253,9 @@ const CostEstimator: React.FC<CostEstimatorProps> = ({ showPopupOnMount = false,
                               <span className={`block font-bold text-lg font-khmer mb-1 ${isSelected ? 'text-white' : 'text-gray-300'}`}>
                                 {t(service.label, service.labelKm)}
                               </span>
+                              {/* Only show base price if it's not 0 */}
                               <span className={`text-sm font-mono font-bold ${isSelected ? 'text-indigo-300' : 'text-gray-500'}`}>
-                                ${service.basePrice}
+                                {service.basePrice > 0 ? `$${service.basePrice}` : t('Select items', 'ជ្រើសរើសមុខងារ')}
                               </span>
                           </div>
                           
@@ -284,7 +298,7 @@ const CostEstimator: React.FC<CostEstimatorProps> = ({ showPopupOnMount = false,
                           `}
                         >
                           <div className="flex items-center gap-4">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 shrink-0
                               ${isSelected ? 'bg-indigo-500 text-white scale-110' : 'bg-gray-800 text-transparent border border-gray-600 group-hover:border-gray-400'}
                             `}>
                               <Check size={16} strokeWidth={3} />
@@ -414,7 +428,6 @@ const CostEstimator: React.FC<CostEstimatorProps> = ({ showPopupOnMount = false,
             </p>
             <button 
                 onClick={() => {
-                   // Add logic to scroll to contact or open modal
                    window.location.hash = 'contact';
                 }}
                 className="group inline-flex items-center gap-3 px-10 py-5 rounded-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white font-bold text-lg hover:from-indigo-500 hover:to-blue-500 transition-all shadow-xl shadow-indigo-600/20 hover:shadow-indigo-600/40 hover:-translate-y-1 font-khmer"
