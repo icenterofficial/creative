@@ -4,12 +4,12 @@ import ScrollBackgroundText from './ScrollBackgroundText';
 import RevealOnScroll from './RevealOnScroll';
 import { 
   Calculator, Monitor, Palette, Home, Smartphone, Check, 
-  RefreshCcw, ArrowRight, ChevronLeft, ChevronRight, Zap, Languages 
+  RefreshCcw, ArrowRight, ChevronLeft, ChevronRight, Zap, Languages, Fan 
 } from 'lucide-react';
 import { hapticMedium, hapticSuccess } from '../utils/haptic';
 import { useRouter } from '../hooks/useRouter';
 
-type ServiceType = 'web' | 'app' | 'design' | 'architecture' | 'translation';
+type ServiceType = 'web' | 'app' | 'design' | 'architecture' | 'translation' | 'mvac';
 type WizardStep = 'service' | 'features' | 'summary';
 
 interface AddOn {
@@ -105,13 +105,27 @@ const CostEstimator: React.FC<CostEstimatorProps> = ({ showPopupOnMount = false,
       ]
     },
     {
+        id: 'mvac',
+        label: 'MVAC Design',
+        labelKm: 'ប្រព័ន្ធទឹកភ្លើង & MVAC',
+        icon: <Fan size={32} strokeWidth={1.5} />,
+        basePrice: 0,
+        addOns: [
+            { id: 'ac_split', label: 'Split AC Layout (Residential)', labelKm: 'ប្លង់ម៉ាស៊ីនត្រជាក់ (Split Type)', price: 60 },
+            { id: 'ac_vrv', label: 'VRV/VRF System (Commercial)', labelKm: 'ប្លង់ម៉ាស៊ីនត្រជាក់កណ្តាល (VRV/VRF)', price: 350 },
+            { id: 'vent_kitchen', label: 'Kitchen Ventilation/Exhaust', labelKm: 'ប្រព័ន្ធបឺតផ្សែងផ្ទះបាយ', price: 150 },
+            { id: 'vent_toilet', label: 'Toilet/Room Exhaust System', labelKm: 'ប្រព័ន្ធបឺតក្លិនបន្ទប់ទឹក', price: 80 },
+            { id: 'fresh_air', label: 'Fresh Air System', labelKm: 'ប្រព័ន្ធខ្យល់បរិសុទ្ធ (Fresh Air)', price: 120 },
+            { id: 'load_calc', label: 'Cooling Load Calculation', labelKm: 'ការគណនាកម្រិតត្រជាក់ (Load Calc)', price: 100 },
+        ]
+    },
+    {
         id: 'translation',
         label: 'Translation',
         labelKm: 'បកប្រែភាសា',
         icon: <Languages size={32} strokeWidth={1.5} />,
         basePrice: 0,
         addOns: [
-            // Start from $0.5/page
             { id: 'arabic_kh', label: 'Arabic <-> Khmer (Per Page)', labelKm: 'អារ៉ាប់ <-> ខ្មែរ (១ ទំព័រ)', price: 0.5 },
             { id: 'malay_kh', label: 'Malay <-> Khmer (Per Page)', labelKm: 'ម៉ាឡេ <-> ខ្មែរ (១ ទំព័រ)', price: 0.5 },
             { id: 'indo_kh', label: 'Indonesian <-> Khmer (Per Page)', labelKm: 'ឥណ្ឌូនេស៊ី <-> ខ្មែរ (១ ទំព័រ)', price: 0.5 },
@@ -241,7 +255,8 @@ const CostEstimator: React.FC<CostEstimatorProps> = ({ showPopupOnMount = false,
                     <p className="text-gray-400 font-khmer">{t("Choose the service that best fits your needs", "ជ្រើសរើសសេវាកម្មដែលសមស្របបំផុតសម្រាប់អ្នក")}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-5"> {/* UPDATED GRID TO 5 COLUMNS */}
+                  {/* UPDATED GRID TO 3 COLUMNS FOR 6 ITEMS */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-5"> 
                     {SERVICES_DATA.map((service) => {
                       const isSelected = selectedService === service.id;
                       return (
