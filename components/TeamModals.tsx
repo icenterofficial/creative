@@ -37,12 +37,12 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({ member, on
     const socials = member.socials || {};
 
     return createPortal(
-        <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4 overflow-hidden">
             <div 
                 className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
                 onClick={onClose}
             />
-            <div className="relative w-full max-w-lg bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10 flex flex-col max-h-[90vh]">
+            <div className="relative w-full max-w-lg bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-[10003] flex flex-col max-h-[90vh]">
                 {/* Header / Cover */}
                 <div className="h-32 bg-gray-800 relative shrink-0 overflow-hidden">
                     {member.coverImage ? (
@@ -156,12 +156,12 @@ export const AuthorArticlesModal: React.FC<AuthorArticlesModalProps> = ({ author
     const { t } = useLanguage();
 
     return createPortal(
-        <div className="fixed inset-0 z-[10003] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[10004] flex items-center justify-center p-4 overflow-hidden">
             <div 
                 className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
                 onClick={onClose}
             />
-            <div className="relative w-full max-w-2xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-10 flex flex-col max-h-[80vh]">
+            <div className="relative w-full max-w-2xl bg-gray-900 border border-white/10 rounded-3xl shadow-2xl overflow-hidden animate-scale-up z-[10005] flex flex-col max-h-[80vh]">
                 <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gray-900 z-10">
                     <div className="flex items-center gap-4">
                         <img src={author.image} alt={author.name} className="w-10 h-10 rounded-full object-cover" />
@@ -375,12 +375,12 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({ post, on
     );
 
     return createPortal(
-        <div className="fixed inset-0 z-[10004] flex items-center justify-center p-0 md:p-4">
+        <div className="fixed inset-0 z-[10006] flex items-center justify-center p-0 md:p-4 overflow-hidden">
             <div 
                 className="absolute inset-0 bg-gray-950/95 backdrop-blur-md animate-fade-in"
                 onClick={onClose}
             />
-            <div className="relative w-full max-w-4xl h-full md:h-[95vh] bg-gray-900 md:border md:border-white/10 md:rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col z-10">
+            <div className="relative w-full max-w-4xl h-full md:h-[95vh] bg-gray-900 md:border md:border-white/10 md:rounded-3xl shadow-2xl overflow-hidden animate-scale-up flex flex-col z-[10007]">
                 {/* Close Button Mobile */}
                 <button 
                     onClick={onClose}
