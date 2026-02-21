@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 export interface GitHubConfig {
@@ -53,6 +52,7 @@ export interface TeamMember {
   role: string;
   roleKm: string;
   image: string;
+  coverImage?: string; // Cover image for team card background
   socials: {
     facebook?: string;
     telegram?: string;
